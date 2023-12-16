@@ -1,0 +1,3 @@
+export ENERGY_DEMAND=1
+export N_ATOMI_INIT=1
+export N_ATOMI_MAX=2
