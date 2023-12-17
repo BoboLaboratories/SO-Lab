@@ -9,8 +9,8 @@ void setup_shmem(int id);
 
 int main() {
     init_ipc(&res, MASTER);
-    setup_shmem(MAIN);
     setup_shmem(CTL);
+    setup_shmem(MAIN);
 }
 
 void setup_shmem(int id) {
