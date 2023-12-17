@@ -3,14 +3,22 @@
 
 #include <sys/types.h>
 
-struct IpcRes {
-    /* Control shared memory */
-    int ctl_shmid;
-    void *ctl_addr;
+enum Component {
+    MASTER=0,
+    ATOMO=1,
+    ATTIVATORE=2,
+    ALIMENTATORE=3,
+    INIBITORE=4
+};
 
-    /* Main shared memory */
-    int main_shmid;
-    void *main_shmem_addr;
+#define CTL  0
+#define MAIN 1
+
+struct IpcRes {
+    int component;
+
+    int shmid[2];
+    void *adrr[2];
 };
 
 struct Ctl {
@@ -29,5 +37,12 @@ struct ShmemCtl {
 #define BOTTOM_INACTIVE (shmem + sizeof(struct Shmem_ctl))
 #define TOP_INACTIVE    (*((struct Shmem_ctl) shmem)->top_inactive)
 #define TOP_ACTIVE
+
+void init_ipc(struct IpcRes *r, int component);
+void attach_shmem(int id);
+void free_ipc();
+
+int errno_fail(char *format, int line, char *file, ...);
+int fail(char *format, int line, char *file, ...);
 
 #endif

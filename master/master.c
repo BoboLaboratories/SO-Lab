@@ -1,31 +1,22 @@
-#include <stdio.h>
-#include <stdlib.h>
 #include <sys/shm.h>
 
+#include "../libs/console.h"
 #include "../libs/ipc/ipc.h"
 
-struct Ctl_mem *ctl;
+struct IpcRes res;
+
+void setup_shmem(int id);
 
 int main() {
-    struct Ipc_res ipc_res;
+    init_ipc(&res, MASTER);
+    setup_shmem(MAIN);
+    setup_shmem(CTL);
+}
 
-    int ctl_shmid;
-    if ((ctl_shmid = shmget(IPC_PRIVATE, sizeof(struct Ctl_mem), 0666 | IPC_CREAT)) == -1) {
-        printf("Errore nella crazione della memoria\n");
-        return EXIT_FAILURE;
+void setup_shmem(int id) {
+    res.shmid[id] = shmget(IPC_PRIVATE, sizeof(struct Ctl), 0666 | IPC_CREAT);
+    if (res.shmid[id] == -1) {
+        errno_fail("Could not create shared memory.\n", F_INFO);
     }
-
-    ctl = (struct Ctl_mem *) shmat(ctl_shmid, NULL, 0);
-    if (ctl == (void *) -1) {
-        // TODO delete shared memory
-        return EXIT_FAILURE;
-    }
-
-    int shmid;
-    if ((shmid = shmget(IPC_PRIVATE, sizeof(struct Ctl_mem), 0666 | IPC_CREAT)) == -1) {
-        // TODO detach shared memory
-        // TODO delete shared memory
-        return EXIT_FAILURE;
-    }
-
+    attach_shmem(id);
 }

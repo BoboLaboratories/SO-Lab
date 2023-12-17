@@ -1,2 +1,2 @@
-../bin/master: master.c ../bin/libs/ipc.o
-	$(CC) $(CFLAGS) $< -o $@
+../bin/master: ../bin/libs/ipc.o master.c
+	$(CC) $(CFLAGS) $^ -o $@

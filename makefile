@@ -1,5 +1,5 @@
 export CC=gcc
-export CFLAGS=-Wvla -Wextra -Werror
+export CFLAGS=-Wvla -Wextra -Werror -D_GNU_SOURCE
 
 MODULES = libs master
 
