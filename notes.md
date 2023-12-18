@@ -1,0 +1,2 @@
+- i file .h sono inclusi tra i file da passare a gcc nei makefile
+- mettere o togliere i nomi dei parametri da tutte le firme dei metodi

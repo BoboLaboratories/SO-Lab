@@ -10,6 +10,9 @@ all:
 		$(MAKE) -s -C $$module; 		   	\
 	done
 
+debug: CFLAGS += -DDEBUG
+debug: all
+
 clean:
 	echo -n "Cleaning up.."
 	rm -rf bin
