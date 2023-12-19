@@ -1,9 +1,9 @@
-#include <sys/shm.h>
 #include <malloc.h>
+#include <sys/shm.h>
 
+#include "config.h"
 #include "../libs/console.h"
 #include "../libs/ipc/ipc.h"
-#include "config.h"
 #include "../libs/config/config.h"
 
 void setup_ipc(struct IpcRes *res);

@@ -23,9 +23,9 @@
 /*
   Macro used to output an informative error report
 */
-#define ERRNO_PRINT fprintf(stderr, M "Errno %d: %s (%s:%d, pid:%5d)\n", errno, strerror(errno), __FILE__, __LINE__, getpid())
+#define ERRNO_PRINT fprintf(stderr, M "errno %d: %s (%s:%d, pid:%5d)\n", errno, strerror(errno), __FILE__, __LINE__, getpid())
 #define F_INFO __LINE__, __FILE__
 
-#define DEBUG_BREAKPOINT printf("%s:%d\n", __FILE__, __LINE__);
+#define DEBUG_BREAKPOINT printf("%s:%d\n", __FILE__, __LINE__)
 
 #endif
