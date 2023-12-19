@@ -1,7 +1,7 @@
 export CC=gcc
 export CFLAGS=-Wvla -Wextra -Werror -D_GNU_SOURCE
 
-MODULES = libs master
+MODULES = libs master atomo
 
 all:
 	mkdir -p bin/libs

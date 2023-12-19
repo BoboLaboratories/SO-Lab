@@ -5,6 +5,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <sys/shm.h>
+#include <fcntl.h>
 
 #include "ipc.h"
 #include "../console.h"
@@ -15,12 +16,12 @@ extern struct Model *model;
 
 static struct IpcRes *res;
 
-void init_ipc(struct IpcRes *r, int component) {
+void init_ipc(struct IpcRes *r, enum Component component) {
     // we set everything to -1 or NULL as each component
     // may keep track of different information
     memset(r, -1, sizeof(struct IpcRes));
-    memset(r->addr, 0, 2 * sizeof(void *));
     r->component = component;
+    r->addr = NULL;
     res = r;
 }
 
@@ -29,56 +30,81 @@ void attach_model() {
         errno_fail("Could not allocate model.\n", F_INFO);
     }
 
-    model->config = (struct Config *) res->addr[CTL];
-    model->ctl = (struct Control *) model->config + sizeof(struct Config);
-    model->atoms = (struct Atoms *) res->addr[MAIN];
+    model->config = (struct Config *) res->addr;
+    model->stats = (struct Stats *) model->config + sizeof(struct Config);
 }
 
-void attach_shmem(enum Shmem which) {
-    res->addr[which] = shmat(res->shmid[which], NULL, 0);
-    if (res->addr[which] == (void *) -1) {
+void attach_shmem() {
+    res->addr = shmat(res->shmid, NULL, 0);
+    if (res->addr == (void *) -1) {
         errno_fail("Could not attach shared memory\n", F_INFO);
     }
 
     #ifdef DEBUG
-        printf(D "Attached shared memory (shmid: %d)\n", res->shmid[which]);
+        printf(D "Attached shared memory (shmid: %d)\n", res->shmid);
     #endif
 }
 
-void free_shmem(enum Shmem which) {
+void free_shmem() {
     // only master process should request the main shared memory removal
-    if (res->component == MASTER && res->shmid[which] != -1) {
+    if (res->component == MASTER && res->shmid!= -1) {
         #ifdef DEBUG
-            printf(D "Requesting shared memory removal (shmid: %d)\n", res->shmid[which]);
+            printf(D "Requesting shared memory removal (shmid: %d)\n", res->shmid);
         #endif
-        if (shmctl(res->shmid[which], IPC_RMID, NULL) == -1) {
-            fprintf(stderr, E "Could not request shared memory removal (shmid: %d)\n", res->shmid[which]);
+        if (shmctl(res->shmid, IPC_RMID, NULL) == -1) {
+            fprintf(stderr, E "Could not request shared memory removal (shmid: %d)\n", res->shmid);
             ERRNO_PRINT;
         }
     }
 }
 
-void detach_shmem(enum Shmem which) {
-    if (res->addr[which] != NULL) {
+void detach_shmem() {
+    if (res->addr != NULL) {
         #ifdef DEBUG
-            printf(D "Detaching shared memory (shmid: %d)\n", res->shmid[which]);
+            printf(D "Detaching shared memory (shmid: %d)\n", res->shmid);
         #endif
-        if (shmdt(res->addr[which]) == -1) {
-            fprintf(stderr, E "Could not detach shared memory (shmid: %d)\n", res->shmid[which]);
+        if (shmdt(res->addr) == -1) {
+            fprintf(stderr, E "Could not detach shared memory (shmid: %d)\n", res->shmid);
             ERRNO_PRINT;
         }
     }
 }
+
+void open_fifo(int flags) {
+    if ((res->fifo_fd = open(FIFO_PATHNAME, flags)) == -1) {
+        fprintf(stderr, E "Could not open fifo.\n");
+        ERRNO_PRINT;
+    }
+}
+
+void close_fifo() {
+    if (close(res->fifo_fd) == -1) {
+        fprintf(stderr, E "Could not close fifo.\n");
+        ERRNO_PRINT;
+    }
+}
+
 
 void free_ipc() {
     // should some of these free operations fail,
     // this function should not return and the process should not terminate
     // as some resources may still be in use
 
-    detach_shmem(MAIN);
-    detach_shmem(CTL);
-    free_shmem(MAIN);
-    free_shmem(CTL);
+    detach_shmem();
+    free_shmem();
+
+    close_fifo();
+
+    if (res->component == MASTER) {
+        if (remove(FIFO_PATHNAME) == -1) {
+            fprintf(stderr, E "Could not delete fifo.\n");
+            ERRNO_PRINT;
+        }
+        if (remove(IPC_DIRECTORY) == -1) {
+            fprintf(stderr, E "Could not delete ipc directory.\n");
+            ERRNO_PRINT;
+        }
+    }
 
     free(model);
 

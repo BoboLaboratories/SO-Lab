@@ -3,6 +3,7 @@
 
 #include "../libs/console.h"
 #include "../libs/ipc/ipc.h"
+#include "../libs/util/util.h"
 
 static const char *variables[9] = {
     "SIM_DURATION",
@@ -20,17 +21,6 @@ static const char *variables[9] = {
     "ENERGY_EXPLODE_THRESHOLD"
 };
 
-int parse_long(char *raw, long *dest) {
-    char *endptr;
-    errno = 0;
-    *dest = strtol(raw, &endptr, 10);
-    return !(
-            errno == ERANGE     // overflow
-            || raw == endptr    // no conversion (no characters read)
-            || *endptr          // extra characters at the end
-    );
-}
-
 void load_config() {
     extern struct Model *model;
 
@@ -42,7 +32,7 @@ void load_config() {
         if ((raw = getenv(variables[i])) == NULL) {
             fail("Configuration environment variable %s is not set.\n", F_INFO, variables[i]);
         }
-        if (!parse_long(raw, addr + i)) {
+        if (parse_long(raw, addr + i) == -1) {
             fail("Bad number format (%s) while parsing environment variable %s.\n", F_INFO, raw, variables[i]);
         }
         if (i != 0 && *(addr + i) <= 0) {
