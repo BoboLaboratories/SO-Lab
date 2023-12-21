@@ -1,5 +1,6 @@
 #include <fcntl.h>
 #include <unistd.h>
+#include <stdlib.h>
 
 #include "../libs/console.h"
 #include "../libs/ipc/ipc.h"
@@ -28,4 +29,5 @@ int main(int argc, char *argv[]) {
 
     free_ipc();
 
+    exit(EXIT_SUCCESS);
 }

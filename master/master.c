@@ -29,25 +29,14 @@ int main() {
 
     open_fifo(O_RDWR);
 
-    fork_execve(1, "alimentatore", "%d", res.shmid);
+    char *buf = NULL;
+    char **argv = prargs(buf, "alimentatore", "%d", res.shmid);
+    if (fork_execve(argv) == -1) {
+        printf("PROBLEMA.\n");
+    }
 
-//    char *argvc[3];
-//    char buf[INT_N_CHARS];
-//    prepare_argv(argvc, buf, "alimentatore", res.shmid);
-//
-//    switch (fork()) {
-//        case -1:
-//            errno_fail("Could not fork %s.\n", F_INFO, argvc[0]);
-//            break;
-//        case 0:
-//            execve(argvc[0], argvc, NULL);
-//            errno_fail("Could not execute %s.\n", F_INFO, argvc[0]);
-//            break;
-//        default:
-//            break;
-//    }
-
-//    fork_execve(1, argvc);
+    free(buf);
+    free(argv);
 
     pid_t pid;
     ssize_t result;
@@ -57,28 +46,6 @@ int main() {
     if (result == -1) {
         errno_fail("Failed to read.", F_INFO);
     }
-
-    fork_execve(N_ATOMI_INIT, "atomo", "%d", res.shmid);
-
-//    prepare_argv(argvc, buf, "atomo", res.shmid);
-//
-//    pid_t pid;
-//    switch (fork()) {
-//        case -1:
-//            errno_fail("Could not fork %s.\n", F_INFO, argvc[0]);
-//            break;
-//        case 0:
-//            execve(argvc[0], argvc, NULL);
-//            errno_fail("Could not execute %s.\n", F_INFO, argvc[0]);
-//        default:
-//            while ((result = read(res.fifo_fd, &pid, sizeof(pid_t))) != -1) {
-//                printf("Pid: %d\n", pid);
-//            }
-//            if(result == -1) {
-//                errno_fail("Failed to read.", F_INFO);
-//            }
-//            break;
-//    }
 
     free_ipc();
 }
