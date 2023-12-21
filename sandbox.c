@@ -1,44 +1,10 @@
-#include <time.h>
 #include <stdio.h>
-#include <errno.h>
+#include <string.h>
 #include <stdarg.h>
-#include <unistd.h>
-#include <stdlib.h>
 #include <printf.h>
+#include <malloc.h>
 
-#include "util.h"
-#include "../console.h"
-#include "../ipc/ipc.h"
-
-void nano_sleep(long nanos) {
-    struct timespec t;
-    t.tv_sec = nanos / 1000000000;
-    t.tv_nsec = nanos % 1000000000;
-    while (nanosleep(&t, &t) == -1)
-        ;
-}
-
-int parse_long(char *raw, long *dest) {
-    char *endptr;
-    errno = 0;
-    *dest = strtol(raw, &endptr, 10);
-    int error = (
-            errno == ERANGE     // overflow
-            || raw == endptr    // no conversion (no characters read)
-            || *endptr          // extra characters at the end
-    );
-    return error ? -1 : 0;
-}
-
-void prepare_argv(char *argv[], char buf[], char *executable, int shmid) {
-    sprintf(buf, "%d", shmid);
-
-    argv[0] = executable;
-    argv[1] = buf;
-    argv[2] = (char *) 0;
-}
-
-int fork_execve(int children, char *executable, char *format, ...) {
+void fork_execve(int nchildren, char *executable, char *format, ...) {
     size_t argc = 0;
     va_list args;
     char buf[32];
@@ -66,7 +32,7 @@ int fork_execve(int children, char *executable, char *format, ...) {
     // argv[0] must be equal to executable name
     argv[i++] = executable;
 
-    // set varargs arguments
+    // prepare actual arguments
     char *ptr;
     char *delim = " ";
     ptr = strtok(str, delim);
@@ -78,30 +44,32 @@ int fork_execve(int children, char *executable, char *format, ...) {
     // argv[argc] must be equal to NULL
     argv[argc + 1] = NULL;
 
-    // fork children processes
-    int np;
-    int error = 0;
-    for (np = 0; !error && np < children; np++) {
+    for (size_t j = 0; j < argc + 1; j++) {
+        printf("%s\n", argv[j]);
+    }
+
+    for (int np = 0; np < nchildren; np++) {
         switch (fork()) {
             case -1:
-                error = 1;
+                errno_fail("Could not fork %s.\n", F_INFO, executable);
                 break;
             case 0:
-                execve(executable, argv, NULL);
+                execve(executable, argvc, NULL);
                 errno_fail("Could not execute %s.\n", F_INFO, executable);
                 break;
             default:
-                // parent process noop
                 break;
         }
     }
 
-    // free dynamically allocated memory (if needed)
+    // free dynamically allocated memory if needed
     free(argv);
     if (str != buf) {
         free(str);
     }
-
-    return np + 1;
 }
 
+
+int main() {
+   fork_execve(0, "atomo", "%d %d %s %d", 1, 2, "aiuto", 3);
+}

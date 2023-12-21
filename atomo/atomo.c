@@ -1,9 +1,9 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#include "../libs/console.h"
 #include "../libs/ipc/ipc.h"
 #include "../libs/util/util.h"
-#include "../libs/console.h"
 
 struct Model *model;
 
@@ -27,4 +27,5 @@ int main(int argc, char *argv[]) {
     }
 
     free_ipc();
+
 }

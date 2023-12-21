@@ -1,15 +1,15 @@
 #include <stdio.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <unistd.h>
 #include <stdarg.h>
 #include <string.h>
 #include <stdlib.h>
 #include <sys/shm.h>
-#include <fcntl.h>
 
 #include "ipc.h"
 #include "../console.h"
-#include "../config/config.h"
+#include "../config.h"
 
 extern int errno;
 extern struct Model *model;
