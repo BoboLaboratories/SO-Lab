@@ -28,7 +28,6 @@ int main(int argc, char *argv[]) {
     printf("%s: %d\n", argv[0], getpid());
 
     init_ipc(&res, ALIMENTATORE);
-    printf(D "Shmid: %s\n", argv[1]);
     if (parse_long(argv[1], (long *) &res.shmid) == -1) {
         fail("Could not parse shmid (%s).\n", F_INFO, argv[1]);
     }
@@ -45,22 +44,29 @@ int main(int argc, char *argv[]) {
         errno_fail("Could not set SIGTERM handler.\n", F_INFO);
     }
 
-    char *buf = NULL;
-    char **argvc;
-    // TODO Evitare di fare il prargs a ogni loop, è da rifare
+    char **argvc = malloc(4 * sizeof(char *));
+    char *buf = malloc(2 * ITC_SIZE);
+    argvc[1] = &buf[0 * ITC_SIZE];
+    argvc[2] = &buf[1 * ITC_SIZE];
+
+    argvc[0] = "atomo";
+    sprintf(argvc[1], "%d", res.shmid);
+    argvc[3] = NULL;
+
     while (!interrupted) {
-        nano_sleep(STEP_ALIMENTAZIONE, &interrupted);
+        nano_sleep(&interrupted, STEP_ALIMENTAZIONE);
         for (int i = 0; !interrupted && i < N_NUOVI_ATOMI; i++) {
-            argvc = prargs(buf, "atomo", "%d %d", res.shmid, 1000);
+            sprintf(argvc[2], "%d", 123);
             if (fork_execve(argvc) == -1) {
                 // TODO signal master we meltdown :(
                 interrupted = 1;
             }
-            free(argvc);
         }
     }
 
     free(buf);
+    free(argvc);
+
     free_ipc();
 
     pid_t pid;

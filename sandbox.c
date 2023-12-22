@@ -4,6 +4,7 @@
 #include <printf.h>
 #include <malloc.h>
 
+
 //void fork_execve(int nchildren, char *executable, char *format, ...) {
 //    size_t argc = 0;
 //    va_list args;
@@ -108,12 +109,33 @@ char **prargs(char *buf, char *executable, char *format, ...) {
     return argv;
 }
 
+#define ITC_SIZE ((3 * sizeof(int) + 1) * sizeof(char))
+
 int main() {
-    char *buf = NULL;
-    char **argvc = prargs(buf, "atomo", "%d", 1);
-    for (int i = 0; argvc[i]; i++) {
-        printf("%s\n", argvc[i]);
-    }
+    char **argvc = (char **) malloc(4 * sizeof(char *));
+    argvc[1] = malloc(ITC_SIZE);
+    argvc[2] = malloc(ITC_SIZE);
+
+    argvc[0] = "atomo";
+    argvc[3] = NULL;
+
+    sprintf(argvc[1], "%d", 12);
+    sprintf(argvc[2], "%d", 1234);
+    printf("%s\n", argvc[0]);
+    printf("%s\n", argvc[1]);
+    printf("%d\n", argvc[3] == NULL);
+
+    free(argvc[1]);
     free(argvc);
-    free(buf);
+
 }
+
+//int main() {
+//    char *buf = NULL;
+//    char **argvc = prargs(buf, "atomo", "%d", 1);
+//    for (int i = 0; argvc[i]; i++) {
+//        printf("%s\n", argvc[i]);
+//    }
+//    free(argvc);
+//    free(buf);
+//}

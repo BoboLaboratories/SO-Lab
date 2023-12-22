@@ -8,8 +8,8 @@
 #include <sys/shm.h>
 
 #include "ipc.h"
-#include "../console.h"
 #include "../config.h"
+#include "../console.h"
 
 extern int errno;
 extern struct Model *model;

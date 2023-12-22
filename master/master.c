@@ -7,7 +7,6 @@
 #include "../libs/console.h"
 #include "../libs/ipc/ipc.h"
 #include "../libs/util/util.h"
-#include "../libs/config.h"
 
 void setup_ipc(struct IpcRes *res);
 void setup_shmem(struct IpcRes *res);
@@ -29,14 +28,20 @@ int main() {
 
     open_fifo(O_RDWR);
 
-    char *buf = NULL;
-    char **argv = prargs(buf, "alimentatore", "%d", res.shmid);
-    if (fork_execve(argv) == -1) {
+    char **argvc = malloc(4 * sizeof(char *));
+    char *buf = malloc(1 * ITC_SIZE);
+    argvc[1] = &buf[0 * ITC_SIZE];
+
+    argvc[0] = "alimentatore";
+    sprintf(argvc[1], "%d", res.shmid);
+    argvc[2] = NULL;
+
+    if (fork_execve(argvc) == -1) {
         printf("PROBLEMA.\n");
     }
 
     free(buf);
-    free(argv);
+    free(argvc);
 
     pid_t pid;
     ssize_t result;
