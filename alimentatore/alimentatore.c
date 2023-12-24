@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <signal.h>
 #include <sys/wait.h>
+#include <sys/sem.h>
 
 #include "../libs/config.h"
 #include "../libs/console.h"
@@ -12,14 +13,14 @@
 sig_atomic_t interrupted = 0;
 
 struct Model *model;
-struct IpcRes res;
+struct IpcRes *res;
 
 void sigterm_handler() {
     // TODO signal masking to prevent other signals from interrupting this handler
     // TODO probably not needed as sig_atomic_t is atomic already
     interrupted = 1;
     pid_t pid = -1;
-    if (write(res.fifo_fd, &pid, sizeof(pid_t)) == -1) {
+    if (write(res->fifo_fd, &pid, sizeof(pid_t)) == -1) {
         errno_fail("MEH.\n", F_INFO);
     }
 }
@@ -28,7 +29,7 @@ int main(int argc, char *argv[]) {
     printf("%s: %d\n", argv[0], getpid());
 
     init_ipc(&res, ALIMENTATORE);
-    if (parse_long(argv[1], (long *) &res.shmid) == -1) {
+    if (parse_int(argv[1], &res->shmid) == -1) {
         fail("Could not parse shmid (%s).\n", F_INFO, argv[1]);
     }
 
@@ -44,14 +45,19 @@ int main(int argc, char *argv[]) {
         errno_fail("Could not set SIGTERM handler.\n", F_INFO);
     }
 
-    char **argvc = malloc(4 * sizeof(char *));
-    char *buf = malloc(2 * ITC_SIZE);
-    argvc[1] = &buf[0 * ITC_SIZE];
-    argvc[2] = &buf[1 * ITC_SIZE];
 
-    argvc[0] = "atomo";
-    sprintf(argvc[1], "%d", res.shmid);
-    argvc[3] = NULL;
+    int semid;
+    if (parse_int(argv[2], &semid) == -1) {
+        errno_fail("Could not parse semid.\n", F_INFO);
+    }
+
+    sem_sync(semid);
+
+
+    char *buf;
+    char **argvc;
+    prargs("atomo", &argvc, &buf, 2, ITC_SIZE);
+    sprintf(argvc[1], "%d", res->shmid);
 
     while (!interrupted) {
         nano_sleep(&interrupted, STEP_ALIMENTAZIONE);
@@ -64,8 +70,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    free(buf);
-    free(argvc);
+    frargs(argvc, buf);
 
     free_ipc();
 

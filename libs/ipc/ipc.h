@@ -14,6 +14,14 @@ enum Component {
     INIBITORE
 };
 
+enum Status {
+    RUNNING,
+    TIMEOUT,
+    EXPLODE,
+    BLACKOUT,
+    MELTDOWN
+};
+
 struct IpcRes {
     enum Component component;
     int shmid;
@@ -24,11 +32,28 @@ struct IpcRes {
 struct Model {
     struct Config *config;
     struct Stats {
-        int energy_explode_threshold;
+        enum Status status;
+        long energy;
+        int n_atoms;
+        int n_wastes;
     } *stats;
 };
 
-void init_ipc(struct IpcRes *r, enum Component component);
+union semun {
+    // value for SETVAL
+    int val;
+    // buffer for IPC_STAT, IPC_SET
+    struct semid_ds* buf;
+    // array for GETALL, SETALL
+    unsigned short* array;
+    // Linux specific part
+#if defined(__linux__)
+    // buffer for IPC_INFO
+    struct seminfo* __buf;
+#endif
+};
+
+void init_ipc(struct IpcRes **res, enum Component component);
 void attach_model();
 void attach_shmem();
 void free_ipc();
@@ -36,6 +61,9 @@ void free_ipc();
 // fifo
 void open_fifo(int flags);
 void close_fifo();
+
+// semaphores
+void sem_sync(int semid);
 
 // failures
 int errno_fail(char *format, int line, char *file, ...);

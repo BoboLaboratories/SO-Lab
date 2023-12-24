@@ -6,6 +6,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <sys/shm.h>
+#include <sys/sem.h>
 
 #include "ipc.h"
 #include "../config.h"
@@ -16,13 +17,14 @@ extern struct Model *model;
 
 static struct IpcRes *res;
 
-void init_ipc(struct IpcRes *r, enum Component component) {
+void init_ipc(struct IpcRes **r, enum Component component) {
     // we set everything to -1 or NULL as each component
     // may keep track of different information
-    memset(r, -1, sizeof(struct IpcRes));
-    r->component = component;
-    r->addr = NULL;
-    res = r;
+    res = *r = malloc(sizeof(struct IpcRes));
+
+    memset(res, -1, sizeof(struct IpcRes));
+    res->component = component;
+    res->addr = NULL;
 }
 
 void attach_model() {
@@ -84,6 +86,20 @@ void close_fifo() {
     }
 }
 
+void sem_sync(int semid) {
+    // TODO what is a signal interrupts? D:
+    struct sembuf sops;
+    sops.sem_num = 0;
+    sops.sem_flg = 0;
+
+    // signal we are ready
+    sops.sem_op = -1;
+    semop(semid, &sops, 1);
+
+    // wait for everyone to be ready
+    sops.sem_op = 0;
+    semop(semid, &sops, 1);
+}
 
 void free_ipc() {
     // should some of these free operations fail,
@@ -107,6 +123,7 @@ void free_ipc() {
     }
 
     free(model);
+    free(res);
 
     #ifdef DEBUG
         printf(D "Freed all IPC resources\n");
