@@ -3,7 +3,6 @@
 #include <stdlib.h>
 #include <signal.h>
 #include <sys/wait.h>
-#include <sys/sem.h>
 
 #include "../libs/config.h"
 #include "../libs/console.h"
