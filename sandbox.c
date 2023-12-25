@@ -13,13 +13,13 @@ union semun {
     // value for SETVAL
     int val;
     // buffer for IPC_STAT, IPC_SET
-    struct semid_ds* buf;
+    struct semid_ds *buf;
     // array for GETALL, SETALL
-    unsigned short* array;
+    unsigned short *array;
     // Linux specific part
 #if defined(__linux__)
     // buffer for IPC_INFO
-    struct seminfo* __buf;
+    struct seminfo *__buf;
 #endif
 };
 
@@ -68,8 +68,27 @@ int main() {
     semctl(semid, ATOM, SETVAL, se);
     se.val = 0;
     semctl(semid, INHIBITOR, SETVAL, se);
-    se.val = 0;
+    se.val = 1;
     semctl(semid, MASTER, SETVAL, se);
+
+//    struct sembuf tmp;
+//    tmp.sem_flg = IPC_NOWAIT;
+//    tmp.sem_num = ATOM;
+//    tmp.sem_op = 0;
+//    if (semop(semid, &tmp, 1) == -1) {
+//        if (errno == EAGAIN) {
+//            printf("EAG\n");
+//        } else {
+//            printf("BOH\n");
+//        }
+//    } else {
+//        printf(":D\n");
+//    }
+//
+//    if (errno != EINTR) {
+//        return 1;
+//    }
+
 
     for (int i = 0; i < 100; i ++) {
         switch (fork()) {
@@ -86,7 +105,7 @@ int main() {
                     sops[0].sem_op = -1;
 
                     sops[1].sem_num = MASTER;
-                    sops[1].sem_op = 0;
+                    sops[1].sem_op = -1;
 
                     if (semop(semid, sops, 2) == -1) {
                         printf("Atom: start %d.\n", getpid());
@@ -131,17 +150,20 @@ int main() {
                 *val = *val - 1;
 //                printf("I");
 
-                sops[0].sem_flg = IPC_NOWAIT;
                 sops[0].sem_num = MASTER;
-                sops[0].sem_op = 0;
+                sops[0].sem_op = 1;
 
-                sops[1].sem_flg = IPC_NOWAIT;
-                sops[1].sem_num = ATOM;
-                sops[1].sem_op = 1;
+                if (semop(semid, sops, 1) == -1) {
+                    printf("Inhibitor: master wake up.\n");
+                    interrupted = 1;
+                }
 
-                if (semop(semid, sops, 2) == -1) {
+                sops[0].sem_num = ATOM;
+                sops[0].sem_op = 1;
+
+                if (semop(semid, sops, 1) == -1) {
                     // TODO Boh forse non vale neanche come errore
-                    printf("woke\n");
+                    printf("Inhibitor: wake up atom.\n");
                 }
             }
             return EXIT_FAILURE;
@@ -151,29 +173,23 @@ int main() {
         struct sembuf sops[2];
         memset(&sops, 0, sizeof(sops));
 
-        sops[0].sem_num = ATOM;
+        sops[0].sem_num = MASTER;
         sops[0].sem_op = -1;
 
-        sops[1].sem_num = MASTER;
-        sops[1].sem_op = 1;
-
-        if (semop(semid, sops, 2) == -1) {
+        if (semop(semid, sops, 1) == -1) {
             printf("Master: start.\n");
             interrupted = 1;
             break;
         }
 
 //        if (*val != 0) {
-            printf("\n---------------------------------------------val=%d\n", *val);
+            printf("val=%d\n", *val);
 //        }
 
         sops[0].sem_num = MASTER;
-        sops[0].sem_op = -1;
+        sops[0].sem_op = 1;
 
-        sops[1].sem_num = ATOM;
-        sops[1].sem_op = 1;
-
-        if (semop(semid, sops, 2) == -1) {
+        if (semop(semid, sops, 1) == -1) {
             printf("Master: end %d %s.\n", errno, strerror(errno));
             interrupted = 1;
         }
@@ -181,8 +197,7 @@ int main() {
         sleep(1);
     }
 
-    pid_t pid;
-    while ((pid = wait(NULL)) != -1)
+    while (wait(NULL) != -1)
         ;
 
     printf("Atom: %d\n", semctl(semid, ATOM, GETVAL));

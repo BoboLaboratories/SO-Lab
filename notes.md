@@ -85,3 +85,67 @@ Energy  1234     1204   130       30
 
 0 [==============================       ] 1000  MAX_EXPLODE_THRESHOLD
 └ 600                       ENERGY_DEMAND
+
+
+
+
+
+
+// atomo
+semop(A-1, M-1)
+    e += de
+if (semop(I=0, IPC_NOWAIT) != -1)
+    semop(I+1)
+else
+    semop(M+1)
+    semop(A+1)
+
+
+// inibitore
+semop(M-1)
+    fresh_start = 1
+
+printf("Sono collegato.\n");
+
+while (!interrupted) {
+    if (!fresh_start) {
+        semop(I-1)
+    }
+    
+    e = max(...)
+    if (fresh_start) {
+        fresh_start = 0
+    }
+    semop(M+1)
+    semop(A+1)
+}
+
+semop(M-1)
+    semop(I+1)
+semop(M+1)
+exit();
+
+
+// master
+semop(M-1)
+    read()
+semop(M+1)
+
+
+A -> M -> I
+A -> I -> M
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
