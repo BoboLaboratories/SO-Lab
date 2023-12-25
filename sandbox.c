@@ -34,8 +34,6 @@ void sigterm_handler() {
 }
 
 int main() {
-    setbuf(stdout, NULL);
-
     struct sigaction sa;
     memset(&sa, 0, sizeof(sa));
     sa.sa_handler = &sigterm_handler;
@@ -141,8 +139,9 @@ int main() {
                 sops[1].sem_num = ATOM;
                 sops[1].sem_op = 1;
 
-                if (semop(semid, sops, 2) != -1) {
+                if (semop(semid, sops, 2) == -1) {
                     // TODO Boh forse non vale neanche come errore
+                    printf("woke\n");
                 }
             }
             return EXIT_FAILURE;
@@ -154,37 +153,19 @@ int main() {
 
         sops[0].sem_num = ATOM;
         sops[0].sem_op = -1;
+
         sops[1].sem_num = MASTER;
         sops[1].sem_op = 1;
 
-        if (semop(semid, sops, 2) == 1) {
+        if (semop(semid, sops, 2) == -1) {
             printf("Master: start.\n");
             interrupted = 1;
             break;
         }
 
-//        sops[0].sem_num = ATOM;
-//        sops[0].sem_op = -1;
-//
-//        if (semop(semid, sops, 1) == 1) {
-//            printf("Master: start.\n");
-//            interrupted = 1;
-//            break;
+//        if (*val != 0) {
+            printf("\n---------------------------------------------val=%d\n", *val);
 //        }
-//
-//        sops[0].sem_num = MASTER;
-//        sops[0].sem_op = 1;
-//
-//        if (semop(semid, sops, 1) == 1) {
-//            printf("Master: mid.\n");
-//            interrupted = 1;
-//            break;
-//        }
-
-        if (*val != 0) {
-            printf("val=%d\n", *val);
-        }
-//        printf("\n MASTER \n");
 
         sops[0].sem_num = MASTER;
         sops[0].sem_op = -1;
