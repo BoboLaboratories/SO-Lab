@@ -1,11 +1,14 @@
 export CC=gcc
 export CFLAGS=-Wvla -Wextra -Werror -D_GNU_SOURCE
 
-all: bin/master bin/inhibitor bin/atom
+all: bin/master bin/inhibitor bin/atom bin/toggle
 
 clean:
 	rm -r bin
 	mkdir -p bin/libs
+
+bin/toggle: bin/libs/mira.o toggle.c
+	$(CC) $(CFLAGS) $^ -o $@
 
 bin/master: bin/libs/mira.o master.c
 	$(CC) $(CFLAGS) $^ -o $@

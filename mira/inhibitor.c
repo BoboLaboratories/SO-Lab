@@ -9,7 +9,6 @@
 sig_atomic_t stopped = 0;
 
 void sig_usr_handler() {
-    printf("SIGUSR1\n");
     stopped = stopped == 1 ? 0 : 1;
 }
 
@@ -37,79 +36,39 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
+    int *val = attach_shmem(shmid);
+
     while (1) {
-        // Logica di inizio
-        int *val = attach_shmem(shmid);
+        struct sembuf sops;
 
-        struct sembuf sops[2];
+        sops.sem_flg = 0;
+        sops.sem_num = INHIBITOR;
+        sops.sem_op = -1;
 
-        sops[0].sem_flg = IPC_NOWAIT;
-        sops[0].sem_num = INH_ON;
-        sops[0].sem_op = -1;
-        if (semop(semid, sops, 1) == -1) {
-            // è giusto che succeda se all'inizio l'inibitore gia' parte attivato
+        if (semop(semid, &sops, 1) == -1) {
+            printf("Inhibitor (1).\n");
+            break;
         }
 
-        printf("Inibitore in funzione.\n");
+        *val = *val - 1;
 
-        // Logica di mezzo
-        while (!stopped) {
+        sops.sem_flg = 0;
+        sops.sem_num = MASTER;
+        sops.sem_op = +1;
 
-            sops[0].sem_flg = 0;
-            sops[0].sem_num = INHIBITOR;
-            sops[0].sem_op = -1;
-
-            if (semop(semid, sops, 1) == -1) {
-                printf("Inhibitor: mid (0).\n");
-                break;
-            }
-
-            *val = *val - 1;
-
-            if (sigprocmask(SIG_BLOCK, &mask, &orig_mask) < 0) {
-                printf("Error masking (1).\n");
-                break;
-            }
-
-            sops[0].sem_flg = 0;
-            sops[0].sem_num = MASTER;
-            sops[0].sem_op = +1;
-
-            if (semop(semid, sops, 1) == -1) {
-                printf("Inhibitor: mid (1).\n");
-                break;
-            }
-
-            if (sigprocmask(SIG_SETMASK, &orig_mask, NULL) < 0) {
-                printf("Error unmasking (2).\n");
-                break;
-            }
-
-            if (stopped) {
-                sops[0].sem_flg = 0;
-                sops[0].sem_num = INH_ON;
-                sops[0].sem_op = +1;
-                if (semop(semid, sops, 1) == -1) {
-                    printf("Inhibitor: mid (2).\n");
-                    break;
-                }
-            }
-
-            sops[0].sem_flg = 0;
-            sops[0].sem_num = ATOM;
-            sops[0].sem_op = +1;
-            if (semop(semid, sops, 1) == -1) {
-                printf("Inhibitor: mid (3).\n");
-                break;
-            }
+        if (semop(semid, &sops, 1) == -1) {
+            printf("Inhibitor (2).\n");
+            break;
         }
-        // Logica di fine
 
+        sops.sem_flg = 0;
+        sops.sem_num = ATOM;
+        sops.sem_op = +1;
 
-        detach_shmem();
-
-        while (stopped)
-            ;
+        if (semop(semid, &sops, 1) == -1) {
+            printf("Inhibitor (3).\n");
+            break;
+        }
     }
 
 }

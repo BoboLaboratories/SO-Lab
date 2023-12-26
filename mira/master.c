@@ -6,12 +6,14 @@
 #include <string.h>
 #include <sys/shm.h>
 #include <sys/sem.h>
+#include <sys/ipc.h>
 
 #include "mira.h"
 #include "../libs/console.h"
 
 int main() {
-    int semid = semget(IPC_PRIVATE, 4, S_IWUSR | S_IRUSR);
+    key_t key = ftok("ftok", 2);
+    int semid = semget(key, 4, S_IWUSR | S_IRUSR | IPC_CREAT);
     if (semid == -1) {
         printf("Could not get semaphore.\n");
         exit(EXIT_FAILURE);

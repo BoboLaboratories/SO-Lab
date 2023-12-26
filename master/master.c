@@ -108,7 +108,7 @@ int main() {
     free_ipc();
 }
 
-void setup_ipc() {
+void fsetup_ipc() {
     if (mkdir(IPC_DIRECTORY, S_IRWXU | S_IRGRP | S_IXGRP | S_IXOTH) == -1) {
         errno_fail("Could not create IPC directory.\n", F_INFO);
     }

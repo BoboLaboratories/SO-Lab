@@ -32,49 +32,37 @@ int main(int argc, char *argv[]) {
         sops[1].sem_op = -1;
 
         if (semop(semid, sops, 2) == -1) {
-            printf("Atom: start.\n");
+            printf("Atom (1).\n");
             break;
         }
 
         *val = *val + 1;
 
-        sops[0].sem_flg = IPC_NOWAIT;
-        sops[0].sem_num = INH_ON;
-        sops[0].sem_op = 0;
+        sops[0].sem_flg = 0;
+        sops[0].sem_num = INHIBITOR;
+        sops[0].sem_op = +1;
 
-        if (semop(semid, sops, 1) == -1) {
+        sops[1].sem_flg = IPC_NOWAIT;
+        sops[1].sem_num = INH_ON;
+        sops[1].sem_op = 0;
+
+        if (semop(semid, sops, 2) == -1) {
             if (errno == EAGAIN) {
-                // inibitore spento
-                sops[0].sem_flg = 0;
-                sops[0].sem_num = MASTER;
-                sops[0].sem_op = +1;
-
-                if (semop(semid, sops, 1) == -1) {
-                    printf("Atom: end (1).\n");
-                    break;
-                }
-
                 sops[0].sem_flg = 0;
                 sops[0].sem_num = ATOM;
                 sops[0].sem_op = +1;
 
-                if (semop(semid, sops, 1) == -1) {
-                    printf("Atom: end (2).\n");
+                sops[1].sem_flg = 0;
+                sops[1].sem_num = MASTER;
+                sops[1].sem_op = +1;
+
+                if (semop(semid, sops, 2) == -1) {
+                    printf("Atom (2).\n");
                     break;
                 }
             }
-        } else {
-            // inibitore acceso
-            sops[0].sem_flg = 0;
-            sops[0].sem_num = INHIBITOR;
-            sops[0].sem_op = +1;
-
-            if (semop(semid, sops, 1) == -1) {
-                printf("Atom: end (3).\n");
-                break;
-            }
         }
-    }
 
+    }
     detach_shmem();
 }
