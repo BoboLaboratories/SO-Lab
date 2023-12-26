@@ -11,7 +11,7 @@
 #include "mira.h"
 #include "../libs/console.h"
 
-int main() {
+int main(int argc, char *args[]) {
     key_t key = ftok("ftok", 2);
     int semid = semget(key, 4, S_IWUSR | S_IRUSR | IPC_CREAT);
     if (semid == -1) {
@@ -26,7 +26,7 @@ int main() {
     semctl(semid, INHIBITOR, SETVAL, se);
     se.val = 1;
     semctl(semid, MASTER, SETVAL, se);
-    se.val = 0;
+    se.val = atoi(args[1]);
     semctl(semid, INH_ON, SETVAL, se);
 
     int shmid = shmget(IPC_PRIVATE, sizeof(int), 0666 | IPC_CREAT);
