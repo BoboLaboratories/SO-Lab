@@ -94,16 +94,19 @@ Energy  1234     1204   130       30
 // atomo
 semop(A-1, M-1)
     e += de
-if (semop(I=0, IPC_NOWAIT) != -1)
-    semop(I+1)
-else
+if (semop(IP=0, IPC_NOWAIT) == -1)
+    // non presente
     semop(M+1)
     semop(A+1)
+else
+    // presente
+    semop(I+1)
 
 
-// inibitore
+// inibitore da rifare sulla base del nuovo semaforo IP (Inibitore Presente)
 semop(M-1)
     fresh_start = 1
+    semop(I-1)
 
 printf("Sono collegato.\n");
 
@@ -113,16 +116,16 @@ while (!interrupted) {
     }
     
     e = max(...)
-    if (fresh_start) {
-        fresh_start = 0
+    fresh_start = 0
+    if(!interrupted){
+        semop(M+1)
+        semop(A+1)
     }
-    semop(M+1)
-    semop(A+1)
 }
 
-semop(M-1)
-    semop(I+1)
-semop(M+1)
+semop(I+1, M+1)
+semop(A+1)
+
 exit();
 
 
@@ -141,6 +144,29 @@ A -> I -> M
 
 
 
+
+
+semop(IP-1)
+
+printf("Sono collegato.\n");
+
+while (!interrupted) {
+    semop(I-1)
+
+    // mask start
+
+    e = max(...)
+    semop(M+1)
+    // mask end
+
+    if (interrupted) {
+        semop(IP+1)
+    }
+
+    semop(A+1)
+}
+
+exit();
 
 
 
