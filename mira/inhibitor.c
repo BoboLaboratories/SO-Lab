@@ -13,10 +13,6 @@ void sig_usr_handler() {
 }
 
 int main(int argc, char *argv[]) {
-    sigset_t orig_mask, mask;
-    sigemptyset(&mask);
-    sigaddset(&mask, SIGUSR1);
-
     int semid, shmid;
     if (parse_int(argv[1], &semid) == -1) {
         printf("Could not parse semid (%s).\n", argv[1]);

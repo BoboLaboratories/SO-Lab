@@ -30,7 +30,7 @@ int main(int argc, char *args[]) {
     semctl(semid, INH_ON, SETVAL, se);
 
     int shmid = shmget(IPC_PRIVATE, sizeof(int), 0666 | IPC_CREAT);
-    if (shmid == 1) {
+    if (shmid == -1) {
         printf("Could not get shared memory.\n");
         exit(EXIT_FAILURE);
     }

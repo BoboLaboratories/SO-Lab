@@ -170,8 +170,16 @@ exit();
 
 
 
+soctl --e=meldown --inhib -S
+
+source schif.env
+soctl sim [--inhibitor] [env]
+soctl inhibitor <start/stop/toggle>
 
 
+        WITHOUT INHIBITOR
+TIMEOUT EXPLODE BLACKOUT MELTDOWN
 
 
-
+ WITH INHIBITOR
+TIMEOUT BLACKOUT
