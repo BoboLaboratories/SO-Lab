@@ -34,6 +34,11 @@ void attach_model() {
 
     model->config = (struct Config *) res->addr;
     model->stats = (struct Stats *) model->config + sizeof(struct Config);
+
+    model->lifo = NULL;
+    if (res->component == ATTIVATORE || res->component == ATOMO) {
+        model->lifo = (struct Lifo *) model->stats + sizeof(struct Stats);
+    }
 }
 
 void attach_shmem() {

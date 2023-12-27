@@ -9,6 +9,14 @@
 
 #define LIFO_PAGE_SIZE (PID_PER_LIFO_PAGE * sizeof(pid_t))
 
+struct Lifo {
+    struct Page *curr;
+    struct Page *buf;
+    pid_t *ptr;
+    int size;
+    int semid;
+};
+
 struct Page {
     int shmid;
     pid_t *addr;

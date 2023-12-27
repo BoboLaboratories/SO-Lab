@@ -14,8 +14,6 @@ void init_lifo(int sem) {
     semid = sem;
 }
 
-#define DEBUG_BREAKPOINT printf("%s:%d\n", __FILE__, __LINE__)
-
 pid_t pop() {
     if (size == 0) {
         return -1;
@@ -63,7 +61,6 @@ pid_t pop() {
 
     return pid;
 }
-
 
 void push(pid_t pid) {
     printf("Writing %d\n", pid);

@@ -2,6 +2,7 @@
 #define IPC_H
 
 #include <sys/types.h>
+#include "../lifo/lifo.h"
 
 #define IPC_DIRECTORY ".ipc"
 #define FIFO_PATHNAME IPC_DIRECTORY "/fifo"
@@ -37,6 +38,7 @@ struct Model {
         int n_atoms;
         int n_wastes;
     } *stats;
+    struct Lifo *lifo;
 };
 
 union semun {
