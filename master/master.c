@@ -1,5 +1,6 @@
 #include <fcntl.h>
 #include <malloc.h>
+#include <stdlib.h>
 #include <sys/shm.h>
 #include <sys/sem.h>
 #include <sys/stat.h>
@@ -8,19 +9,57 @@
 #include "../libs/console.h"
 #include "../libs/ipc/ipc.h"
 #include "../libs/util/util.h"
-
-sig_atomic_t interrupted = 0;
+#include "../libs/shmem/shmem.h"
+#include "../libs/model/model.h"
 
 void setup_ipc();
 void setup_shmem();
 void setup_fifo();
+void fail();
 
-struct Model *model;
-struct IpcRes *res;
+const enum Component component = MASTER;
+struct Config *config;
+struct Stats *stats;
 
-int main() {
+sig_atomic_t interrupted = 0;
+
+
+
+int main(int argc, char *argv[]) {
     setbuf(stdout, NULL); // TODO si vuole?
     setbuf(stderr, NULL); // TODO si vuole?
+
+    // =========================================
+    //          Setup IPC directory
+    // =========================================
+    if ((res.ipc_dir = mkdir(IPC_DIRECTORY, S_IRWXU | S_IRGRP | S_IXGRP | S_IXOTH)) == -1) {
+        errno_term("Could not create IPC directory.\n", F_INFO);
+        exit(EXIT_FAILURE);
+    }
+
+
+    // =========================================
+    //          Setup shared memory
+    // =========================================
+    size_t shmize = sizeof(struct Config)
+            + sizeof(struct Stats)
+            + sizeof(struct Lifo);
+    if ((res.shmid = shmem_create(IPC_PRIVATE, shmize, S_IWUSR | S_IRUSR | IPC_CREAT)) == -1) {
+        fail();
+    }
+
+    if ((res.shmaddr = shmem_attach(res.shmid)) == (void *) -1) {
+        // rm .ipc
+
+        shmem_remove(shmid);
+    }
+
+
+
+    init_model(shmaddr);
+
+    // END
+
 
     setup_ipc();
     attach_model();
@@ -109,9 +148,7 @@ int main() {
 }
 
 void setup_ipc() {
-    if (mkdir(IPC_DIRECTORY, S_IRWXU | S_IRGRP | S_IXGRP | S_IXOTH) == -1) {
-        errno_fail("Could not create IPC directory.\n", F_INFO);
-    }
+
 
     init_ipc(&res, MASTER);
     setup_shmem();

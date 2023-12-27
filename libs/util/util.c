@@ -62,7 +62,39 @@ pid_t fork_execve(char **argv) {
     pid_t pid = fork();
     if (pid == 0) {
         execve(argv[0], argv, NULL);
-        errno_fail("Could not execute %s.\n", F_INFO, argv[0]);
+        errno_term("Could not execute %s.\n", F_INFO, argv[0]);
     }
     return pid;
+}
+
+void errno_term(char *format, int line, char *file, ...) {
+    int backup_errno;
+    va_list args;
+
+    backup_errno = errno;
+
+    va_start(args, file);
+    printf("\033[1;31m");
+    fprintf(stderr, E);
+    vfprintf(stderr, format, args);
+    va_end(args);
+
+    fprintf(stderr, M "errno %d: %s (%s:%d, pid: %5d)\n", backup_errno, strerror(backup_errno), file, line, getpid());
+    printf("\033[0m");
+
+    raise(SIGTERM);
+}
+
+void term(char *format, int line, char *file, ...) {
+    va_list args;
+
+    va_start(args, file);
+    printf("\033[1;31m");
+    fprintf(stderr, E);
+    vfprintf(stderr, format, args);
+    fprintf(stderr, M "(%s:%d, pid: %5d)\n", file, line, getpid());
+    printf("\033[0m");
+    va_end(args);
+
+    raise(SIGTERM);
 }

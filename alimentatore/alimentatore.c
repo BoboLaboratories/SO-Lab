@@ -9,6 +9,8 @@
 #include "../libs/ipc/ipc.h"
 #include "../libs/util/util.h"
 
+#include "../libs/shmem/shmem.h"
+
 sig_atomic_t interrupted = 0;
 
 struct Model *model;
@@ -27,10 +29,16 @@ void sigterm_handler() {
 int main(int argc, char *argv[]) {
     printf("%s: %d\n", argv[0], getpid());
 
-    init_ipc(&res, ALIMENTATORE);
-    if (parse_int(argv[1], &res->shmid) == -1) {
+
+    struct Shmem *shmem;
+
+    int shmid;
+    if (parse_int(argv[1], &shmid) == -1) {
         fail("Could not parse shmid (%s).\n", F_INFO, argv[1]);
     }
+    shmem->shmid = shmid;
+
+    shmem_attach(shmem);
 
     attach_shmem();
     attach_model();

@@ -1,13 +1,9 @@
-#ifndef LIFO_H
-#define LIFO_H
+#ifndef LIBS_LIFO_H
+#define LIBS_LIFO_H
 
 #include <sys/types.h>
 
-#ifndef PID_PER_LIFO_PAGE
-#define PID_PER_LIFO_PAGE 2
-#endif
-
-#define LIFO_PAGE_SIZE (PID_PER_LIFO_PAGE * sizeof(pid_t))
+#define LIFO_PAGE_SIZE 100
 
 struct Lifo {
     struct Page *curr;

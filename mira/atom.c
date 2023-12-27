@@ -38,6 +38,11 @@ int main(int argc, char *argv[]) {
 
         *val = *val + 1;
 
+//        struct sembuf tmpo[2];
+//        release(tmp[0], INHIBITOR, 0);
+//        wait_zero(tmp[1], INH_ON, IPC_NOWAIT);
+//        sem_op(tmp);
+
         sops[0].sem_flg = 0;
         sops[0].sem_num = INHIBITOR;
         sops[0].sem_op = +1;
@@ -45,6 +50,15 @@ int main(int argc, char *argv[]) {
         sops[1].sem_flg = IPC_NOWAIT;
         sops[1].sem_num = INH_ON;
         sops[1].sem_op = 0;
+
+//        struct sembuf tmp[2];
+//        tmp[0] = realese(INHIBITOR, 0);
+//        tmp[1] = wait_zero(INH_ON, IPC_NOWAIT);
+//
+//
+//        tmp[0] = sem_op(+1, INHIBITOR, 0);
+//        tmp[1] = sem_op( 0, INH_ON, IPC_NOWAIT);
+//
 
         if (semop(semid, sops, 2) == -1) {
             if (errno == EAGAIN) {
