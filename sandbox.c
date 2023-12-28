@@ -10,7 +10,7 @@
 #define YELLOW      "\e[0;33m"
 
 #define BOLD_RED    "\e[1;31m"
-#define BOLD_BLUE  "\e[1;34m"
+#define BOLD_BLUE   "\e[1;34m"
 #define BOLD_YELLOW "\e[1;33m"
 
 #define M_PREFIX    "      "
