@@ -1,2 +1,12 @@
-../bin/master: ../bin/libs/ipc.o ../bin/libs/util.o master.c config.c cleanup.c config.h
-	$(CC) $(CFLAGS) $^ -o $@
+../bin/master: \
+	../bin/libs/console.o \
+	../bin/libs/shmem.o \
+	../bin/libs/util.o \
+	../bin/libs/fifo.o \
+	../bin/libs/sem.o \
+	../model/model.c \
+	../model/model.h \
+	config.c config.h \
+	cleanup.c cleanup.h \
+	master.c
+	$(CC) $(CFLAGS) -DMASTER $(filter-out %.h,$^) -o $@

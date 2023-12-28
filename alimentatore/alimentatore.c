@@ -1,36 +1,38 @@
+#ifndef ALIMENTATORE
+#define ALIMENTATORE
+#endif
+
 #include <time.h>
+#include <stdio.h>
 #include <fcntl.h>
 #include <stdlib.h>
 #include <signal.h>
-#include <sys/wait.h>
+#include <string.h>
 
-#include "../libs/config.h"
-#include "../libs/console.h"
-#include "../libs/ipc/ipc.h"
-#include "../libs/util/util.h"
-#include "../libs/model/model.h"
+#include "../libs/ipc.h"
+#include "../model/model.h"
+#include "../libs/sem/sem.h"
+#include "../libs/fifo/fifo.h"
 #include "../libs/shmem/shmem.h"
 
 void sigterm_handler();
 
-const enum Component component = ALIMENTATORE;
-struct Config *config;
-struct Stats *stats;
-
 sig_atomic_t interrupted = 0;
+struct Model *model;
 
 int main(int argc, char *argv[]) {
     if (argc != 2) {
-        fprintf(stderr, "Usage: %s <shmid>\n", argv[0]);
+        print(E, "Usage: %s <shmid>\n", argv[0]);
         exit(EXIT_FAILURE);
     }
+
 
     // =========================================
     //          Setup shared memory
     // =========================================
     int shmid;
     if (parse_int(argv[1], &shmid) == -1) {
-        print_errno("Could not parse shmid (%s).\n", F_INFO, argv[1]);
+        print(E, "Could not parse shmid (%s).\n", argv[1]);
         exit(EXIT_FAILURE);
     }
 
@@ -41,7 +43,9 @@ int main(int argc, char *argv[]) {
 
     init_model(shmaddr);
 
-    open_fifo(O_WRONLY);
+
+    // Open fifo
+    fifo_open(TMP_FILE, O_WRONLY);
 
 
     // =========================================
@@ -51,25 +55,25 @@ int main(int argc, char *argv[]) {
     memset(&sa, 0, sizeof(sa));
     sa.sa_handler = &sigterm_handler;
     if (sigaction(SIGTERM, &sa, NULL) == -1) {
-        print_errno("Could not set SIGTERM handler.\n", F_INFO);
+        print(E, "Could not set SIGTERM handler.\n");
     }
 
 
     int semid;
     if (parse_int(argv[2], &semid) == -1) {
-        errno_fail("Could not parse semid.\n", F_INFO);
+        print(E, "Could not parse semid.\n");
     }
 
-    sem_sync(semid);
+    sem_sync();
 
 
     char *buf;
     char **argvc;
     prargs("atomo", &argvc, &buf, 2, ITC_SIZE);
-    sprintf(argvc[1], "%d", res->shmid);
+    sprintf(argvc[1], "%d", model->ipc->semid);
 
     while (!interrupted) {
-        nano_sleep(&interrupted, STEP_ALIMENTAZIONE);
+        nano_sleep(STEP_ALIMENTAZIONE);
         for (int i = 0; !interrupted && i < N_NUOVI_ATOMI; i++) {
             sprintf(argvc[2], "%d", 123);
             if (fork_execve(argvc) == -1) {
@@ -81,11 +85,7 @@ int main(int argc, char *argv[]) {
 
     frargs(argvc, buf);
 
-    free_ipc();
-
-    pid_t pid;
-    while ((pid = wait(NULL)) != -1)
-        ;
+    wait_children();
 
     exit(EXIT_SUCCESS);
 }

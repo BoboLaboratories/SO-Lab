@@ -3,7 +3,7 @@
 
 #include <sys/types.h>
 
-#define TMP_FILE ".so_ipc"
+#define IPC_DIRECTORY ".so_ipc"
 
 struct Ipc {
     int semid;

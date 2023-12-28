@@ -2,13 +2,14 @@
 #define UTIL_H
 
 #include <signal.h>
+#include <sys/types.h>
 
 // TODO Perché?
 // (I)nteger (T)o (C)hars
 #define ITC_SIZE ((3 * sizeof(int) + 1) * sizeof(char))
 
 // misc
-void nano_sleep(sig_atomic_t *interrupted, long nanos);
+void nano_sleep(long nanos);
 
 // numerical parsing
 int parse_long(char *raw, long *dest);
@@ -20,8 +21,9 @@ void frargs(char **argv, char *buf);
 pid_t fork_execve(char **argv);
 void wait_children();
 
-// termination
-void print_errno(char *format, int line, char *file, ...);
-void print_error(char *format, int line, char *file, ...);
+// tmp files
+int mktmpfile(const char *pathname, int flags, mode_t mode);
+void addtmpfile(const char *pathname);
+void rmtmpfiles();
 
 #endif

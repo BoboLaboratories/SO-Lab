@@ -1,16 +1,15 @@
-#include <fcntl.h>
-#include <unistd.h>
+#ifndef ATOMO
+#define ATOMO
+#endif
+
 #include <stdlib.h>
 
-#include "../libs/console.h"
-#include "../libs/ipc/ipc.h"
+#include "../model/model.h"
 #include "../libs/util/util.h"
+#include "../libs/shmem/shmem.h"
 
-#define ATOMO
-
+sig_atomic_t *interrupted = 0;
 struct Model *model;
-struct IpcRes *res;
-
 /*
     [0] = executable
     [1] = shmid
@@ -19,33 +18,20 @@ struct IpcRes *res;
     [4] = NULL, if semaphore synchronization is needed; not present, otherwise
  */
 int main(int argc, char *argv[]) {
-    init_ipc(&res, ATOMO);
+    model->lifo = NULL;
 
-    if (parse_int(argv[1], &res->shmid) == -1) {
-        fail("Could not parse shmid (%s).\n", F_INFO, argv[1]);
+    int shmid;
+    if (parse_int(argv[1], &shmid) == -1) {
+        print(E, "Could not parse shmid (%s).\n", argv[1]);
+        exit(EXIT_FAILURE);
     }
 
-    attach_shmem();
-    attach_model();
-
-    open_fifo(O_WRONLY);
-
-    if (argv[3] != NULL) {
-        // if present, argv[2] contains the sync semaphore id
-        int semid;
-        if (parse_int(argv[2], &semid) == -1) {
-            errno_fail("Could not parse semid.\n", F_INFO);
-        }
-
-        sem_sync(semid);
+    void *shmaddr;
+    if ((shmaddr = shmem_attach(shmid)) == (void *) -1) {
+        exit(EXIT_FAILURE);
     }
 
-    pid_t pid = getpid();
-    if (write(res->fifo_fd, &pid, sizeof(pid_t)) == -1) {
-        errno_fail("NON ABBIAMO SCRITTO.\n", F_INFO);
-    }
+    init_model(shmaddr);
 
-    free_ipc();
-
-    exit(EXIT_SUCCESS);
+    model->lifo;
 }

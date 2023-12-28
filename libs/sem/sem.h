@@ -3,8 +3,9 @@
 
 #include <sys/sem.h>
 
-#include "../console/console.h"
 #include "../util/util.h"
+#include "../../model/model.h"
+#include "../console/console.h"
 
 union semun {
     int val;                // value for SETVAL

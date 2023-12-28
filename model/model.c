@@ -1,8 +1,6 @@
-#include <malloc.h>
 #include <stdlib.h>
 
 #include "model.h"
-#include "../console/console.h"
 
 #define OFFSET_CONFIG   0
 #define OFFSET_STATS    (OFFSET_CONFIG + sizeof(struct Config))

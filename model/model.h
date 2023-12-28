@@ -1,12 +1,12 @@
 #ifndef MODEL_H
 #define MODEL_H
 
-#include "../ipc.h"
-#include "../config.h"
-#include "../console/console.h"
+#include "../libs/ipc.h"
+#include "../libs/config.h"
+#include "../libs/console/console.h"
 
 #if defined(ATTIVATORE) || defined(ATOMO)
-#include "../lifo/lifo.h"
+#include "../libs/lifo/lifo.h"
 #endif
 
 enum Status {

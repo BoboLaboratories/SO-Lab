@@ -1,5 +1,6 @@
 #include <time.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <limits.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -9,7 +10,9 @@
 #include "util.h"
 #include "../console/console.h"
 
-void nano_sleep(sig_atomic_t *interrupted, long nanos) {
+void nano_sleep(long nanos) {
+    extern sig_atomic_t *interrupted;
+
     struct timespec t;
     t.tv_sec = nanos / 1000000000;
     t.tv_nsec = nanos % 1000000000;
@@ -62,7 +65,8 @@ pid_t fork_execve(char **argv) {
     pid_t pid = fork();
     if (pid == 0) {
         execve(argv[0], argv, NULL);
-        errno_term("Could not execute %s.\n", F_INFO, argv[0]);
+        print(E, "Could not execute %s.\n", argv[0]);
+        kill(getppid(), SIGTERM);     // TODO test if working as expected
     }
     return pid;
 }
@@ -76,30 +80,51 @@ void wait_children() {
     }
 }
 
-void print_errno(char *format, int line, char *file, ...) {
-    int backup_errno;
-    va_list args;
+static const char **tmpfiles;
+int atexit_registered = 0;
+int size = 0;
 
-    backup_errno = errno;
+int mktmpfile(const char *pathname, int flags, mode_t mode) {
+    int fd = open(pathname, flags, mode);
+    if (fd == -1) {
+        print(E, "Could not create temporary file (%s).\n", pathname);
+        exit(EXIT_FAILURE);
+    } else {
+#ifdef DEBUG
+        print(D, "Created temporary file (%s).\n", pathname);
+#endif
+        addtmpfile(pathname);
+        if (!atexit_registered) {
+            if (atexit(&rmtmpfiles) != 0) {
+                print(W, "Could not register temporary file(s) removal at exit.\n");
+            } else {
+                atexit_registered = 1;
+#ifdef DEBUG
+                print(D, "Registered temporary file(s) cleanup at exit.\n", pathname);
+#endif
+            }
+        }
+    }
 
-    va_start(args, file);
-    printf("\033[1;31m");
-    fprintf(stderr, E);
-    vfprintf(stderr, format, args);
-    va_end(args);
-
-    fprintf(stderr, M "errno %d: %s (%s:%d, pid: %5d)\n", backup_errno, strerror(backup_errno), file, line, getpid());
-    printf("\033[0m");
+    return fd;
 }
 
-void print_error(char *format, int line, char *file, ...) {
-    va_list args;
+void addtmpfile(const char *pathname) {
+    tmpfiles = reallocarray(tmpfiles, size++, sizeof(char *));
+    tmpfiles[size - 1] = pathname;
+}
 
-    va_start(args, file);
-    printf("\033[1;31m");
-    fprintf(stderr, E);
-    vfprintf(stderr, format, args);
-    fprintf(stderr, M "(%s:%d, pid: %5d)\n", file, line, getpid());
-    printf("\033[0m");
-    va_end(args);
+void rmtmpfiles() {
+    for (int i = 0; i < size; i++) {
+        if (unlink(tmpfiles[i]) == -1) {
+            print(E, "Could not delete temporary file (%s).\n", tmpfiles[1]);
+        }
+#ifdef DEBUG
+        else {
+            print(D, "Deleted temporary file (%s).\n", tmpfiles[1]);
+        }
+#endif
+    }
+
+    free(tmpfiles);
 }

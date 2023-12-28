@@ -3,6 +3,10 @@ export CFLAGS=-Wvla -Wextra -Werror -D_GNU_SOURCE
 
 MODULES = libs master alimentatore atomo
 
+# $@ target
+# $^ prerequisites
+# $< first prerequisite
+
 all:
 	mkdir -p bin/libs
 	for module in $(MODULES); do 		   	\

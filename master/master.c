@@ -1,3 +1,7 @@
+#ifndef MASTER
+#define MASTER
+#endif
+
 #include <fcntl.h>
 #include <malloc.h>
 #include <stdlib.h>
@@ -8,20 +12,14 @@
 
 #include "config.h"
 #include "cleanup.h"
-
+#include "../model/model.h"
 #include "../libs/sem/sem.h"
 #include "../libs/fifo/fifo.h"
 #include "../libs/lifo/lifo.h"
 #include "../libs/shmem/shmem.h"
-#include "../libs/model/model.h"
-#include "../libs/console/console.h"
-
-#define MASTER
-
-struct Config *config;
-struct Stats *stats;
 
 sig_atomic_t interrupted = 0;
+struct Model *model;
 
 // TODO sigterm handler
 
@@ -44,7 +42,7 @@ int main(int argc, char *argv[]) {
 
         // mark shared memory for removal so that
         // as soon as no process is attached
-        // it the OS can recall it back
+        // to it the OS can recall it
         shmem_rmark(shmid);
     }
 
@@ -61,7 +59,6 @@ int main(int argc, char *argv[]) {
     // =========================================
     //               Setup fifo
     // =========================================
-    mktmpfile();
     fifo_create(TMP_FILE, S_IWUSR | S_IRUSR);
     int fifo_fd = fifo_open(TMP_FILE, O_RDWR);
 
@@ -91,14 +88,14 @@ int main(int argc, char *argv[]) {
     int res = semctl(semid, 0, SETALL, se);
     free(se.array);
     if (res == -1) {
-        print_error("Could not initialize semaphore set.\n", F_INFO);
+        print(E, "Could not initialize semaphore set.\n");
         // TODO exit how
     }
 
     if (nproc > USHRT_MAX) {
         se.val = nproc;
         if (semctl(semid, SEM_SYNC, SETVAL, se) == -1) {
-            print_error("Could not initialize sync semaphore.\n", F_INFO);
+            print(E, "Could not initialize sync semaphore.\n");
             // TODO exit how
         }
     }
@@ -113,7 +110,7 @@ int main(int argc, char *argv[]) {
     sprintf(argvc[1], "%d", shmid);
     sprintf(argvc[2], "%d", semid);
     if (fork_execve(argvc) == -1) {
-        printf("Could not fork alimentatore.\n");
+        print(E, "Could not fork alimentatore.\n");
     }
     frargs(argvc, buf);
 
@@ -144,7 +141,7 @@ int main(int argc, char *argv[]) {
 
 
     // Waiting for child processes
-    sem_sync(semid);
+    sem_sync();
 
 
     // =========================================
@@ -165,7 +162,7 @@ int main(int argc, char *argv[]) {
 
     // TODO la lasciamo qui?
     if (semctl(semid, 0, IPC_RMID) == -1) {
-        print_errno("Could not request semaphore set removal.\n", F_INFO);
+        print(E, "Could not request semaphore set removal.\n");
         // TODO exit or not exit?
     }
 

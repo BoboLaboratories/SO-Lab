@@ -1,11 +1,5 @@
 #include "sem.h"
 
-static int semid;
-
-void sem_set(int _semid) {
-    semid = semid;
-}
-
 void sem_sync() {
     // TODO what is a signal interrupts? D:
     // what if it doesn't
@@ -21,6 +15,8 @@ void sem_sync() {
     // wait for everyone to be ready
     sem_buf(&sops, 0, SEM_SYNC, 0);
     sem_op(&sops, 1);
+    // TODO what if it fails?
+    // what if it doesn't
 }
 
 void sem_buf(struct sembuf *sop, short sem_op, unsigned short sem_num, short sem_flg) {
@@ -30,5 +26,6 @@ void sem_buf(struct sembuf *sop, short sem_op, unsigned short sem_num, short sem
 }
 
 void sem_op(struct sembuf *sops, int nsops) {
-    semop(semid, sops, nsops);
+    extern struct Model *model;
+    semop(model->ipc->semid, sops, nsops);
 }
