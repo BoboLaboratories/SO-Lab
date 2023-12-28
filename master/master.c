@@ -8,11 +8,13 @@
 
 #include "config.h"
 #include "cleanup.h"
-#include "../libs/console.h"
+
 #include "../libs/sem/sem.h"
 #include "../libs/fifo/fifo.h"
+#include "../libs/lifo/lifo.h"
 #include "../libs/shmem/shmem.h"
 #include "../libs/model/model.h"
+#include "../libs/console/console.h"
 
 #define MASTER
 
@@ -26,12 +28,6 @@ sig_atomic_t interrupted = 0;
 int main(int argc, char *argv[]) {
     setbuf(stdout, NULL);   // TODO si vuole?
     setbuf(stderr, NULL);   // TODO si vuole?
-
-
-    // =========================================
-    //          Setup IPC directory
-    // =========================================
-    const char *tmp_file = mktmpfile();
 
 
     // =========================================
@@ -65,8 +61,9 @@ int main(int argc, char *argv[]) {
     // =========================================
     //               Setup fifo
     // =========================================
-    fifo_create(tmp_file, S_IWUSR | S_IRUSR);
-    int fifo_fd = fifo_open(tmp_file, O_RDWR);
+    mktmpfile();
+    fifo_create(TMP_FILE, S_IWUSR | S_IRUSR);
+    int fifo_fd = fifo_open(TMP_FILE, O_RDWR);
 
 
     // =========================================
@@ -159,6 +156,9 @@ int main(int argc, char *argv[]) {
     // =========================================
     //               Cleanup
     // =========================================
+
+    // TODO wait for children before releasing some resources (e.g. semaphores)
+
     if (shmem_detach(shmaddr) == -1) {
         // TODO should we do anything special about this?
     }
