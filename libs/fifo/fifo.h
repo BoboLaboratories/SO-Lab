@@ -4,8 +4,8 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 
-#include "../console.h"
 #include "../util/util.h"
+#include "../console/console.h"
 
 int fifo_create(const char *pathname, mode_t mode);
 int fifo_open(const char *path, int flags);

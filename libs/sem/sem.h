@@ -3,7 +3,7 @@
 
 #include <sys/sem.h>
 
-#include "../console.h"
+#include "../console/console.h"
 #include "../util/util.h"
 
 union semun {

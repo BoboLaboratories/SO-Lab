@@ -2,6 +2,7 @@
 #include <stdlib.h>
 
 #include "model.h"
+#include "../console/console.h"
 
 #define OFFSET_CONFIG   0
 #define OFFSET_STATS    (OFFSET_CONFIG + sizeof(struct Config))
@@ -15,7 +16,7 @@ static void free_model();
 void init_model(void *shmaddr) {
     model = malloc(sizeof(struct Model));
     if (atexit(&free_model) != 0) {
-        printf(W "Could not register model removal at exit.\n");
+        print(W, "Could not register model removal at exit.\n");
     }
 
     model->config = shmaddr + OFFSET_CONFIG;

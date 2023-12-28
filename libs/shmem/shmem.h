@@ -4,7 +4,7 @@
 #include <fcntl.h>
 #include <sys/shm.h>
 
-#include "../console.h"
+#include "../console/console.h"
 #include "../util/util.h"
 
 #define SHM_CONFIG_OFFSET   0

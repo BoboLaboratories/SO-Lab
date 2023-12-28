@@ -7,7 +7,7 @@
 #include <sys/wait.h>
 
 #include "util.h"
-#include "../console.h"
+#include "../console/console.h"
 
 void nano_sleep(sig_atomic_t *interrupted, long nanos) {
     struct timespec t;

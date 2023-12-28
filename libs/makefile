@@ -1,4 +1,14 @@
-all: ../bin/libs/model.o ../bin/libs/util.o ../bin/libs/lifo.o ../bin/libs/lifo.o ../bin/libs/ipc.o ../bin/libs/sem.o
+all: \
+	../bin/libs/console.o \
+	../bin/libs/model.o \
+	../bin/libs/util.o \
+	../bin/libs/lifo.o \
+	../bin/libs/lifo.o \
+	../bin/libs/ipc.o \
+	../bin/libs/sem.o
+
+../bin/libs/console.o: console/console.c console/console.h
+	$(CC) $(CFLAGS) -c -o $@ $<
 
 ../bin/libs/model.o: model/model.c model/model.h
 	$(CC) $(CFLAGS) -c -o $@ $<
@@ -6,7 +16,7 @@ all: ../bin/libs/model.o ../bin/libs/util.o ../bin/libs/lifo.o ../bin/libs/lifo.
 ../bin/libs/util.o: util/util.c util/util.h
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-../bin/libs/fifo.o: fifo/fifo.c fifo/fifo.c
+../bin/libs/fifo.o: fifo/fifo.c fifo/fifo.h
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 ../bin/libs/lifo.o: lifo/lifo.c lifo/lifo.h

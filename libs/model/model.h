@@ -3,7 +3,7 @@
 
 #include "../ipc.h"
 #include "../config.h"
-#include "../console.h"
+#include "../console/console.h"
 
 #if defined(ATTIVATORE) || defined(ATOMO)
 #include "../lifo/lifo.h"
