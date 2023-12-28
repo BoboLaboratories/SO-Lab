@@ -6,6 +6,8 @@
 #include "../libs/ipc/ipc.h"
 #include "../libs/util/util.h"
 
+#define ATOMO
+
 struct Model *model;
 struct IpcRes *res;
 

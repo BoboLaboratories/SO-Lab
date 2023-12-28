@@ -18,9 +18,10 @@ int parse_int(char *raw, int *dest);
 void prargs(char *executable, char ***argv, char **buf, int vargs, size_t elemsize);
 void frargs(char **argv, char *buf);
 pid_t fork_execve(char **argv);
+void wait_children();
 
 // termination
-void errno_term(char *format, int line, char *file, ...);
-void term(char *format, int line, char *file, ...);
+void print_errno(char *format, int line, char *file, ...);
+void print_error(char *format, int line, char *file, ...);
 
 #endif

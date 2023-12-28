@@ -3,6 +3,6 @@
 
 #include "../libs/config.h"
 
-void load_config();
+int load_config();
 
 #endif

@@ -1,76 +1,81 @@
 #include <fcntl.h>
 #include <malloc.h>
 #include <stdlib.h>
+#include <limits.h>
 #include <sys/shm.h>
 #include <sys/sem.h>
 #include <sys/stat.h>
 
 #include "config.h"
+#include "cleanup.h"
 #include "../libs/console.h"
-#include "../libs/ipc/ipc.h"
-#include "../libs/util/util.h"
+#include "../libs/sem/sem.h"
+#include "../libs/fifo/fifo.h"
 #include "../libs/shmem/shmem.h"
 #include "../libs/model/model.h"
 
-void setup_ipc();
-void setup_shmem();
-void setup_fifo();
-void fail();
+#define MASTER
 
-const enum Component component = MASTER;
 struct Config *config;
 struct Stats *stats;
 
 sig_atomic_t interrupted = 0;
 
-
+// TODO sigterm handler
 
 int main(int argc, char *argv[]) {
-    setbuf(stdout, NULL); // TODO si vuole?
-    setbuf(stderr, NULL); // TODO si vuole?
+    setbuf(stdout, NULL);   // TODO si vuole?
+    setbuf(stderr, NULL);   // TODO si vuole?
+
 
     // =========================================
     //          Setup IPC directory
     // =========================================
-    if ((res.ipc_dir = mkdir(IPC_DIRECTORY, S_IRWXU | S_IRGRP | S_IXGRP | S_IXOTH)) == -1) {
-        errno_term("Could not create IPC directory.\n", F_INFO);
-        exit(EXIT_FAILURE);
-    }
+    const char *tmp_file = mktmpfile();
 
 
     // =========================================
     //          Setup shared memory
     // =========================================
+    int shmid;
+    void *shmaddr;
     size_t shmize = sizeof(struct Config)
             + sizeof(struct Stats)
             + sizeof(struct Lifo);
-    if ((res.shmid = shmem_create(IPC_PRIVATE, shmize, S_IWUSR | S_IRUSR | IPC_CREAT)) == -1) {
-        fail();
+
+    if ((shmid = shmem_create(IPC_PRIVATE, shmize, S_IWUSR | S_IRUSR | IPC_CREAT)) != -1) {
+        shmaddr = shmem_attach(shmid);
+
+        // mark shared memory for removal so that
+        // as soon as no process is attached
+        // it the OS can recall it back
+        shmem_rmark(shmid);
     }
 
-    if ((res.shmaddr = shmem_attach(res.shmid)) == (void *) -1) {
-        // rm .ipc
-
-        shmem_remove(shmid);
+    if (shmid == -1 || shmaddr == (void *) -1) {
+        exit(EXIT_FAILURE);
     }
-
-
 
     init_model(shmaddr);
-
-    // END
-
-
-    setup_ipc();
-    attach_model();
-    load_config();
-
-    open_fifo(O_RDWR);
+    if (load_config() == -1) {
+        exit(EXIT_FAILURE);
+    }
 
 
     // =========================================
-    //          Setup sync semaphore
+    //               Setup fifo
     // =========================================
+    fifo_create(tmp_file, S_IWUSR | S_IRUSR);
+    int fifo_fd = fifo_open(tmp_file, O_RDWR);
+
+
+    // =========================================
+    //             Setup semaphores
+    // =========================================
+    int semid = semget(IPC_PRIVATE, SEM_COUNT, S_IWUSR | S_IRUSR);
+    if (semid == -1) {
+        // errno_fail("Could not get sync semaphore.\n", F_INFO);
+    }
 
     int nproc = N_ATOMI_INIT /* atomi */
                 + 1 /* alimentatore */
@@ -78,26 +83,37 @@ int main(int argc, char *argv[]) {
                 + 0 /* inibitore */
                 + 1 /* master */;
 
-    printf(D "nproc: %d\n", nproc);
+    union semun se;
+    se.array = malloc(SEM_COUNT * sizeof(unsigned short));
+    se.array[SEM_SYNC] = nproc <= USHRT_MAX ? (short) nproc : 0;
+    se.array[SEM_ATOM] = 1;
+    se.array[SEM_MASTER] = 1;
+    se.array[SEM_INHIBITOR] = 0;
+    se.array[SEM_INHIBITOR_ON] = 0; // TODO depends on --inhibitor flag
 
-    int semid = semget(IPC_PRIVATE, 1, S_IWUSR | S_IRUSR);
-    if (semid == -1) {
-        errno_fail("Could not get sync semaphore.\n", F_INFO);
+    int res = semctl(semid, 0, SETALL, se);
+    free(se.array);
+    if (res == -1) {
+        print_error("Could not initialize semaphore set.\n", F_INFO);
+        // TODO exit how
     }
 
-    union semun se;
-    se.val = nproc;
-    semctl(semid, 0, SETVAL, se);
+    if (nproc > USHRT_MAX) {
+        se.val = nproc;
+        if (semctl(semid, SEM_SYNC, SETVAL, se) == -1) {
+            print_error("Could not initialize sync semaphore.\n", F_INFO);
+            // TODO exit how
+        }
+    }
 
 
     // =========================================
     //          Forking alimentatore
     // =========================================
-
     char *buf;
     char **argvc;
     prargs("alimentatore", &argvc, &buf, 2, ITC_SIZE);
-    sprintf(argvc[1], "%d", res->shmid);
+    sprintf(argvc[1], "%d", shmid);
     sprintf(argvc[2], "%d", semid);
     if (fork_execve(argvc) == -1) {
         printf("Could not fork alimentatore.\n");
@@ -108,9 +124,8 @@ int main(int argc, char *argv[]) {
     // =========================================
     //              Forking atoms
     // =========================================
-
     prargs("atomo", &argvc, &buf, 3, ITC_SIZE);
-    sprintf(argvc[1], "%d", res->shmid);
+    sprintf(argvc[1], "%d", shmid);
     sprintf(argvc[2], "%d", semid);
     // argvc[3] will be assigned later for each atom
 
@@ -126,52 +141,35 @@ int main(int argc, char *argv[]) {
 
     frargs(argvc, buf);
 
+    // master will fork no more atoms,
+    // no need to keep fifo open
+    fifo_close(fifo_fd);
+
 
     // Waiting for child processes
     sem_sync(semid);
 
 
     // =========================================
-    //             Do other stuff
+    //              Main logic
     // =========================================
 
-    pid_t pid;
-    ssize_t result;
-    while ((result = read(res->fifo_fd, &pid, sizeof(pid_t))) != -1 && pid != -1) {
-        printf("Pid: %d\n", pid);
-    }
-    if (result == -1) {
-        errno_fail("Failed to read.", F_INFO);
-    }
-
-    free_ipc();
-}
-
-void setup_ipc() {
 
 
-    init_ipc(&res, MASTER);
-    setup_shmem();
-
-    setup_fifo();
-}
-
-void setup_shmem() {
-    size_t size = sizeof(struct Config) + sizeof(struct Stats);
-    res->shmid = shmget(IPC_PRIVATE, size, 0666 | IPC_CREAT);
-    if (res->shmid == -1) {
-        errno_fail("Could not create shared memory.\n", F_INFO);
+    // =========================================
+    //               Cleanup
+    // =========================================
+    if (shmem_detach(shmaddr) == -1) {
+        // TODO should we do anything special about this?
     }
 
-    #ifdef DEBUG
-        printf(D "Obtained shared memory from OS (shmid: %d)\n", res->shmid);
-    #endif
-
-    attach_shmem();
-}
-
-void setup_fifo() {
-    if (mkfifo(FIFO_PATHNAME, S_IWUSR | S_IRUSR) == -1) {
-        errno_fail("Could not create fifo.\n", F_INFO);
+    // TODO la lasciamo qui?
+    if (semctl(semid, 0, IPC_RMID) == -1) {
+        print_errno("Could not request semaphore set removal.\n", F_INFO);
+        // TODO exit or not exit?
     }
+
+    wait_children();
+
+    exit(EXIT_SUCCESS);
 }

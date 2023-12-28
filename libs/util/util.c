@@ -4,10 +4,10 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <printf.h>
+#include <sys/wait.h>
 
 #include "util.h"
 #include "../console.h"
-#include "../ipc/ipc.h"
 
 void nano_sleep(sig_atomic_t *interrupted, long nanos) {
     struct timespec t;
@@ -67,7 +67,16 @@ pid_t fork_execve(char **argv) {
     return pid;
 }
 
-void errno_term(char *format, int line, char *file, ...) {
+void wait_children() {
+    while (wait(NULL) != -1)
+        continue;
+
+    if (errno != ECHILD) {
+        // TODO capire come e se gestire questo errore
+    }
+}
+
+void print_errno(char *format, int line, char *file, ...) {
     int backup_errno;
     va_list args;
 
@@ -81,11 +90,9 @@ void errno_term(char *format, int line, char *file, ...) {
 
     fprintf(stderr, M "errno %d: %s (%s:%d, pid: %5d)\n", backup_errno, strerror(backup_errno), file, line, getpid());
     printf("\033[0m");
-
-    raise(SIGTERM);
 }
 
-void term(char *format, int line, char *file, ...) {
+void print_error(char *format, int line, char *file, ...) {
     va_list args;
 
     va_start(args, file);
@@ -95,6 +102,4 @@ void term(char *format, int line, char *file, ...) {
     fprintf(stderr, M "(%s:%d, pid: %5d)\n", file, line, getpid());
     printf("\033[0m");
     va_end(args);
-
-    raise(SIGTERM);
 }

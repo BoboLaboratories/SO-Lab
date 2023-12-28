@@ -191,12 +191,18 @@ while (!interrupted) {
 exit();
 
 
+soctl run --meltdown --inhib
+    source env/meltdown.sh
+    ./master --inhib
 
-soctl --e=meldown --inhib -S
+soctl stop
+    kill -SIGTERM $(preg master)
 
-source schif.env
-soctl sim [--inhibitor] [env]
 soctl inhibitor <start/stop/toggle>
+    start  = ./inhibitor_ctl 1
+    stop   = ./inhibitor_ctl 0
+    toggle = ./inhibitor_ctl
+
 
 
         WITHOUT INHIBITOR

@@ -8,7 +8,7 @@
 #include "../util/util.h"
 
 int fifo_create(const char *pathname, mode_t mode);
-int fifo_open(char *path, int flags);
+int fifo_open(const char *path, int flags);
 int fifo_close(int fifo_fd);
 
 #endif

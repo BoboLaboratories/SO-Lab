@@ -14,7 +14,7 @@ int fifo_create(const char *pathname, mode_t flags) {
     return fifo_fd;
 }
 
-int fifo_open(char *pathname, int flags) {
+int fifo_open(const char *pathname, int flags) {
     int fifo_fd = open(pathname, flags);
     if (fifo_fd == -1) {
         errno_term("Could not open fifo (%s).\n", F_INFO, pathname);

@@ -8,48 +8,50 @@
 #include "../libs/console.h"
 #include "../libs/ipc/ipc.h"
 #include "../libs/util/util.h"
-
+#include "../libs/model/model.h"
 #include "../libs/shmem/shmem.h"
+
+void sigterm_handler();
+
+const enum Component component = ALIMENTATORE;
+struct Config *config;
+struct Stats *stats;
 
 sig_atomic_t interrupted = 0;
 
-struct Model *model;
-struct IpcRes *res;
-
-void sigterm_handler() {
-    // TODO signal masking to prevent other signals from interrupting this handler
-    // TODO probably not needed as sig_atomic_t is atomic already
-    interrupted = 1;
-    pid_t pid = -1;
-    if (write(res->fifo_fd, &pid, sizeof(pid_t)) == -1) {
-        errno_fail("MEH.\n", F_INFO);
-    }
-}
-
 int main(int argc, char *argv[]) {
-    printf("%s: %d\n", argv[0], getpid());
+    if (argc != 2) {
+        fprintf(stderr, "Usage: %s <shmid>\n", argv[0]);
+        exit(EXIT_FAILURE);
+    }
 
-
-    struct Shmem *shmem;
-
+    // =========================================
+    //          Setup shared memory
+    // =========================================
     int shmid;
     if (parse_int(argv[1], &shmid) == -1) {
-        fail("Could not parse shmid (%s).\n", F_INFO, argv[1]);
+        print_errno("Could not parse shmid (%s).\n", F_INFO, argv[1]);
+        exit(EXIT_FAILURE);
     }
-    shmem->shmid = shmid;
 
-    shmem_attach(shmem);
+    void *shmaddr;
+    if ((shmaddr = shmem_attach(shmid)) == (void *) -1) {
+        exit(EXIT_FAILURE);
+    }
 
-    attach_shmem();
-    attach_model();
+    init_model(shmaddr);
 
     open_fifo(O_WRONLY);
 
+
+    // =========================================
+    //          Setup signal handler
+    // =========================================
     struct sigaction sa;
     memset(&sa, 0, sizeof(sa));
     sa.sa_handler = &sigterm_handler;
     if (sigaction(SIGTERM, &sa, NULL) == -1) {
-        errno_fail("Could not set SIGTERM handler.\n", F_INFO);
+        print_errno("Could not set SIGTERM handler.\n", F_INFO);
     }
 
 
@@ -86,4 +88,10 @@ int main(int argc, char *argv[]) {
         ;
 
     exit(EXIT_SUCCESS);
+}
+
+void sigterm_handler() {
+    // TODO signal masking to prevent other signals from interrupting this handler
+    // TODO probably not needed as sig_atomic_t is atomic already
+    interrupted = 1;
 }

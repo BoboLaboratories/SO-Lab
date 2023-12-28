@@ -7,6 +7,8 @@
 #include "../libs/config.h"
 #include "../libs/console.h"
 
+#define ATTIVATORE
+
 sig_atomic_t interrupted = 0;
 
 void sigterm_handler() {
