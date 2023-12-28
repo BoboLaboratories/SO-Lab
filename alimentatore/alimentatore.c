@@ -45,7 +45,7 @@ int main(int argc, char *argv[]) {
 
 
     // Open fifo
-    fifo_open(TMP_FILE, O_WRONLY);
+    fifo_open(FIFO, O_WRONLY);
 
 
     // =========================================

@@ -11,7 +11,6 @@
 #include <sys/stat.h>
 
 #include "config.h"
-#include "cleanup.h"
 #include "../model/model.h"
 #include "../libs/sem/sem.h"
 #include "../libs/fifo/fifo.h"
@@ -59,8 +58,8 @@ int main(int argc, char *argv[]) {
     // =========================================
     //               Setup fifo
     // =========================================
-    fifo_create(TMP_FILE, S_IWUSR | S_IRUSR);
-    int fifo_fd = fifo_open(TMP_FILE, O_RDWR);
+    fifo_create(FIFO, S_IWUSR | S_IRUSR);
+    int fifo_fd = fifo_open(FIFO, O_RDWR);
 
 
     // =========================================

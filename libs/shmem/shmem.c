@@ -9,7 +9,7 @@ int shmem_create(key_t key, size_t size, int shmflg) {
     }
 #if defined(DEBUG) || defined(D_SHMEM)
     else {
-        printf(D "Created shared memory (%d).\n", shmid);
+        print(D, "Created shared memory (%d).\n", shmid);
     }
 #endif
 
@@ -23,7 +23,7 @@ void *shmem_attach(int shmid) {
     }
 #if defined(DEBUG) || defined(D_SHMEM)
     else {
-        printf(D "Attached shared memory (%d, %p).\n", shmid, shmaddr);
+        print(D, "Attached shared memory (%d, %p).\n", shmid, shmaddr);
     }
 #endif
 
@@ -37,7 +37,7 @@ int shmem_detach(void *shmaddr) {
     }
 #if defined(DEBUG) || defined(D_SHMEM)
     else {
-        printf(D "Attached shared memory (%p).\n", shmaddr);
+        print(D, "Attached shared memory (%p).\n", shmaddr);
     }
 #endif
 
@@ -51,7 +51,7 @@ int shmem_rmark(int shmid) {
     }
 #if defined(DEBUG) || defined(D_SHMEM)
     else {
-        printf(D "Marked shared memory for removal (%d).\n", shmid);
+        print(D, "Marked shared memory for removal (%d).\n", shmid);
     }
 #endif
 
