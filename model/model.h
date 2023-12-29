@@ -9,6 +9,7 @@
 #include "../libs/lifo/lifo.h"
 #endif
 
+#ifdef MASTER
 enum Status {
     RUNNING,
     TIMEOUT,
@@ -16,23 +17,35 @@ enum Status {
     BLACKOUT,
     MELTDOWN
 };
+#endif
 
 struct Stats {
-    enum Status status;
-    long energy;
-    int n_atoms;
-    int n_wastes;
+    long curr_energy;
+    long used_energy;
+    long inhibited_energy;
+    long n_atoms;
+    long n_wastes;
+    long n_fissions;
+    long n_activations;
 };
 
 struct Model {
     struct Config *config;
     struct Stats *stats;
     struct Ipc *ipc;
-#if defined(ATTIVATORE) || defined(ATOMO)
+#if defined(MASTER) || defined(ATTIVATORE) || defined(ATOMO)
     struct Lifo *lifo;
 #endif
+    struct Resources {
+        void *shmaddr;
+        int shmid;
+#if defined(MASTER) || defined(ATTIVATORE) || defined(ATOMO)
+        int fifo_fd;
+#endif
+    } *res;
 };
 
-void init_model(void *shmaddr);
+void init();
+void attach_model(void *shmaddr);
 
 #endif

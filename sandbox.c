@@ -137,34 +137,58 @@ unsigned long arr[] = {
         12
 };
 
+// 101
+// 100
+
+#define FLAG1 1
+#define FLAG2 2
+#define FLAG3 4
+
+// 10111
+// 10000
+
+// 101 & 100 = 100
+// 1
+
+#define flag(x) ((flag & x) >> (x - 1))
+
 int main(int argc, char *argv[]) {
-    update_max_len(arr, 7);
+    printf("%d\n", strcmp(argv[1], "ciao"));
+    int flag = FLAG1 | FLAG3;
+    printf("%d\n", flag);
+    printf("1: %d\n", flag(FLAG1));
+    printf("2: %d\n", flag(FLAG2));
+    printf("3: %d\n", flag(FLAG3));
 
-    aspaces(ROW_MAX_LEN);
-    astr(HEADER_GLOBAL);
-    achar(' ');
-    achar('[');
-    astr("meltdown");
-    achar(']');
-    achar('\n');
 
-    aspaces(ROW_MAX_LEN);
-    astrpad(HEADER_FREE);
-    astrpad(HEADER_USED);
-    achar('\n');
 
-    astr(ROW_ATOMS);
-    along(arr[1]);
-    along(4532);
-    achar('\n');
-    astr(ROW_FISSION);
-    along(53212);
-    along(453);
-    achar('\n');
-
-    printf("%s", done());
-    printf("\n");
-
-    printf("%lu\n", LONG_MAX);
-    printf("%d\n", snprintf(NULL, 0, "%lu", LONG_MAX));
+//    update_max_len(arr, 7);
+//
+//    aspaces(ROW_MAX_LEN);
+//    astr(HEADER_GLOBAL);
+//    achar(' ');
+//    achar('[');
+//    astr("meltdown");
+//    achar(']');
+//    achar('\n');
+//
+//    aspaces(ROW_MAX_LEN);
+//    astrpad(HEADER_FREE);
+//    astrpad(HEADER_USED);
+//    achar('\n');
+//
+//    astr(ROW_ATOMS);
+//    along(arr[1]);
+//    along(4532);
+//    achar('\n');
+//    astr(ROW_FISSION);
+//    along(53212);
+//    along(453);
+//    achar('\n');
+//
+//    printf("%s", done());
+//    printf("\n");
+//
+//    printf("%lu\n", LONG_MAX);
+//    printf("%d\n", snprintf(NULL, 0, "%lu", LONG_MAX));
 }

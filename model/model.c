@@ -9,23 +9,33 @@
 
 extern struct Model *model;
 
-static void free_model();
-
-void init_model(void *shmaddr) {
-    model = malloc(sizeof(struct Model));
-    if (atexit(&free_model) != 0) {
-        print(W, "Could not register model removal at exit.\n");
-    }
-
+void attach_model(void *shmaddr) {
     model->config = shmaddr + OFFSET_CONFIG;
     model->stats = shmaddr + OFFSET_STATS;
     model->ipc = shmaddr + OFFSET_IPC;
 
-#if defined(ATOMO) || defined(ATTIVATORE)
+#if defined(MASTER) || defined(ATOMO) || defined(ATTIVATORE)
     model->lifo = shmaddr + OFFSET_LIFO;
 #endif
 }
 
-static void free_model() {
+static void cleanup();
+
+void init() {
+    model = malloc(sizeof(struct Model));
+    model->res = malloc(sizeof(struct Resources));
+    if (atexit(&cleanup) != 0) {
+        print(E, "Could not register cleanup function at exit.\n");
+        cleanup();
+        exit(EXIT_FAILURE);
+    }
+
+}
+
+void cleanup() {
+#ifdef MASTER
+#endif
+
+    free(model->res);
     free(model);
 }

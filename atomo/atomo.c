@@ -33,7 +33,7 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    init_model(shmaddr);
+    attach_model(shmaddr);
 
     int atomic_number;
     parse_int(argv[2], &atomic_number);

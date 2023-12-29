@@ -41,7 +41,7 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    init_model(shmaddr);
+    attach_model(shmaddr);
 
 
     // Open fifo

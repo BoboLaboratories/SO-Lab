@@ -1,17 +1,13 @@
-#ifndef MASTER
-#define MASTER
-#endif
-
 #include <fcntl.h>
 #include <malloc.h>
 #include <stdlib.h>
+#include <string.h>
 #include <limits.h>
 #include <sys/shm.h>
 #include <sys/sem.h>
 #include <sys/stat.h>
 
-#include "config.h"
-#include "../model/model.h"
+#include "master.h"
 #include "../libs/sem/sem.h"
 #include "../libs/fifo/fifo.h"
 #include "../libs/lifo/lifo.h"
@@ -20,87 +16,106 @@
 sig_atomic_t interrupted = 0;
 struct Model *model;
 
+#define INHIBITOR_FLAG  0
+
+static int flags[1] = {
+    [INHIBITOR_FLAG] = 0
+};
+
 // TODO sigterm handler
 
+
 int main(int argc, char *argv[]) {
+    // immediately register cleanup function
+    init();
+
+    // check for flags
+    for (int i = 1; i < argc; i++) {
+        if (strcmp("--inhibitor", argv[i]) == 0) {
+            flags[INHIBITOR_FLAG] = 1;
+        }
+    }
+
     setbuf(stdout, NULL);   // TODO si vuole?
     setbuf(stderr, NULL);   // TODO si vuole?
 
 
     // =========================================
-    //          Setup shared memory
+    //           Setup shared memory
     // =========================================
-    int shmid;
-    void *shmaddr;
     size_t shmize = sizeof(struct Config)
             + sizeof(struct Stats)
             + sizeof(struct Ipc)
             + sizeof(struct Lifo);
 
-    if ((shmid = shmem_create(IPC_PRIVATE, shmize, S_IWUSR | S_IRUSR | IPC_CREAT)) != -1) {
-        shmaddr = shmem_attach(shmid);
+    if ((model->res->shmid = shmem_create(IPC_PRIVATE, shmize, S_IWUSR | S_IRUSR | IPC_CREAT)) != -1) {
+        model->res->shmaddr = shmem_attach(model->res->shmid);
 
         // mark shared memory for removal so that
         // as soon as no process is attached
         // to it the OS can recall it
-        shmem_rmark(shmid);
+        shmem_rmark(model->res->shmid);
     }
 
-    if (shmid == -1 || shmaddr == (void *) -1) {
+    if (model->res->shmid == -1 || model->res->shmaddr == (void *) -1) {
         exit(EXIT_FAILURE);
     }
 
-    init_model(shmaddr);
+    attach_model(model->res->shmaddr);
+
+    // initialize shared data
+    memset(model->stats, 0, sizeof(struct Stats));
+    model->ipc->master = getpid();
     if (load_config() == -1) {
         exit(EXIT_FAILURE);
     }
-
-    // TODO inizializzazione della memoria condivisa (specie stats)
 
 
     // =========================================
     //               Setup fifo
     // =========================================
-    if (fifo_create(FIFO, S_IWUSR | S_IRUSR) == -1)  {
+    if ((fifo_create(FIFO, S_IWUSR | S_IRUSR) == -1) || (model->res = fifo_open(FIFO, O_RDWR)) == -1)  {
+        // fifo_create automatically setups fifo removal at exit,
+        // nothing else to be done if fifo_open fails
         exit(EXIT_FAILURE);
     }
-    int fifo_fd = fifo_open(FIFO, O_RDWR);
 
 
     // =========================================
-    //             Setup semaphores
+    //             Setup semaphore
     // =========================================
+    // let other processes know semaphore set id
     model->ipc->semid = semget(IPC_PRIVATE, SEM_COUNT, S_IWUSR | S_IRUSR);
     if (model->ipc->semid == -1) {
-        // errno_fail("Could not get sync semaphore.\n", F_INFO);
+        exit(EXIT_FAILURE);
     }
 
-    int nproc = N_ATOMI_INIT /* atomi */
-                + 1 /* alimentatore */
-                + 0 /* attivatore */
-                + 0 /* inibitore */
-                + 1 /* master */;
+    int nproc = N_ATOMI_INIT                // atomi
+                + flags[INHIBITOR_FLAG]     // inibitore
+                + 1                         // alimentatore
+                + 0                         // attivatore
+                + 1;                        // master
 
     union semun se;
     se.array = malloc(SEM_COUNT * sizeof(unsigned short));
     se.array[SEM_SYNC] = nproc <= USHRT_MAX ? (short) nproc : 0;
-    se.array[SEM_ATOM] = 1;
-    se.array[SEM_MASTER] = 1;
+    se.array[SEM_INHIBITOR_ON] = flags[INHIBITOR_FLAG];
     se.array[SEM_INHIBITOR] = 0;
-    se.array[SEM_INHIBITOR_ON] = 0; // TODO depends on --inhibitor flag
+    se.array[SEM_MASTER] = 1;
+    se.array[SEM_ATOM] = 1;
 
     int res = semctl(model->ipc->semid, 0, SETALL, se);
     free(se.array);
     if (res == -1) {
         print(E, "Could not initialize semaphore set.\n");
-        // TODO exit how
+        exit(EXIT_FAILURE);
     }
 
     if (nproc > USHRT_MAX) {
         se.val = nproc;
         if (semctl(model->ipc->semid, SEM_SYNC, SETVAL, se) == -1) {
             print(E, "Could not initialize sync semaphore.\n");
-            // TODO exit how
+            exit(EXIT_FAILURE);
         }
     }
 
@@ -111,35 +126,45 @@ int main(int argc, char *argv[]) {
     char *buf;
     char **argvc;
     prargs("alimentatore", &argvc, &buf, 1, ITC_SIZE);
-    sprintf(argvc[1], "%d", shmid);
-    if (fork_execve(argvc) == -1) {
-        print(E, "Could not fork alimentatore.\n");
-    }
+    sprintf(argvc[1], "%d", model->res->shmid);
+    res = fork_execve(argvc);
     frargs(argvc, buf);
+    if (res == -1) {
+        exit(EXIT_FAILURE);
+    }
+
+    // =========================================
+    //           Forking attivatore
+    // =========================================
+    if (flags[INHIBITOR_FLAG]) {
+        // TODO spawn attivatore
+    }
+
+
+    // =========================================
+    //           Forking inibitore
+    // =========================================
+    // TODO spawn inibitore
 
 
     // =========================================
     //              Forking atoms
     // =========================================
     prargs("atomo", &argvc, &buf, 2, ITC_SIZE);
-    sprintf(argvc[1], "%d", shmid);
-    // argvc[2] will be assigned later for each atom
-
-    for (int i = 0; !interrupted && i < N_ATOMI_INIT; i++) {
+    sprintf(argvc[1], "%d", model->res->shmid);
+    for (int i = 0; res != -1 && i < N_ATOMI_INIT; i++) {
         sprintf(argvc[2], "%d", 123);
-        // TODO mask SIGTERM?
-        if (fork_execve(argvc) == -1) {
-            // TODO did we meltdown already? :(
-            interrupted = 1;
-        }
-        // TODO unmask SIGTERM?
+        res = fork_execve(argvc);
     }
-
     frargs(argvc, buf);
+    if (res == -1) {
+        exit(EXIT_FAILURE);
+    }
 
     // master will fork no more atoms,
     // no need to keep fifo open
     fifo_close(fifo_fd);
+    fifo_fd = -1;
 
 
     // Waiting for child processes
@@ -149,27 +174,28 @@ int main(int argc, char *argv[]) {
     // =========================================
     //              Main logic
     // =========================================
-
+    print(I, "All processes ready, simulation start.\n");
 
 
     // =========================================
     //               Cleanup
     // =========================================
 
-    // TODO wait for children before releasing some resources (e.g. semaphores)
-
-    // TODO la lasciamo qui?
-    if (semctl(model->ipc->semid, 0, IPC_RMID) == -1) {
-        print(E, "Could not request semaphore set removal.\n");
-        // TODO exit or not exit?
-    }
-
-    if (shmem_detach(shmaddr) == -1) {
-        // TODO should we do anything special about this?
-    }
-
     wait_children();
 
-
     exit(EXIT_SUCCESS);
+}
+
+void cleanup() {
+    if (model != NULL && model->ipc->semid != -1) {
+        if (semctl(model->ipc->semid, 0, IPC_RMID) == -1) {
+            print(E, "Could not request semaphore set removal.\n");
+        }
+    }
+    if (shmid != -1 && shmaddr != (void *) -1) {
+        shmem_detach(shmaddr);
+    }
+    if (fifo_fd != -1) {
+        fifo_close(fifo_fd);
+    }
 }
