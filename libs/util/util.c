@@ -118,7 +118,7 @@ void addtmpfile(const char *pathname) {
 void rmtmpfiles() {
     for (int i = 0; i < size; i++) {
         if (unlink(tmpfiles[i]) == -1) {
-            print(E, "Could not delete temporary file (%s).\n", tmpfiles[1]);
+            print(E, "Could not delete temporary file (%s).\n", tmpfiles[i]);
         }
 #ifdef DEBUG
         else {

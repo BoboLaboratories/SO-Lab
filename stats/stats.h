@@ -17,13 +17,11 @@ Time    87s      50s                                                    computat
 
         Total    Used   Free
 Energy  1234     1204   30                                              computata dal master
+
  */
 
 #ifndef STATS_H
 #define STATS_H
-
-#define PAREN_OPEN  "["
-#define PAREN_CLOSE "]"
 
 #define STAT_ATOMS                          0
 #define STAT_WASTES                         1
@@ -40,38 +38,29 @@ Energy  1234     1204   30                                              computat
 #define COMPUTED_STAT_TOTAL_ENERGY          11
 #define COMPUTED_STAT_INHIBITED_FISSIONS    12
 
-#define HEADER_FREE         0
-#define HEADER_USED         1
-#define HEADER_TOTAL        2
-#define HEADER_GLOBAL       3
-#define HEADER_LAST_SEC     4
-#define HEADER_REMAINING    5
-#define HEADER_INHIBITOR    6
+#define STAT_COUNT                          13
 
-const char *headers[] = {
-    [HEADER_FREE]       = "Free",
-    [HEADER_USED]       = "Used",
-    [HEADER_TOTAL]      = "Total",
-    [HEADER_GLOBAL]     = "Global",
-    [HEADER_LAST_SEC]   = "LastSec",
-    [HEADER_REMAINING]  = "Remaining",
-    [HEADER_INHIBITOR]  = "Inhibitor"
-};
 
-#define ROW_TIME            0
-#define ROW_ATOMS           1
-#define ROW_WASTE           2
-#define ROW_ENERGY          3
-#define ROW_FISSION         4
-#define ROW_ACTIVATIONS     5
+#define HEADER_FREE         "Free"
+#define HEADER_USED         "Used"
+#define HEADER_TOTAL        "Total"
+#define HEADER_GLOBAL       "Global"
+#define HEADER_LAST_SEC     "LastSec"
+#define HEADER_REMAINING    "Remaining"
+#define HEADER_INHIBITOR    "Inhibitor"
 
-const char *rows[] = {
-    [ROW_TIME]          = "Time",
-    [ROW_ATOMS]         = "Atoms",
-    [ROW_WASTE]         = "Waste",
-    [ROW_ENERGY]        = "Energy",
-    [ROW_FISSION]       = "Fission",
-    [ROW_ACTIVATIONS]   = "Att"
-};
+#define HEADER_MAX_LEN      9
+
+
+#define ROW_TIME            "    Time "
+#define ROW_ATOMS           "   Atoms "
+#define ROW_WASTE           "   Waste "
+#define ROW_ENERGY          "  Energy "
+#define ROW_FISSION         " Fission "
+#define ROW_ACTIVATIONS     "     Att "
+
+#define ROW_MAX_LEN         9
+
+void print_stats(const unsigned long *data);
 
 #endif

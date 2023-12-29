@@ -3,7 +3,10 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <limits.h>
-#include "libs/util/util.h"
+#include <string.h>
+#include <malloc.h>
+
+#include "stats/stats.h"
 
 /*
         Global [running]                                                computata dal master
@@ -44,8 +47,124 @@ struct Stats {
     int n_activations;
 };
 
+#define INCREMENT 100
+
+static char *buf = NULL;
+static char *ptr = NULL;
+static char *endptr = NULL;
+
+static char *segbuf = NULL;
+static unsigned long max_len = HEADER_MAX_LEN;
+static int arrlen = 0;
+
+void more_space() {
+    arrlen += INCREMENT;
+    buf = reallocarray(buf, arrlen, sizeof(char));
+    if (ptr == NULL) {
+        ptr = endptr = buf;
+    }
+    endptr += INCREMENT * sizeof(char);
+}
+
+void update_max_len(const unsigned long *numbers, int n) {
+    if (numbers != NULL) {
+        unsigned long max = 0;
+        for (int i = 0; i < n; i++) {
+            if (numbers[i] > max) {
+                max = numbers[i];
+            }
+        }
+        char tmp[500];
+        sprintf(tmp, "%lu", max);
+        max = strlen(tmp) + 1;
+        if (max > max_len) {
+            max_len = max;
+        }
+    }
+
+    segbuf = malloc(max_len * sizeof(char));
+    if (buf == NULL) {
+        more_space();
+    }
+}
+
+
+
+void achar(char c) {
+    if (ptr == endptr) {
+        more_space();
+    }
+    *ptr++ = c;
+}
+
+void aspaces(unsigned long n) {
+    while (n > 0) {
+        achar(' ');
+        n--;
+    }
+}
+
+unsigned long astr(const char *str) {
+    unsigned long i = 0;
+    while (*str != '\0') {
+        achar(*str++);
+        i++;
+    }
+    return i;
+}
+
+void astrpad(const char *str) {
+    aspaces(max_len - astr(str));
+}
+
+void along(unsigned long number) {
+    sprintf(segbuf, "%lu", number);
+    astrpad(segbuf);
+}
+
+const char *done() {
+    *ptr = '\0';
+    return buf;
+}
+
+unsigned long arr[] = {
+        3,
+        12345670221123,
+        54132,
+        4532,
+        6532,
+        777,
+        12
+};
 
 int main(int argc, char *argv[]) {
-    // informazione privata del master
-    long remaining_sim_duration;
+    update_max_len(arr, 7);
+
+    aspaces(ROW_MAX_LEN);
+    astr(HEADER_GLOBAL);
+    achar(' ');
+    achar('[');
+    astr("meltdown");
+    achar(']');
+    achar('\n');
+
+    aspaces(ROW_MAX_LEN);
+    astrpad(HEADER_FREE);
+    astrpad(HEADER_USED);
+    achar('\n');
+
+    astr(ROW_ATOMS);
+    along(arr[1]);
+    along(4532);
+    achar('\n');
+    astr(ROW_FISSION);
+    along(53212);
+    along(453);
+    achar('\n');
+
+    printf("%s", done());
+    printf("\n");
+
+    printf("%lu\n", LONG_MAX);
+    printf("%d\n", snprintf(NULL, 0, "%lu", LONG_MAX));
 }
