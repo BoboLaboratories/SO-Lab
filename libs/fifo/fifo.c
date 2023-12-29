@@ -1,21 +1,15 @@
 #include "fifo.h"
 
-/*
- * - unico file, creato e rimosso da fifo
- * - due file:
- *      - ftok, creato e rimosso da master e significa simulazione in corso, usato per ottenere semafori
- *      - fifo, creato e rimosso da fifo
- */
 int fifo_create(const char *pathname, mode_t flags) {
     int fifo_fd = mkfifo(pathname, flags);
     if (fifo_fd == -1) {
         print(E, "Could not create fifo (%s).\n", pathname);
-    }
+    } else {
+        addtmpfile(pathname);
 #if defined(DEBUG) || defined(D_FIFO)
-    else {
-        print(D, "Created fifo (%s).\n", pathname);
-    }
+        print(D, "Created fifo (%s, fd=%d).\n", pathname, fifo_fd);
 #endif
+    }
 
     return fifo_fd;
 }
@@ -27,7 +21,7 @@ int fifo_open(const char *pathname, int flags) {
     }
 #if defined(DEBUG) || defined(D_FIFO)
     else {
-        print(D, "Could not open fifo fifo (%s).\n", pathname);
+        print(D, "Opened fifo (%s, fd=%d).\n", pathname, fifo_fd);
     }
 #endif
 
@@ -41,7 +35,7 @@ int fifo_close(int fifo_fd) {
     }
 #if defined(DEBUG) || defined(D_FIFO)
     else {
-        print(D, "Could not open fifo fifo (%d).\n", fifo_fd);
+        print(D, "Closed fifo (fd=%d).\n", fifo_fd);
     }
 #endif
 

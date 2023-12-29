@@ -4,7 +4,6 @@
 - stampa dello stato
 
 ## Lifo
-- Ammirare il capolavoro
 - semaforo per proteggere la consistenza
 - documentazione
 - gestione degli errori
@@ -18,13 +17,12 @@
 - progettarla e farla
 
 ## Misc
-- i file .h sono inclusi tra i file da passare a gcc nei makefile
-- mettere o togliere i nomi dei parametri da tutte le firme dei metodi
-- eseguire free_ipc al SIGTERM
-- non tutti i messaggi di errore sono in rosso (quelli che non usano `fail` o `errno_fail` sono in bianco)
-- se un figlio muore per qualsiasi errore bisogna segnalarlo al master e terminare tutti i processi
-- wait per aspettare tutti i figli dei vari processi
-- dobbiamo controllare il fail di malloc/calloc?
+- [x] i file .h sono inclusi tra i file da passare a gcc nei makefile
+- [x] mettere o togliere i nomi dei parametri da tutte le firme dei metodi
+- [ ] tutti devono gestire il SIGTERM
+- [ ] se un figlio muore per qualsiasi errore bisogna segnalarlo al master e terminare tutti i processi
+- [x] wait per aspettare tutti i figli dei vari processi
+- [x] dobbiamo controllare il fail di malloc/calloc? (No)
 
 
 
@@ -105,7 +103,7 @@ Energy  1234     1204   130       30
 
 
 
-0 [==============================       ] 1000  MAX_EXPLODE_THRESHOLD
+0 [====================|=========       ] 1000  MAX_EXPLODE_THRESHOLD
 └ 600                       ENERGY_DEMAND
 
 

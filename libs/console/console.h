@@ -1,6 +1,8 @@
 #ifndef CONSOLE_H
 #define CONSOLE_H
 
+#include <stdio.h>
+
 #define I   0,   NULL,      -1
 #define E   1, __FILE__, __LINE__
 #define D   2, __FILE__, __LINE__

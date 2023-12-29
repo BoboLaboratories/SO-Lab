@@ -27,6 +27,6 @@ union semun {
 void sem_set(int semid);
 void sem_sync();
 void sem_buf(struct sembuf *sop, short sem_op, unsigned short sem_num, short sem_flg);
-void sem_op(struct sembuf *sops, int nsops);
+int sem_op(struct sembuf *sops, int nsops);
 
 #endif

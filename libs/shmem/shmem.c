@@ -19,7 +19,7 @@ int shmem_create(key_t key, size_t size, int shmflg) {
 void *shmem_attach(int shmid) {
     void *shmaddr = shmat(shmid, NULL, 0);
     if (shmaddr == (void *) -1) {
-        print(E, "Could not attach shared memory.\n");
+        print(E, "Could not attach shared memory (%d).\n", shmid);
     }
 #if defined(DEBUG) || defined(D_SHMEM)
     else {
@@ -37,7 +37,7 @@ int shmem_detach(void *shmaddr) {
     }
 #if defined(DEBUG) || defined(D_SHMEM)
     else {
-        print(D, "Attached shared memory (%p).\n", shmaddr);
+        print(D, "Detached shared memory (%p).\n", shmaddr);
     }
 #endif
 

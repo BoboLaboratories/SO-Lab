@@ -11,12 +11,12 @@
 #include "../console/console.h"
 
 void nano_sleep(long nanos) {
-    extern sig_atomic_t *interrupted;
+    extern sig_atomic_t interrupted;
 
     struct timespec t;
     t.tv_sec = nanos / 1000000000;
     t.tv_nsec = nanos % 1000000000;
-    while (!*interrupted && nanosleep(&t, &t) == -1)
+    while (!interrupted && nanosleep(&t, &t) == -1)
         ;
 }
 
@@ -80,7 +80,7 @@ void wait_children() {
     }
 }
 
-static const char **tmpfiles;
+static const char **tmpfiles = NULL;
 int atexit_registered = 0;
 int size = 0;
 
@@ -94,16 +94,6 @@ int mktmpfile(const char *pathname, int flags, mode_t mode) {
         print(D, "Created temporary file (%s).\n", pathname);
 #endif
         addtmpfile(pathname);
-        if (!atexit_registered) {
-            if (atexit(&rmtmpfiles) != 0) {
-                print(W, "Could not register temporary file(s) removal at exit.\n");
-            } else {
-                atexit_registered = 1;
-#ifdef DEBUG
-                print(D, "Registered temporary file(s) cleanup at exit.\n", pathname);
-#endif
-            }
-        }
     }
 
     return fd;
@@ -112,6 +102,17 @@ int mktmpfile(const char *pathname, int flags, mode_t mode) {
 void addtmpfile(const char *pathname) {
     tmpfiles = reallocarray(tmpfiles, size++, sizeof(char *));
     tmpfiles[size - 1] = pathname;
+
+    if (!atexit_registered) {
+        if (atexit(&rmtmpfiles) != 0) {
+            print(W, "Could not register temporary file(s) removal at exit.\n");
+        } else {
+            atexit_registered = 1;
+#ifdef DEBUG
+            print(D, "Registered temporary file(s) cleanup at exit.\n", pathname);
+#endif
+        }
+    }
 }
 
 void rmtmpfiles() {
@@ -121,7 +122,7 @@ void rmtmpfiles() {
         }
 #ifdef DEBUG
         else {
-            print(D, "Deleted temporary file (%s).\n", tmpfiles[1]);
+            print(D, "Deleted temporary file (%s).\n", tmpfiles[i]);
         }
 #endif
     }

@@ -15,8 +15,12 @@ all: 						\
 	$(OUT_BIN)/attivatore	\
 	$(OUT_BIN)/atomo		\
 
-# Directive for building the whole project with debug enabled
-debug: CFLAGS+=-DDEBUG -DD_FIFO -DD_SHMEM
+# Directive for building the whole project with full debug enabled
+# Partial debug can be enabled like so
+#	$ make CFLAGS="-DD_<component>"
+# passing as many component as needed e.g.
+#	$ make CFLAGS="-DD_SHMEM -DD_FIFO"
+debug: CFLAGS += -DDEBUG
 debug: all
 
 # Directive for making any library
@@ -24,6 +28,7 @@ $(OUT_LIB)/%.o: libs/%/*.c libs/%/*.h | $(OUT_LIB)
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 # Collection of common libraries used by any type of process
+
 $(OUT_LIB)/common.o: 		\
 	$(OUT_LIB)/console.o	\
 	$(OUT_LIB)/shmem.o		\
@@ -31,10 +36,11 @@ $(OUT_LIB)/common.o: 		\
 	$(OUT_LIB)/sem.o
 	ld -relocatable $^ -o $@
 
+
 $(OUT_BIN)/master: 			\
 	$(OUT_LIB)/common.o 	\
 	$(OUT_LIB)/fifo.o 		\
-	model/* 				\
+	model/*					\
 	master/*
 	$(CC) $(CFLAGS) -DMASTER $(filter-out %.h,$^) -o $@
 

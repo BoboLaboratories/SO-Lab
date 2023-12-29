@@ -1,22 +1,21 @@
 #include "sem.h"
+#include "errno.h"
 
 void sem_sync() {
     // TODO what is a signal interrupts? D:
-    // what if it doesn't
+
+    // TODO error handling
 
     struct sembuf sops;
+    sem_buf(&sops, -1, SEM_SYNC, IPC_NOWAIT);
+    if (sem_op(&sops, 1) == -1) {
+        if (errno == EAGAIN) {
+            return;
+        }
+    }
 
-    // signal we are ready
-    sem_buf(&sops, -1, SEM_SYNC, 0);
-    sem_op(&sops, 1);
-    // TODO what if it fails?
-    // what if it doesn't
-
-    // wait for everyone to be ready
     sem_buf(&sops, 0, SEM_SYNC, 0);
     sem_op(&sops, 1);
-    // TODO what if it fails?
-    // what if it doesn't
 }
 
 void sem_buf(struct sembuf *sop, short sem_op, unsigned short sem_num, short sem_flg) {
@@ -25,7 +24,7 @@ void sem_buf(struct sembuf *sop, short sem_op, unsigned short sem_num, short sem
     sop->sem_op = sem_op;
 }
 
-void sem_op(struct sembuf *sops, int nsops) {
+int sem_op(struct sembuf *sops, int nsops) {
     extern struct Model *model;
-    semop(model->ipc->semid, sops, nsops);
+    return semop(model->ipc->semid, sops, nsops);
 }

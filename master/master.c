@@ -34,6 +34,7 @@ int main(int argc, char *argv[]) {
     void *shmaddr;
     size_t shmize = sizeof(struct Config)
             + sizeof(struct Stats)
+            + sizeof(struct Ipc)
             + sizeof(struct Lifo);
 
     if ((shmid = shmem_create(IPC_PRIVATE, shmize, S_IWUSR | S_IRUSR | IPC_CREAT)) != -1) {
@@ -54,19 +55,23 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
+    // TODO inizializzazione della memoria condivisa (specie stats)
+
 
     // =========================================
     //               Setup fifo
     // =========================================
-    fifo_create(FIFO, S_IWUSR | S_IRUSR);
+    if (fifo_create(FIFO, S_IWUSR | S_IRUSR) == -1)  {
+        exit(EXIT_FAILURE);
+    }
     int fifo_fd = fifo_open(FIFO, O_RDWR);
 
 
     // =========================================
     //             Setup semaphores
     // =========================================
-    int semid = semget(IPC_PRIVATE, SEM_COUNT, S_IWUSR | S_IRUSR);
-    if (semid == -1) {
+    model->ipc->semid = semget(IPC_PRIVATE, SEM_COUNT, S_IWUSR | S_IRUSR);
+    if (model->ipc->semid == -1) {
         // errno_fail("Could not get sync semaphore.\n", F_INFO);
     }
 
@@ -84,7 +89,7 @@ int main(int argc, char *argv[]) {
     se.array[SEM_INHIBITOR] = 0;
     se.array[SEM_INHIBITOR_ON] = 0; // TODO depends on --inhibitor flag
 
-    int res = semctl(semid, 0, SETALL, se);
+    int res = semctl(model->ipc->semid, 0, SETALL, se);
     free(se.array);
     if (res == -1) {
         print(E, "Could not initialize semaphore set.\n");
@@ -93,7 +98,7 @@ int main(int argc, char *argv[]) {
 
     if (nproc > USHRT_MAX) {
         se.val = nproc;
-        if (semctl(semid, SEM_SYNC, SETVAL, se) == -1) {
+        if (semctl(model->ipc->semid, SEM_SYNC, SETVAL, se) == -1) {
             print(E, "Could not initialize sync semaphore.\n");
             // TODO exit how
         }
@@ -105,9 +110,8 @@ int main(int argc, char *argv[]) {
     // =========================================
     char *buf;
     char **argvc;
-    prargs("alimentatore", &argvc, &buf, 2, ITC_SIZE);
+    prargs("alimentatore", &argvc, &buf, 1, ITC_SIZE);
     sprintf(argvc[1], "%d", shmid);
-    sprintf(argvc[2], "%d", semid);
     if (fork_execve(argvc) == -1) {
         print(E, "Could not fork alimentatore.\n");
     }
@@ -117,13 +121,12 @@ int main(int argc, char *argv[]) {
     // =========================================
     //              Forking atoms
     // =========================================
-    prargs("atomo", &argvc, &buf, 3, ITC_SIZE);
+    prargs("atomo", &argvc, &buf, 2, ITC_SIZE);
     sprintf(argvc[1], "%d", shmid);
-    sprintf(argvc[2], "%d", semid);
-    // argvc[3] will be assigned later for each atom
+    // argvc[2] will be assigned later for each atom
 
     for (int i = 0; !interrupted && i < N_ATOMI_INIT; i++) {
-        sprintf(argvc[3], "%d", 123);
+        sprintf(argvc[2], "%d", 123);
         // TODO mask SIGTERM?
         if (fork_execve(argvc) == -1) {
             // TODO did we meltdown already? :(
@@ -155,17 +158,18 @@ int main(int argc, char *argv[]) {
 
     // TODO wait for children before releasing some resources (e.g. semaphores)
 
-    if (shmem_detach(shmaddr) == -1) {
-        // TODO should we do anything special about this?
-    }
-
     // TODO la lasciamo qui?
-    if (semctl(semid, 0, IPC_RMID) == -1) {
+    if (semctl(model->ipc->semid, 0, IPC_RMID) == -1) {
         print(E, "Could not request semaphore set removal.\n");
         // TODO exit or not exit?
     }
 
+    if (shmem_detach(shmaddr) == -1) {
+        // TODO should we do anything special about this?
+    }
+
     wait_children();
+
 
     exit(EXIT_SUCCESS);
 }

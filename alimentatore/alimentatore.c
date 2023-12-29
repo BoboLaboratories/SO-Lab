@@ -47,7 +47,6 @@ int main(int argc, char *argv[]) {
     // Open fifo
     fifo_open(FIFO, O_WRONLY);
 
-
     // =========================================
     //          Setup signal handler
     // =========================================
@@ -58,20 +57,12 @@ int main(int argc, char *argv[]) {
         print(E, "Could not set SIGTERM handler.\n");
     }
 
-
-    int semid;
-    if (parse_int(argv[2], &semid) == -1) {
-        print(E, "Could not parse semid.\n");
-    }
-
     sem_sync();
-
 
     char *buf;
     char **argvc;
     prargs("atomo", &argvc, &buf, 2, ITC_SIZE);
-    sprintf(argvc[1], "%d", model->ipc->semid);
-
+    sprintf(argvc[1], "%d", shmid);
     while (!interrupted) {
         nano_sleep(STEP_ALIMENTAZIONE);
         for (int i = 0; !interrupted && i < N_NUOVI_ATOMI; i++) {

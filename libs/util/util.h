@@ -6,7 +6,8 @@
 
 // TODO Perché?
 // (I)nteger (T)o (C)hars
-#define ITC_SIZE ((3 * sizeof(int) + 1) * sizeof(char))
+#define CHARS_PER_INT   (3 * sizeof(int) + 1)
+#define ITC_SIZE        (CHARS_PER_INT * sizeof(char))
 
 // misc
 void nano_sleep(long nanos);
