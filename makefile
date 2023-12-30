@@ -1,5 +1,6 @@
+LIB_DIR=libs
 OUT_BIN=bin
-OUT_LIB=$(OUT_BIN)/libs
+OUT_LIB=$(OUT_BIN)/$(LIB_DIR)
 
 export CC=gcc
 export LD_LIBRARY_PATH+=$(OUT_LIB)
@@ -9,16 +10,15 @@ override CFLAGS += -Wvla -Wextra -Werror -D_GNU_SOURCE
 # $^ prerequisites
 # $< first prerequisite
 
-$(OUT_BIN)/%: %/* | libs/*
-	gcc -D$* $(filter-out %.h,$^) -L$(OUT_LIB)
-#	$(CC) $(CFLAGS) $(filter-out %.h,$^) -o $@
+# Collection of common libraries used by any type of process
+LIBS = console shmem util fifo lifo sem
+MAIN = master alimentatore attivatore atomo
 
 # Directive for building the whole project
-all: 						\
-	$(OUT_BIN)/master 		\
-	$(OUT_BIN)/alimentatore	\
-	$(OUT_BIN)/attivatore	\
-	$(OUT_BIN)/atomo		\
+all: $(addprefix $(OUT_BIN)/,$(MAIN))
+
+# Directive for building all the libraries
+libs: $(addprefix $(OUT_LIB)/,$(LIBS))
 
 # Directive for building the whole project with full debug enabled
 # Partial debug can be enabled like so
@@ -28,62 +28,22 @@ all: 						\
 debug: CFLAGS += -DDEBUG
 debug: all
 
-# Directive for making any library
-$(OUT_LIB)/%.o: libs/%/*.c libs/%/*.h | $(OUT_LIB)
-	$(CC) $(CFLAGS) -c -o $@ $<
-
-# Collection of common libraries used by any type of process
-#
-#$(OUT_LIB)/common.o: 		\
-#	$(OUT_LIB)/console.o	\
-#	$(OUT_LIB)/shmem.o		\
-#	$(OUT_LIB)/util.o		\
-#	$(OUT_LIB)/sem.o
-#	ld -relocatable $^ -o $@
-#
-#$(OUT_BIN)/%: 				\
-#	$(OUT_LIB)/common.o 	\
-#	$(OUT_LIB)/fifo.o 		\
-#	model/*					\
-#	master/*
-#	$(CC) $(CFLAGS) $(filter-out %.h,$^) -o $@
-#	gcc -D$* $*/$*.c model/model.c -L$(OUT_LIB)
-#
-#
-#$(OUT_BIN)/master: 			\
-#	$(OUT_LIB)/common.o 	\
-#	$(OUT_LIB)/fifo.o 		\
-#	model/*					\
-#	master/*
-#	$(CC) $(CFLAGS)  $(filter-out %.h,$^) -o $@
-#
-#$(OUT_BIN)/alimentatore:	\
-#	$(OUT_LIB)/common.o 	\
-#	$(OUT_LIB)/fifo.o 		\
-#	model/* 				\
-#	alimentatore/*
-#	$(CC) $(CFLAGS) -DALIMENTATORE $(filter-out %.h,$^) -o $@
-#
-#$(OUT_BIN)/attivatore:		\
-#	$(OUT_LIB)/common.o 	\
-#	$(OUT_LIB)/fifo.o 		\
-#	$(OUT_LIB)/lifo.o		\
-#	model/* 				\
-#	attivatore/*
-#	$(CC) $(CFLAGS) -DATTIVATORE $(filter-out %.h,$^) -o $@
-#
-#$(OUT_BIN)/atomo:			\
-#	$(OUT_LIB)/common.o 	\
-#	$(OUT_LIB)/lifo.o		\
-#	model/* 				\
-#	atomo/*
-#	$(CC) $(CFLAGS) -DATOMO $(filter-out %.h,$^) -o $@
-#
+# Simple clean directive
 clean:
 	echo -n "Cleaning up.."
 	rm -rf bin
 	echo " done."
 
+# Directive for building any main component
+$(OUT_BIN)/%: %/* model/* libs/* libs
+	$(eval DEF := $(shell tr '[:lower:]' '[:upper:]' <<< $*))
+	$(CC) $(CFLAGS) -D$(DEF) $(filter %.c,$^) -o $@ -L$(OUT_LIB) $(addprefix -l:,$(LIBS))
+
+# Directive for making any library
+$(OUT_LIB)/%: $(LIB_DIR)/%/*.c $(LIB_DIR)/%/*.h | $(OUT_LIB)
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+# Creates the output directory
 $(OUT_LIB):
 	@mkdir -p bin/libs
 

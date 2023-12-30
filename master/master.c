@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
+#include <unistd.h>
 #include <sys/shm.h>
 #include <sys/sem.h>
 #include <sys/stat.h>
@@ -65,6 +66,7 @@ int main(int argc, char *argv[]) {
 
     // initialize shared data
     memset(model->stats, 0, sizeof(struct Stats));
+
     model->ipc->master = getpid();
     if (load_config() == -1) {
         exit(EXIT_FAILURE);
@@ -74,7 +76,7 @@ int main(int argc, char *argv[]) {
     // =========================================
     //               Setup fifo
     // =========================================
-    if ((fifo_create(FIFO, S_IWUSR | S_IRUSR) == -1) || (model->res = fifo_open(FIFO, O_RDWR)) == -1)  {
+    if ((fifo_create(FIFO, S_IWUSR | S_IRUSR) == -1) || (model->res->fifo_fd = fifo_open(FIFO, O_RDWR)) == -1)  {
         // fifo_create automatically setups fifo removal at exit,
         // nothing else to be done if fifo_open fails
         exit(EXIT_FAILURE);
@@ -163,8 +165,8 @@ int main(int argc, char *argv[]) {
 
     // master will fork no more atoms,
     // no need to keep fifo open
-    fifo_close(fifo_fd);
-    fifo_fd = -1;
+    fifo_close(model->res->fifo_fd);
+    model->res->fifo_fd = -1;
 
 
     // Waiting for child processes
@@ -186,16 +188,16 @@ int main(int argc, char *argv[]) {
     exit(EXIT_SUCCESS);
 }
 
-void cleanup() {
-    if (model != NULL && model->ipc->semid != -1) {
-        if (semctl(model->ipc->semid, 0, IPC_RMID) == -1) {
-            print(E, "Could not request semaphore set removal.\n");
-        }
-    }
-    if (shmid != -1 && shmaddr != (void *) -1) {
-        shmem_detach(shmaddr);
-    }
-    if (fifo_fd != -1) {
-        fifo_close(fifo_fd);
-    }
-}
+//void cleanup() {
+//    if (model != NULL && model->ipc->semid != -1) {
+//        if (semctl(model->ipc->semid, 0, IPC_RMID) == -1) {
+//            print(E, "Could not request semaphore set removal.\n");
+//        }
+//    }
+//    if (shmid != -1 && shmaddr != (void *) -1) {
+//        shmem_detach(shmaddr);
+//    }
+//    if (fifo_fd != -1) {
+//        fifo_close(fifo_fd);
+//    }
+//}
