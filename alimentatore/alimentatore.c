@@ -9,11 +9,11 @@
 #include <signal.h>
 #include <string.h>
 
-#include "../libs/ipc.h"
+#include "../lib/ipc.h"
 #include "../model/model.h"
-#include "../libs/sem/sem.h"
-#include "../libs/fifo/fifo.h"
-#include "../libs/shmem/shmem.h"
+#include "../lib/sem/sem.h"
+#include "../lib/fifo/fifo.h"
+#include "../lib/shmem/shmem.h"
 
 void sigterm_handler();
 

@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "../libs/console/console.h"
-#include "../libs/util/util.h"
+#include "../lib/console/console.h"
+#include "../lib/util/util.h"
 #include "../model/model.h"
 
 static const char *variables[9] = {

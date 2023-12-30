@@ -5,9 +5,9 @@
 #include <stdlib.h>
 
 #include "../model/model.h"
-#include "../libs/util/util.h"
-#include "../libs/shmem/shmem.h"
-#include "../libs/sem/sem.h"
+#include "../lib/util/util.h"
+#include "../lib/shmem/shmem.h"
+#include "../lib/sem/sem.h"
 
 sig_atomic_t *interrupted = 0;
 struct Model *model;

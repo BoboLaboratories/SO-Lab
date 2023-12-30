@@ -6,8 +6,8 @@
 #include <signal.h>
 #include <stdlib.h>
 
-#include "../libs/util/util.h"
-#include "../libs/config.h"
+#include "../lib/util/util.h"
+#include "../lib/config.h"
 
 sig_atomic_t interrupted = 0;
 

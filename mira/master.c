@@ -9,7 +9,7 @@
 #include <sys/ipc.h>
 
 #include "mira.h"
-#include "../libs/console.h"
+#include "../lib/console.h"
 
 int main(int argc, char *args[]) {
     key_t key = ftok("ftok", 2);

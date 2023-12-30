@@ -9,10 +9,10 @@
 #include <sys/stat.h>
 
 #include "master.h"
-#include "../libs/sem/sem.h"
-#include "../libs/fifo/fifo.h"
-#include "../libs/lifo/lifo.h"
-#include "../libs/shmem/shmem.h"
+#include "../lib/sem/sem.h"
+#include "../lib/fifo/fifo.h"
+#include "../lib/lifo/lifo.h"
+#include "../lib/shmem/shmem.h"
 
 sig_atomic_t interrupted = 0;
 struct Model *model;

@@ -1,12 +1,12 @@
 #ifndef MODEL_H
 #define MODEL_H
 
-#include "../libs/ipc.h"
-#include "../libs/config.h"
-#include "../libs/console/console.h"
+#include "../lib/ipc.h"
+#include "../lib/config.h"
+#include "../lib/console/console.h"
 
 #if defined(ATTIVATORE) || defined(ATOMO)
-#include "../libs/lifo/lifo.h"
+#include "../lib/lifo/lifo.h"
 #endif
 
 #ifdef MASTER
