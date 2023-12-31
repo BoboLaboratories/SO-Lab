@@ -2,20 +2,19 @@ LIB_DIR=lib
 OUT_BIN=bin
 OUT_LIB=$(OUT_BIN)/$(LIB_DIR)
 
-export CC=gcc
-export LD_LIBRARY_PATH+=$(OUT_LIB)
 override CFLAGS += -Wvla -Wextra -Werror -D_GNU_SOURCE
+export CC=gcc
 
 # $@ target
 # $^ prerequisites
 # $< first prerequisite
 
-# Collection of common libraries used by any type of process
-LIBS = console shmem util fifo lifo sem
-MAIN = master alimentatore attivatore atomo
-
 LIBS_FULL_PATHS = $(addprefix $(OUT_LIB)/,$(LIBS))
 MAIN_FULL_PATHS = $(addprefix $(OUT_BIN)/,$(MAIN))
+
+# Collection of common libraries used by any type of process
+LIBS = console shmem util fifo lifo sem
+MAIN = master alimentatore attivatore atomo sandbox
 
 # Directive for building the whole project
 all: $(MAIN_FULL_PATHS)
@@ -40,7 +39,7 @@ clean:
 # Directive for building any main component
 $(OUT_BIN)/%: %/*.c model/*.c $(LIBS_FULL_PATHS)
 	$(eval DEF := $(shell tr '[:lower:]' '[:upper:]' <<< $*))
-	$(CC) $(CFLAGS) -D$(DEF) $(filter %.c,$^) -o $@ -L$(OUT_LIB) $(addprefix -l:,$(LIBS))
+	$(CC) $(CFLAGS) -D$(DEF) $(filter %.c,$^) -o $@ -L$(OUT_LIB) $(addprefix -l:,$(LIBS)) -lm
 
 # Directive for making any library
 $(OUT_LIB)/%: $(LIB_DIR)/%/*.c | $(OUT_LIB)

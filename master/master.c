@@ -8,7 +8,8 @@
 #include <sys/sem.h>
 #include <sys/stat.h>
 
-#include "master.h"
+#include "config.h"
+#include "../model/model.h"
 #include "../lib/sem/sem.h"
 #include "../lib/fifo/fifo.h"
 #include "../lib/lifo/lifo.h"
@@ -27,10 +28,9 @@ static int flags[1] = {
 
 
 int main(int argc, char *argv[]) {
-    // immediately register cleanup function
     init();
 
-    // check for flags
+    // attach for flags
     for (int i = 1; i < argc; i++) {
         if (strcmp("--inhibitor", argv[i]) == 0) {
             flags[INHIBITOR_FLAG] = 1;
@@ -66,7 +66,6 @@ int main(int argc, char *argv[]) {
 
     // initialize shared data
     memset(model->stats, 0, sizeof(struct Stats));
-
     model->ipc->master = getpid();
     if (load_config() == -1) {
         exit(EXIT_FAILURE);
@@ -81,6 +80,13 @@ int main(int argc, char *argv[]) {
         // nothing else to be done if fifo_open fails
         exit(EXIT_FAILURE);
     }
+
+
+    // =========================================
+    //               Setup lifo
+    // =========================================
+    // TODO 100 come segment_length a 4 occhi chiusi, meglio avere qualche euristica
+    mklifo(model->lifo, 100, sizeof(pid_t), model->ipc->semid, SEM_LIFO);
 
 
     // =========================================
@@ -104,6 +110,7 @@ int main(int argc, char *argv[]) {
     se.array[SEM_INHIBITOR_ON] = flags[INHIBITOR_FLAG];
     se.array[SEM_INHIBITOR] = 0;
     se.array[SEM_MASTER] = 1;
+    se.array[SEM_LIFO] = 1;
     se.array[SEM_ATOM] = 1;
 
     int res = semctl(model->ipc->semid, 0, SETALL, se);
@@ -170,7 +177,7 @@ int main(int argc, char *argv[]) {
 
 
     // Waiting for child processes
-    sem_sync();
+    sem_sync(model->ipc->semid, SEM_SYNC);
 
 
     // =========================================
@@ -188,16 +195,16 @@ int main(int argc, char *argv[]) {
     exit(EXIT_SUCCESS);
 }
 
-//void cleanup() {
-//    if (model != NULL && model->ipc->semid != -1) {
-//        if (semctl(model->ipc->semid, 0, IPC_RMID) == -1) {
-//            print(E, "Could not request semaphore set removal.\n");
-//        }
-//    }
-//    if (shmid != -1 && shmaddr != (void *) -1) {
-//        shmem_detach(shmaddr);
-//    }
-//    if (fifo_fd != -1) {
-//        fifo_close(fifo_fd);
-//    }
-//}
+void cleanup() {
+    if (model->ipc->semid != -1) {
+        if (semctl(model->ipc->semid, 0, IPC_RMID) == -1) {
+            print(E, "Could not request semaphore set removal.\n");
+        }
+    }
+    if (model->res->shmid != -1 && model->res->shmaddr != (void *) -1) {
+        shmem_detach(model->res->shmaddr);
+    }
+    if (model->res->fifo_fd != -1) {
+        fifo_close(model->res->fifo_fd);
+    }
+}

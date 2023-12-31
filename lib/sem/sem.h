@@ -4,7 +4,6 @@
 #include <sys/sem.h>
 
 #include "../util/util.h"
-#include "../../model/model.h"
 #include "../console/console.h"
 
 union semun {
@@ -16,17 +15,10 @@ union semun {
 #endif
 };
 
-#define SEM_SYNC            0
-#define SEM_ATOM            1
-#define SEM_MASTER          2
-#define SEM_INHIBITOR       3
-#define SEM_INHIBITOR_ON    4
-
-#define SEM_COUNT           5
-
-void sem_set(int semid);
-void sem_sync();
-void sem_buf(struct sembuf *sop, short sem_op, unsigned short sem_num, short sem_flg);
-int sem_op(struct sembuf *sops, int nsops);
+int mksem(key_t key, int nsems, int semflg, const int *init);
+void sem_sync(int semid, int sem_num);
+void sem_buf(struct sembuf *sop, unsigned short sem_num, short sem_op, short sem_flg);
+int sem_op(int semid, struct sembuf *sops, int nsops);
+int rmsem(int semid);
 
 #endif

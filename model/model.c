@@ -19,23 +19,26 @@ void attach_model(void *shmaddr) {
 #endif
 }
 
-static void cleanup();
+extern void cleanup();
+static void cleanup_model();
 
 void init() {
     model = malloc(sizeof(struct Model));
     model->res = malloc(sizeof(struct Resources));
+    if (atexit(&cleanup_model) != 0) {
+        print(E, "Could not register model cleanup function at exit.\n");
+        cleanup();
+        cleanup_model();
+        exit(EXIT_FAILURE);
+    }
     if (atexit(&cleanup) != 0) {
         print(E, "Could not register cleanup function at exit.\n");
         cleanup();
         exit(EXIT_FAILURE);
     }
-
 }
 
-void cleanup() {
-#ifdef MASTER
-#endif
-
+static void cleanup_model() {
     free(model->res);
     free(model);
 }

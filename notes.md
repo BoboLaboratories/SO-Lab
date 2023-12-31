@@ -4,7 +4,6 @@
 - stampa dello stato
 
 ## Lifo
-- semaforo per proteggere la consistenza
 - documentazione
 - gestione degli errori
 
@@ -23,6 +22,12 @@
 - [ ] se un figlio muore per qualsiasi errore bisogna segnalarlo al master e terminare tutti i processi
 - [x] wait per aspettare tutti i figli dei vari processi
 - [x] dobbiamo controllare il fail di malloc/calloc? (No)
+- [ ] eventualmente, fare in modo che mklifo(<lifo>, <segment_size>, <elem_size>, -1, <ignored>) si crei in autonomia il semaforo
+- [ ] lifo e' molto debole nella gestione degli errori
+- [ ] libreria sem da rivedere
+  - [ ] signal interruptions
+  - [ ] error handling
+  - [ ] valori sopra SHRT_MAX danno ERANGE
 
 
 
@@ -157,8 +162,6 @@ semop(M+1)
 
 A -> M -> I
 A -> I -> M
-
-
 
 
 

@@ -100,7 +100,7 @@ int mktmpfile(const char *pathname, int flags, mode_t mode) {
 }
 
 void addtmpfile(const char *pathname) {
-    tmpfiles = reallocarray(tmpfiles, size++, sizeof(char *));
+    tmpfiles = reallocarray(tmpfiles, ++size, sizeof(char *));
     tmpfiles[size - 1] = pathname;
 
     if (!atexit_registered) {

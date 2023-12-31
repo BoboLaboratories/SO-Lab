@@ -4,11 +4,17 @@
 #include <sys/types.h>
 
 struct Lifo {
-    int size;
-    pid_t *ptr;
+    int shmid;
+    int length;
+    const int semid;
+    const int sem_num;
+    const int segment_length;
+    const size_t elem_size;
 };
 
-pid_t pop();
-void push(pid_t pid);
+void mklifo(struct Lifo *lifo, int segment_length, size_t elem_size, int semid, int sem_num);
+void lifo_push(struct Lifo *lifo, void *data);
+void lifo_pop(struct Lifo *lifo, void *data);
+int rmlifo(struct Lifo *lifo);
 
 #endif

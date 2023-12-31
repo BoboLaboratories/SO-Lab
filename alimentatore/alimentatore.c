@@ -1,7 +1,3 @@
-#ifndef ALIMENTATORE
-#define ALIMENTATORE
-#endif
-
 #include <time.h>
 #include <stdio.h>
 #include <fcntl.h>
@@ -26,26 +22,29 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
+    init();
+
 
     // =========================================
     //          Setup shared memory
     // =========================================
-    int shmid;
-    if (parse_int(argv[1], &shmid) == -1) {
+    if (parse_int(argv[1], &model->res->shmid) == -1) {
         print(E, "Could not parse shmid (%s).\n", argv[1]);
         exit(EXIT_FAILURE);
     }
 
-    void *shmaddr;
-    if ((shmaddr = shmem_attach(shmid)) == (void *) -1) {
+    if ((model->res->shmaddr = shmem_attach(model->res->shmid)) == (void *) -1) {
         exit(EXIT_FAILURE);
     }
 
-    attach_model(shmaddr);
+    attach_model(model->res->shmaddr);
 
 
     // Open fifo
-    fifo_open(FIFO, O_WRONLY);
+    if ((model->res->fifo_fd = fifo_open(FIFO, O_WRONLY)) == -1) {
+        exit(EXIT_FAILURE);
+    }
+
 
     // =========================================
     //          Setup signal handler
@@ -57,12 +56,12 @@ int main(int argc, char *argv[]) {
         print(E, "Could not set SIGTERM handler.\n");
     }
 
-    sem_sync();
+    sem_sync(model->ipc->semid, SEM_SYNC);
 
     char *buf;
     char **argvc;
     prargs("atomo", &argvc, &buf, 2, ITC_SIZE);
-    sprintf(argvc[1], "%d", shmid);
+    sprintf(argvc[1], "%d", model->res->shmid);
     while (!interrupted) {
         nano_sleep(STEP_ALIMENTAZIONE);
         for (int i = 0; !interrupted && i < N_NUOVI_ATOMI; i++) {
@@ -85,4 +84,13 @@ void sigterm_handler() {
     // TODO signal masking to prevent other signals from interrupting this handler
     // TODO probably not needed as sig_atomic_t is atomic already
     interrupted = 1;
+}
+
+void cleanup() {
+    if (model->res->fifo_fd != -1) {
+        fifo_close(model->res->fifo_fd);
+    }
+    if (model->res->shmaddr != (void *) -1) {
+        shmem_detach(model->res->shmaddr);
+    }
 }

@@ -1,7 +1,3 @@
-#ifndef ATTIVATORE
-#define ATTIVATORE
-#endif
-
 #include <fcntl.h>
 #include <signal.h>
 #include <stdlib.h>
@@ -72,5 +68,9 @@ int main(int argc, char *argv[]) {
 //    free_ipc();
 //
 //    exit(EXIT_SUCCESS);
+
+}
+
+void cleanup() {
 
 }

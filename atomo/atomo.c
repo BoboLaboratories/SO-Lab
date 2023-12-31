@@ -1,7 +1,3 @@
-#ifndef ATOMO
-#define ATOMO
-#endif
-
 #include <stdlib.h>
 
 #include "../model/model.h"
@@ -18,29 +14,37 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
+    init();
+
 
     // =========================================
     //          Setup shared memory
     // =========================================
-    int shmid;
-    if (parse_int(argv[1], &shmid) == -1) {
+
+    if (parse_int(argv[1], &model->res->shmid) == -1) {
         print(E, "Could not parse shmid (%s).\n", argv[1]);
         exit(EXIT_FAILURE);
     }
 
-    void *shmaddr;
-    if ((shmaddr = shmem_attach(shmid)) == (void *) -1) {
+    if ((model->res->shmaddr = shmem_attach(model->res->shmid)) == (void *) -1) {
         exit(EXIT_FAILURE);
     }
 
-    attach_model(shmaddr);
+    attach_model(model->res->shmaddr);
 
     int atomic_number;
     parse_int(argv[2], &atomic_number);
 
 
-    sem_sync();
+    sem_sync(model->ipc->semid, SEM_SYNC);
 //    print(D, "New atom just spawned with atomic number %d\n", atomic_number);
 
     exit(EXIT_SUCCESS);
+}
+
+void cleanup() {
+    if (model->res->shmaddr != (void *) -1) {
+        shmem_detach(model->res->shmaddr);
+    }
+    // TODO: cleanup lifo
 }

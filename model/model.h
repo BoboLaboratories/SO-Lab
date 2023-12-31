@@ -39,7 +39,7 @@ struct Model {
     struct Resources {
         void *shmaddr;
         int shmid;
-#if defined(MASTER) || defined(ATTIVATORE) || defined(ATOMO)
+#if defined(MASTER) || defined(ATTIVATORE) || defined(ALIMENTATORE)
         int fifo_fd;
 #endif
     } *res;
