@@ -13,7 +13,7 @@ LIBS_FULL_PATHS = $(addprefix $(OUT_LIB)/,$(LIBS))
 MAIN_FULL_PATHS = $(addprefix $(OUT_BIN)/,$(MAIN))
 
 # Collection of common libraries used by any type of process
-LIBS = console shmem util fifo lifo sem
+LIBS = console shmem util fifo lifo sem signal
 MAIN = master alimentatore attivatore atomo sandbox
 
 # Directive for building the whole project

@@ -24,18 +24,15 @@ static int flags[1] = {
     [INHIBITOR_FLAG] = 0
 };
 
-// TODO sigterm handler
-
-
 int main(int argc, char *argv[]) {
-    init();
-
-    // attach for flags
+    // check for flags
     for (int i = 1; i < argc; i++) {
         if (strcmp("--inhibitor", argv[i]) == 0) {
             flags[INHIBITOR_FLAG] = 1;
         }
     }
+
+    init();
 
     setbuf(stdout, NULL);   // TODO si vuole?
     setbuf(stderr, NULL);   // TODO si vuole?
@@ -93,40 +90,51 @@ int main(int argc, char *argv[]) {
     //             Setup semaphore
     // =========================================
     // let other processes know semaphore set id
-    model->ipc->semid = semget(IPC_PRIVATE, SEM_COUNT, S_IWUSR | S_IRUSR);
-    if (model->ipc->semid == -1) {
-        exit(EXIT_FAILURE);
-    }
-
     int nproc = N_ATOMI_INIT                // atomi
                 + flags[INHIBITOR_FLAG]     // inibitore
                 + 1                         // alimentatore
                 + 0                         // attivatore
                 + 1;                        // master
 
-    union semun se;
-    se.array = malloc(SEM_COUNT * sizeof(unsigned short));
-    se.array[SEM_SYNC] = nproc <= USHRT_MAX ? (short) nproc : 0;
-    se.array[SEM_INHIBITOR_ON] = flags[INHIBITOR_FLAG];
-    se.array[SEM_INHIBITOR] = 0;
-    se.array[SEM_MASTER] = 1;
-    se.array[SEM_LIFO] = 1;
-    se.array[SEM_ATOM] = 1;
+    int init[SEM_COUNT] = {
+            [SEM_INHIBITOR_ON] = flags[INHIBITOR_FLAG],
+            [SEM_INHIBITOR] = 0,
+            [SEM_SYNC] = nproc,
+            [SEM_MASTER] = 1,
+            [SEM_ATOM] = 1,
+            [SEM_LIFO] = 1
+    };
 
-    int res = semctl(model->ipc->semid, 0, SETALL, se);
-    free(se.array);
-    if (res == -1) {
-        print(E, "Could not initialize semaphore set.\n");
+    model->ipc->semid = mksem(IPC_PRIVATE, SEM_COUNT, S_IWUSR | S_IRUSR, init);
+    if (model->ipc->semid == -1) {
         exit(EXIT_FAILURE);
     }
 
-    if (nproc > USHRT_MAX) {
-        se.val = nproc;
-        if (semctl(model->ipc->semid, SEM_SYNC, SETVAL, se) == -1) {
-            print(E, "Could not initialize sync semaphore.\n");
-            exit(EXIT_FAILURE);
-        }
-    }
+
+//
+//    union semun se;
+//    se.array = malloc(SEM_COUNT * sizeof(unsigned short));
+//    se.array[SEM_SYNC] = nproc <= USHRT_MAX ? (short) nproc : 0;
+//    se.array[SEM_INHIBITOR_ON] = ;
+//    se.array[SEM_INHIBITOR] = 0;
+//    se.array[SEM_MASTER] = 1;
+//    se.array[SEM_LIFO] = 1;
+//    se.array[SEM_ATOM] = 1;
+//
+//    int res = semctl(model->ipc->semid, 0, SETALL, se);
+//    free(se.array);
+//    if (res == -1) {
+//        print(E, "Could not initialize semaphore set.\n");
+//        exit(EXIT_FAILURE);
+//    }
+//
+//    if (nproc > USHRT_MAX) {
+//        se.val = nproc;
+//        if (semctl(model->ipc->semid, SEM_SYNC, SETVAL, se) == -1) {
+//            print(E, "Could not initialize sync semaphore.\n");
+//            exit(EXIT_FAILURE);
+//        }
+//    }
 
 
     // =========================================
@@ -136,7 +144,7 @@ int main(int argc, char *argv[]) {
     char **argvc;
     prargs("alimentatore", &argvc, &buf, 1, ITC_SIZE);
     sprintf(argvc[1], "%d", model->res->shmid);
-    res = fork_execve(argvc);
+    int res = fork_execve(argvc);
     frargs(argvc, buf);
     if (res == -1) {
         exit(EXIT_FAILURE);
@@ -162,7 +170,7 @@ int main(int argc, char *argv[]) {
     prargs("atomo", &argvc, &buf, 2, ITC_SIZE);
     sprintf(argvc[1], "%d", model->res->shmid);
     for (int i = 0; res != -1 && i < N_ATOMI_INIT; i++) {
-        sprintf(argvc[2], "%d", 123);
+        sprintf(argvc[2], "%d", rand_between(MIN_N_ATOMICO, N_ATOM_MAX));
         res = fork_execve(argvc);
     }
     frargs(argvc, buf);
@@ -197,9 +205,7 @@ int main(int argc, char *argv[]) {
 
 void cleanup() {
     if (model->ipc->semid != -1) {
-        if (semctl(model->ipc->semid, 0, IPC_RMID) == -1) {
-            print(E, "Could not request semaphore set removal.\n");
-        }
+        rmsem(model->ipc->semid);
     }
     if (model->res->shmid != -1 && model->res->shmaddr != (void *) -1) {
         shmem_detach(model->res->shmaddr);
@@ -207,4 +213,8 @@ void cleanup() {
     if (model->res->fifo_fd != -1) {
         fifo_close(model->res->fifo_fd);
     }
+}
+
+void sigterm_handler() {
+    interrupted = 1;
 }

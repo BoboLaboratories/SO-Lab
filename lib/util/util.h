@@ -11,6 +11,7 @@
 
 // misc
 void nano_sleep(long nanos);
+int rand_between(int min, int max);
 
 // numerical parsing
 int parse_long(char *raw, long *dest);

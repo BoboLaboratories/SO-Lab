@@ -11,6 +11,7 @@
 
 #include "../lib/lifo/lifo.h"
 #include "../lib/sem/sem.h"
+#include "../lib/util/util.h"
 #include "../lib/shmem/shmem.h"
 
 #define MASTER
@@ -19,14 +20,10 @@ sig_atomic_t interrupted;
 struct Model *model;
 
 int main(int argc, char *argv[]) {
-    int init[] = { 1000 + 1, 12 };
-    int semid = mksem(IPC_PRIVATE, 2, 0777, init);
-    printf("semid=%d\n", semid);
-
-    printf("0=%d\n", semctl(semid, 0, GETVAL));
-    printf("1=%d\n", semctl(semid, 1, GETVAL));
-
-    rmsem(semid);
+    srand(getpid());
+    for (int i = 0; i < 100; ++i) {
+        printf("0=%d\n", rand_between(20, 40));
+    }
 
 
 
@@ -65,4 +62,7 @@ int main(int argc, char *argv[]) {
 
 void cleanup() {
 
+}
+
+void sigterm_handler() {
 }

@@ -45,17 +45,6 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
-
-    // =========================================
-    //          Setup signal handler
-    // =========================================
-    struct sigaction sa;
-    memset(&sa, 0, sizeof(sa));
-    sa.sa_handler = &sigterm_handler;
-    if (sigaction(SIGTERM, &sa, NULL) == -1) {
-        print(E, "Could not set SIGTERM handler.\n");
-    }
-
     sem_sync(model->ipc->semid, SEM_SYNC);
 
     char *buf;
@@ -65,7 +54,7 @@ int main(int argc, char *argv[]) {
     while (!interrupted) {
         nano_sleep(STEP_ALIMENTAZIONE);
         for (int i = 0; !interrupted && i < N_NUOVI_ATOMI; i++) {
-            sprintf(argvc[2], "%d", 123);
+            sprintf(argvc[2], "%d", rand_between(MIN_N_ATOMICO, N_ATOM_MAX));
             if (fork_execve(argvc) == -1) {
                 // TODO signal master we meltdown :(
                 interrupted = 1;
@@ -80,12 +69,6 @@ int main(int argc, char *argv[]) {
     exit(EXIT_SUCCESS);
 }
 
-void sigterm_handler() {
-    // TODO signal masking to prevent other signals from interrupting this handler
-    // TODO probably not needed as sig_atomic_t is atomic already
-    interrupted = 1;
-}
-
 void cleanup() {
     if (model->res->fifo_fd != -1) {
         fifo_close(model->res->fifo_fd);
@@ -93,4 +76,8 @@ void cleanup() {
     if (model->res->shmaddr != (void *) -1) {
         shmem_detach(model->res->shmaddr);
     }
+}
+
+void sigterm_handler() {
+    interrupted = 1;
 }

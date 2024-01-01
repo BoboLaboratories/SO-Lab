@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include "../lib/signal/signal.h"
 
 #include "model.h"
 
@@ -35,7 +36,10 @@ void init() {
         print(E, "Could not register cleanup function at exit.\n");
         cleanup();
         exit(EXIT_FAILURE);
-    }
+}
+
+    extern void sigterm_handler();
+    set_sighandler(SIGTERM, &sigterm_handler);
 }
 
 static void cleanup_model() {

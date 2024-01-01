@@ -20,6 +20,10 @@ void nano_sleep(long nanos) {
         ;
 }
 
+int rand_between(int min, int max) {
+    return rand() % (max + 1 - min) + min;
+}
+
 int parse_long(char *raw, long *dest) {
     char *endptr;
     errno = 0;
