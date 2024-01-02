@@ -1,4 +1,4 @@
-#include "fifo.h"
+#include "lib/fifo.h"
 
 int fifo_create(const char *pathname, mode_t flags) {
     int fifo_fd = mkfifo(pathname, flags);

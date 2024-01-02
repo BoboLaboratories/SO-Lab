@@ -7,8 +7,8 @@
 #include <printf.h>
 #include <sys/wait.h>
 
-#include "util.h"
-#include "../console/console.h"
+#include "lib/util.h"
+#include "lib/console.h"
 
 void nano_sleep(long nanos) {
     extern sig_atomic_t interrupted;

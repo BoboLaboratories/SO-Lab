@@ -4,8 +4,8 @@
 #include <fcntl.h>
 #include <sys/shm.h>
 
-#include "../util/util.h"
-#include "../console/console.h"
+#include "util.h"
+#include "console.h"
 
 int shmem_create(key_t key, size_t size, int shmflg);
 void *shmem_attach(int shmid);

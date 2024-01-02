@@ -4,8 +4,8 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 
-#include "../util/util.h"
-#include "../console/console.h"
+#include "util.h"
+#include "console.h"
 
 #define FIFO ".so_fifo"
 

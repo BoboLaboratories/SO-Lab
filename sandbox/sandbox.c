@@ -9,10 +9,10 @@
 #include <stdlib.h>
 #include <signal.h>
 
-#include "../lib/lifo/lifo.h"
-#include "../lib/sem/sem.h"
-#include "../lib/util/util.h"
-#include "../lib/shmem/shmem.h"
+#include "lib/lifo.h"
+#include "lib/sem.h"
+#include "lib/util.h"
+#include "lib/shmem.h"
 
 #define MASTER
 

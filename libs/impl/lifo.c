@@ -1,9 +1,9 @@
 #include <math.h>
 #include <string.h>
 
-#include "lifo.h"
-#include "../sem/sem.h"
-#include "../shmem/shmem.h"
+#include "lib/lifo.h"
+#include "lib/sem.h"
+#include "lib/shmem.h"
 
 #define POP  0
 #define PUSH 1

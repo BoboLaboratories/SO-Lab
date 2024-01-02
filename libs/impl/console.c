@@ -3,7 +3,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "console.h"
+#include "lib/console.h"
 
 #define RESET       "\e[0m"
 #define RED         "\e[0;31m"

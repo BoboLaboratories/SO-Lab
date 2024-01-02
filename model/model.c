@@ -1,5 +1,6 @@
 #include <stdlib.h>
-#include "../lib/signal/signal.h"
+
+#include "lib/sig.h"
 
 #include "model.h"
 

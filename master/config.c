@@ -1,9 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "../lib/console/console.h"
-#include "../lib/util/util.h"
-#include "../model/model.h"
+#include "model.h"
+#include "lib/util.h"
+#include "lib/console.h"
 
 static const char *variables[9] = {
     "SIM_DURATION",

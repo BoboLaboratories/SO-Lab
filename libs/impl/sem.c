@@ -1,9 +1,9 @@
 #include <limits.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 
-#include "sem.h"
-#include "errno.h"
+#include "lib/sem.h"
 
 struct Init {
     int sem_num;

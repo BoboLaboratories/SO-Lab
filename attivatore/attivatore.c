@@ -1,8 +1,6 @@
 #include <signal.h>
 
-#include "../lib/util/util.h"
-#include "../lib/config.h"
-#include "../lib/signal/signal.h"
+#include "lib/sig.h"
 
 void signal_handler(int signum);
 

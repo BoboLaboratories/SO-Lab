@@ -1,6 +1,6 @@
 #include <stdlib.h>
 
-#include "shmem.h"
+#include "lib/shmem.h"
 
 int shmem_create(key_t key, size_t size, int shmflg) {
     int shmid = shmget(key, size, shmflg);

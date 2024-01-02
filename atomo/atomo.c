@@ -4,10 +4,10 @@
 #include <math.h>
 #endif
 
-#include "../model/model.h"
-#include "../lib/sem/sem.h"
-#include "../lib/shmem/shmem.h"
-#include "../lib/signal/signal.h"
+#include "model.h"
+#include "lib/sem.h"
+#include "lib/shmem.h"
+#include "lib/sig.h"
 
 void signal_handler(int signum);
 

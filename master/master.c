@@ -6,13 +6,13 @@
 #include <sys/shm.h>
 #include <sys/stat.h>
 
+#include "model.h"
 #include "config.h"
-#include "../model/model.h"
-#include "../lib/sem/sem.h"
-#include "../lib/fifo/fifo.h"
-#include "../lib/lifo/lifo.h"
-#include "../lib/shmem/shmem.h"
-#include "../lib/signal/signal.h"
+#include "lib/sig.h"
+#include "lib/sem.h"
+#include "lib/fifo.h"
+#include "lib/lifo.h"
+#include "lib/shmem.h"
 
 static void shutdown(int signum, int exit_status);
 void signal_handler(int signum);
@@ -173,7 +173,7 @@ int main(int argc, char *argv[]) {
     model->res->fifo_fd = -1;
 
     // Waiting for child processes
-    print(I, "Waiting for all processes to be ready..");
+    print(I, "Waiting for all process to be ready..\n");
     sem_sync(model->ipc->semid, SEM_SYNC);
 
 

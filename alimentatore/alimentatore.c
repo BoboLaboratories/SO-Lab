@@ -4,12 +4,12 @@
 #include <stdlib.h>
 #include <signal.h>
 
-#include "../lib/ipc.h"
-#include "../model/model.h"
-#include "../lib/sem/sem.h"
-#include "../lib/fifo/fifo.h"
-#include "../lib/shmem/shmem.h"
-#include "../lib/signal/signal.h"
+#include "model.h"
+#include "lib/sem.h"
+#include "lib/ipc.h"
+#include "lib/sig.h"
+#include "lib/fifo.h"
+#include "lib/shmem.h"
 
 void signal_handler(int signum);
 
