@@ -64,5 +64,5 @@ void cleanup() {
 
 }
 
-void sigterm_handler() {
+void signal_handler(int signum) {
 }

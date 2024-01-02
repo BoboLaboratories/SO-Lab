@@ -1,20 +1,13 @@
-#include <fcntl.h>
 #include <signal.h>
-#include <stdlib.h>
 
 #include "../lib/util/util.h"
 #include "../lib/config.h"
+#include "../lib/signal/signal.h"
 
-sig_atomic_t interrupted = 0;
-
-void sigterm_handler() {
-    // TODO signal masking to prevent other signals from interrupting this handler
-    // TODO probably not needed as sig_atomic_t is atomic already
-    interrupted = 1;
-}
+void signal_handler(int signum);
 
 struct Model *model;
-
+sig_atomic_t interrupted = 0;
 
 int main(int argc, char *argv[]) {
 //    init_ipc(res, ATTIVATORE);
@@ -73,4 +66,11 @@ int main(int argc, char *argv[]) {
 
 void cleanup() {
 
+}
+
+void signal_handler(int signum) {
+    if (signum == SIGTERM) {
+        set_sighandler(SIGTERM, SIG_IGN);
+        interrupted = 1;
+    }
 }

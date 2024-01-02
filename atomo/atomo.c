@@ -1,16 +1,21 @@
-#include <math.h>
 #include <stdlib.h>
+
+#ifdef FISSION_HALF
+#include <math.h>
+#endif
 
 #include "../model/model.h"
 #include "../lib/sem/sem.h"
 #include "../lib/shmem/shmem.h"
 #include "../lib/signal/signal.h"
 
-sig_atomic_t interrupted = 0;
-sig_atomic_t fission = 0;
-struct Model *model;
+void signal_handler(int signum);
 
-static int atomic_number;
+void split(int *atomic_number, int *child_atomic_number);
+
+sig_atomic_t sig;
+struct Model *model;
+sig_atomic_t interrupted = 0;
 
 int main(int argc, char *argv[]) {
     if (argc != 3) {
@@ -18,7 +23,13 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
+    int child_atomic_number;
+    int atomic_number;
+
+    init();
+
     if (parse_int(argv[1], &model->res->shmid) == -1) {
+        DEBUG_BREAKPOINT;
         print(E, "Could not parse shmid (%s).\n", argv[1]);
         exit(EXIT_FAILURE);
     }
@@ -29,41 +40,48 @@ int main(int argc, char *argv[]) {
     }
 
 
-    init();
-
     // =========================================
     //          Setup shared memory
     // =========================================
     if ((model->res->shmaddr = shmem_attach(model->res->shmid)) == (void *) -1) {
         exit(EXIT_FAILURE);
     }
-
     attach_model(model->res->shmaddr);
 
-
-    // Lifo here
-    pid_t pid = getpid();
-    lifo_push(model->lifo, &pid);
-
-    set_sighandler(SIGUSR1, ...);
-
+    set_sighandler(SIGACTV, &signal_handler);
     sem_sync(model->ipc->semid, SEM_SYNC);
 
-    srand(getpid());
-    // Funzione 1
-    int child_atomic_number = rand_between(1, atomic_number - 1);
-    atomic_number = atomic_number - child_atomic_number;
+    pid_t pid = getpid();
+    srand(pid);
 
-    // Funzione 2
-    child_atomic_number = floor((double) atomic_number / 2);
-    atomic_number = atomic_number - child_atomic_number;
-
-    while (pause() == -1 && !interrupted) {
-        if (fission == 1) {
-        
+    char *buf = NULL;
+    char **argvc = NULL;
+    while (!interrupted) {
+        pause();
+        if (sig == SIGACTV) {
+            if (argvc == NULL) {
+                prargs("atomo", &argvc, &buf, 2, ITC_SIZE);
+                sprintf(argvc[1], "%d", model->res->shmid);
+            }
+            split(&atomic_number, &child_atomic_number);
+            sprintf(argvc[2], "%d", child_atomic_number);
+            pid_t child_pid = fork_execve(argvc);
+            if (child_pid != -1) {
+                lifo_push(model->lifo, &pid);
+                lifo_push(model->lifo, &child_pid);
+            } else {
+                kill(model->ipc->master, SIGMELT);
+                break;
+            }
         }
+        DEBUG_BREAKPOINT;
     }
 
+    if (argvc != NULL) {
+        frargs(argvc, buf);
+    }
+
+    wait_children();
 
     exit(EXIT_SUCCESS);
 }
@@ -72,13 +90,24 @@ void cleanup() {
     if (model->res->shmaddr != (void *) -1) {
         shmem_detach(model->res->shmaddr);
     }
-    // TODO: cleanup lifo
 }
 
-void sigterm_handler() {
-    interrupted = 1;
+void signal_handler(int signum) {
+    sig = signum;
+    if (signum == SIGTERM) {
+        set_sighandler(SIGTERM, SIG_IGN);
+        kill(0, SIGTERM);
+        interrupted = 1;
+    }
 }
 
-void sigusr1_handler() {
-    fission = 1;
+void split(int *atomic_number, int *child_atomic_number) {
+#if defined(FISSION_HALF)
+    *child_atomic_number = floor((double) *atomic_number / 2);
+    *atomic_number = *atomic_number - *child_atomic_number;
+#elif defined(FISSION_OTHER)
+#else
+    *child_atomic_number = rand_between(1, *atomic_number - 1);
+    *atomic_number = *atomic_number - *child_atomic_number;
+#endif
 }

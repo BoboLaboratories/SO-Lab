@@ -12,6 +12,10 @@
 
 #define SEM_COUNT           6
 
+
+#define SIGACTV     SIGUSR1
+#define SIGMELT     SIGUSR2
+
 struct Ipc {
     int semid;
     pid_t master;

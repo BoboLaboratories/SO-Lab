@@ -11,6 +11,7 @@
 
 #ifdef MASTER
 enum Status {
+    STARTING,
     RUNNING,
     TIMEOUT,
     EXPLODE,

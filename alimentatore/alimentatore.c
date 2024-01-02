@@ -3,18 +3,18 @@
 #include <fcntl.h>
 #include <stdlib.h>
 #include <signal.h>
-#include <string.h>
 
 #include "../lib/ipc.h"
 #include "../model/model.h"
 #include "../lib/sem/sem.h"
 #include "../lib/fifo/fifo.h"
 #include "../lib/shmem/shmem.h"
+#include "../lib/signal/signal.h"
 
-void sigterm_handler();
+void signal_handler(int signum);
 
-sig_atomic_t interrupted = 0;
 struct Model *model;
+sig_atomic_t interrupted = 0;
 
 int main(int argc, char *argv[]) {
     if (argc != 2) {
@@ -55,7 +55,10 @@ int main(int argc, char *argv[]) {
         nano_sleep(STEP_ALIMENTAZIONE);
         for (int i = 0; !interrupted && i < N_NUOVI_ATOMI; i++) {
             sprintf(argvc[2], "%d", rand_between(MIN_N_ATOMICO, N_ATOM_MAX));
-            if (fork_execve(argvc) == -1) {
+            pid_t child_pid = fork_execve(argvc);
+            if (child_pid != -1) {
+                write(model->res->fifo_fd, &child_pid, sizeof(pid_t));
+            } else {
                 // TODO signal master we meltdown :(
                 interrupted = 1;
             }
@@ -78,6 +81,10 @@ void cleanup() {
     }
 }
 
-void sigterm_handler() {
-    interrupted = 1;
+void signal_handler(int signum) {
+    if (signum == SIGTERM) {
+        set_sighandler(SIGTERM, SIG_IGN);
+        kill(0, SIGTERM);
+        interrupted = 1;
+    }
 }

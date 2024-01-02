@@ -36,10 +36,10 @@ void init() {
         print(E, "Could not register cleanup function at exit.\n");
         cleanup();
         exit(EXIT_FAILURE);
-}
+    }
 
-    extern void sigterm_handler();
-    set_sighandler(SIGTERM, &sigterm_handler);
+    extern void signal_handler();
+    set_sighandler(SIGTERM, &signal_handler);
 }
 
 static void cleanup_model() {

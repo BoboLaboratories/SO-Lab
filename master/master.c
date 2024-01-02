@@ -2,10 +2,8 @@
 #include <malloc.h>
 #include <stdlib.h>
 #include <string.h>
-#include <limits.h>
 #include <unistd.h>
 #include <sys/shm.h>
-#include <sys/sem.h>
 #include <sys/stat.h>
 
 #include "config.h"
@@ -14,15 +12,21 @@
 #include "../lib/fifo/fifo.h"
 #include "../lib/lifo/lifo.h"
 #include "../lib/shmem/shmem.h"
+#include "../lib/signal/signal.h"
 
-sig_atomic_t interrupted = 0;
-struct Model *model;
+static void shutdown(int signum, int exit_status);
+void signal_handler(int signum);
 
 #define INHIBITOR_FLAG  0
 
 static int flags[1] = {
-    [INHIBITOR_FLAG] = 0
+        [INHIBITOR_FLAG] = 0
 };
+
+enum Status status = STARTING;
+
+struct Model *model;
+sig_atomic_t interrupted = 0;
 
 int main(int argc, char *argv[]) {
     // check for flags
@@ -111,57 +115,38 @@ int main(int argc, char *argv[]) {
     }
 
 
-//
-//    union semun se;
-//    se.array = malloc(SEM_COUNT * sizeof(unsigned short));
-//    se.array[SEM_SYNC] = nproc <= USHRT_MAX ? (short) nproc : 0;
-//    se.array[SEM_INHIBITOR_ON] = ;
-//    se.array[SEM_INHIBITOR] = 0;
-//    se.array[SEM_MASTER] = 1;
-//    se.array[SEM_LIFO] = 1;
-//    se.array[SEM_ATOM] = 1;
-//
-//    int res = semctl(model->ipc->semid, 0, SETALL, se);
-//    free(se.array);
-//    if (res == -1) {
-//        print(E, "Could not initialize semaphore set.\n");
-//        exit(EXIT_FAILURE);
-//    }
-//
-//    if (nproc > USHRT_MAX) {
-//        se.val = nproc;
-//        if (semctl(model->ipc->semid, SEM_SYNC, SETVAL, se) == -1) {
-//            print(E, "Could not initialize sync semaphore.\n");
-//            exit(EXIT_FAILURE);
-//        }
-//    }
-
-
     // =========================================
     //          Forking alimentatore
     // =========================================
+
     char *buf;
     char **argvc;
     prargs("alimentatore", &argvc, &buf, 1, ITC_SIZE);
     sprintf(argvc[1], "%d", model->res->shmid);
-    int res = fork_execve(argvc);
+    pid_t child_pid = fork_execve(argvc);
     frargs(argvc, buf);
-    if (res == -1) {
-        exit(EXIT_FAILURE);
+    if (child_pid == -1) {
+        shutdown(SIGMELT, EXIT_FAILURE);
     }
-
-    // =========================================
-    //           Forking attivatore
-    // =========================================
-    if (flags[INHIBITOR_FLAG]) {
-        // TODO spawn attivatore
-    }
-
 
     // =========================================
     //           Forking inibitore
     // =========================================
-    // TODO spawn inibitore
+    if (flags[INHIBITOR_FLAG]) {
+        // TODO
+    }
+
+
+    // =========================================
+    //           Forking attivatore
+    // =========================================
+    prargs("attivatore", &argvc, &buf, 1, ITC_SIZE);
+    sprintf(argvc[1], "%d", model->res->shmid);
+    child_pid = fork_execve(argvc);
+    frargs(argvc, buf);
+    if (child_pid == -1) {
+        shutdown(SIGMELT, EXIT_FAILURE);
+    }
 
 
     // =========================================
@@ -169,13 +154,17 @@ int main(int argc, char *argv[]) {
     // =========================================
     prargs("atomo", &argvc, &buf, 2, ITC_SIZE);
     sprintf(argvc[1], "%d", model->res->shmid);
-    for (int i = 0; res != -1 && i < N_ATOMI_INIT; i++) {
+    for (int i = 0; child_pid != -1 && i < N_ATOMI_INIT; i++) {
         sprintf(argvc[2], "%d", rand_between(MIN_N_ATOMICO, N_ATOM_MAX));
-        res = fork_execve(argvc);
+        child_pid = fork_execve(argvc);
+        if (child_pid != -1) {
+            write(model->res->fifo_fd, &child_pid, sizeof(pid_t));
+        }
     }
+
     frargs(argvc, buf);
-    if (res == -1) {
-        exit(EXIT_FAILURE);
+    if (child_pid == -1) {
+        shutdown(SIGMELT, EXIT_FAILURE);
     }
 
     // master will fork no more atoms,
@@ -183,24 +172,28 @@ int main(int argc, char *argv[]) {
     fifo_close(model->res->fifo_fd);
     model->res->fifo_fd = -1;
 
-
     // Waiting for child processes
+    print(I, "Waiting for all processes to be ready..");
     sem_sync(model->ipc->semid, SEM_SYNC);
 
 
     // =========================================
     //              Main logic
     // =========================================
+    status = RUNNING;
     print(I, "All processes ready, simulation start.\n");
 
 
     // =========================================
     //               Cleanup
     // =========================================
+    shutdown(SIGTERM, EXIT_SUCCESS);
+}
 
+static void shutdown(int signum, int exit_status) {
+    raise(signum);
     wait_children();
-
-    exit(EXIT_SUCCESS);
+    exit(exit_status);
 }
 
 void cleanup() {
@@ -213,8 +206,19 @@ void cleanup() {
     if (model->res->fifo_fd != -1) {
         fifo_close(model->res->fifo_fd);
     }
+    if (model->lifo != NULL) {
+        rmlifo(model->lifo);
+    }
 }
 
-void sigterm_handler() {
-    interrupted = 1;
+void signal_handler(int signum) {
+    if (signum == SIGMELT) {
+        status = MELTDOWN;
+    }
+
+    if (signum == SIGMELT || signum == SIGTERM) {
+        set_sighandler(SIGTERM, SIG_IGN);
+        kill(0, SIGTERM);
+        interrupted = 1;
+    }
 }
