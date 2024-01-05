@@ -71,10 +71,13 @@ int rmlifo(struct Lifo *lifo) {
     return ret;
 }
 
-static void swap(struct Lifo *lifo, size_t size) {
+static void swap(struct Lifo *lifo, size_t size, void **dest) {
     int tmp;
     if ((tmp = shmem_create(IPC_PRIVATE, size, S_IWUSR | S_IRUSR | IPC_CREAT)) != -1) {
         if (lifo->shmid != -1) {
+            void *src = shmem_attach(lifo->shmid);
+            dest = shmem_attach(tmp);
+            memcpy(dest, src, lifo->length * lifo->elem_size);
             shmem_rmark(lifo->shmid);
         }
         lifo->shmid = tmp;
@@ -84,17 +87,23 @@ static void swap(struct Lifo *lifo, size_t size) {
 static void *attach(struct Lifo *lifo, int pushing) {
     int n_segments = ceil((double) lifo->length / lifo->segment_length);
     int free_slots = n_segments * lifo->segment_length - lifo->length;
-    size_t size = -1;
+    int new_n_segments = n_segments;
 
     if (pushing && free_slots == 0) {
-        size = (n_segments + 1) * lifo->segment_length * lifo->elem_size;
+        new_n_segments++;
     } else if (free_slots >= 2 * lifo->segment_length) {
-        size = (n_segments - 1) * lifo->segment_length * lifo->elem_size;
+        new_n_segments--;
     }
 
-    if (size != (size_t) -1) {
-        swap(lifo, size);
+    void *dest = NULL;
+    if (n_segments != new_n_segments) {
+        size_t size = new_n_segments * lifo->segment_length * lifo->elem_size;
+        swap(lifo, size, &dest);
     }
 
-    return shmem_attach(lifo->shmid);
+    if (dest == NULL) {
+        dest = shmem_attach(lifo->shmid);
+    }
+
+    return dest;
 }

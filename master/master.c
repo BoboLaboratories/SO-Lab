@@ -15,6 +15,7 @@
 #include "lib/shmem.h"
 
 static void shutdown(int signum, int exit_status);
+
 void signal_handler(int signum);
 
 #define INHIBITOR_FLAG  0
@@ -46,9 +47,9 @@ int main(int argc, char *argv[]) {
     //           Setup shared memory
     // =========================================
     size_t shmize = sizeof(struct Config)
-            + sizeof(struct Stats)
-            + sizeof(struct Ipc)
-            + sizeof(struct Lifo);
+                    + sizeof(struct Stats)
+                    + sizeof(struct Ipc)
+                    + sizeof(struct Lifo);
 
     if ((model->res->shmid = shmem_create(IPC_PRIVATE, shmize, S_IWUSR | S_IRUSR | IPC_CREAT)) != -1) {
         model->res->shmaddr = shmem_attach(model->res->shmid);
@@ -76,7 +77,7 @@ int main(int argc, char *argv[]) {
     // =========================================
     //               Setup fifo
     // =========================================
-    if ((fifo_create(FIFO, S_IWUSR | S_IRUSR) == -1) || (model->res->fifo_fd = fifo_open(FIFO, O_RDWR)) == -1)  {
+    if ((fifo_create(FIFO, S_IWUSR | S_IRUSR) == -1) || (model->res->fifo_fd = fifo_open(FIFO, O_RDWR)) == -1) {
         // fifo_create automatically setups fifo removal at exit,
         // nothing else to be done if fifo_open fails
         exit(EXIT_FAILURE);
@@ -102,6 +103,8 @@ int main(int argc, char *argv[]) {
 
     int init[SEM_COUNT] = {
             [SEM_INHIBITOR_ON] = flags[INHIBITOR_FLAG],
+            [SEM_ALIMENTATORE] = 0,
+            [SEM_ATTIVATORE] = 1,   // TODO scrivi bene che una fork ce la lasciamo di sicuro perche' assumiamo di avere almeno uno slot processi
             [SEM_INHIBITOR] = 0,
             [SEM_SYNC] = nproc,
             [SEM_MASTER] = 1,
@@ -118,7 +121,6 @@ int main(int argc, char *argv[]) {
     // =========================================
     //          Forking alimentatore
     // =========================================
-
     char *buf;
     char **argvc;
     prargs("alimentatore", &argvc, &buf, 1, ITC_SIZE);
@@ -128,6 +130,7 @@ int main(int argc, char *argv[]) {
     if (child_pid == -1) {
         shutdown(SIGMELT, EXIT_FAILURE);
     }
+
 
     // =========================================
     //           Forking inibitore
@@ -148,6 +151,9 @@ int main(int argc, char *argv[]) {
         shutdown(SIGMELT, EXIT_FAILURE);
     }
 
+
+    // TODO: remove
+    model->stats->n_atoms = N_ATOMI_INIT;
 
     // =========================================
     //              Forking atoms
@@ -182,6 +188,23 @@ int main(int argc, char *argv[]) {
     // =========================================
     status = RUNNING;
     print(I, "All processes ready, simulation start.\n");
+
+    while (!interrupted) {
+        sleep(1);
+
+        if (sem_acquire(model->ipc->semid, SEM_MASTER, 0) == -1) {
+            // TODO: Error handling
+            interrupted = 0;
+        }
+
+        // TODO print stats and main logic
+        print(I, "E: %d, W: %d, A: %d \n", model->stats->curr_energy, model->stats->n_wastes, model->stats->n_atoms);
+
+        if (sem_release(model->ipc->semid, SEM_MASTER, 0) == -1) {
+            // TODO error handling
+            interrupted = 0;
+        }
+    }
 
 
     // =========================================

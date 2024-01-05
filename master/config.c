@@ -11,8 +11,8 @@ static const char *variables[9] = {
     "N_ATOMI_INIT",
     "N_NUOVI_ATOMI",
 
-    "MIN_N_ATOMICO",
     "N_ATOM_MAX",
+    "MIN_N_ATOMICO",
 
     "STEP_ATTIVATORE",
     "STEP_ALIMENTAZIONE",
@@ -54,7 +54,7 @@ int load_config() {
     }
 
     // N_ATOM_MAX <= MIN_N_ATOMICO
-    if (*(addr + 4) <= *(addr + 3)) {
+    if (*(addr + 3) <= *(addr + 4)) {
         print(E, "Configuration error: N_ATOM_MAX must be greater than MIN_N_ATOMICO.\n");
         err = 1;
     }

@@ -7,6 +7,7 @@ export CC=gcc
 
 LIBS_FULL_PATHS = $(addprefix bin/libs/,$(LIBS))
 MAIN_FULL_PATHS = $(addprefix bin/,$(MAIN))
+HEADER_DIRECTORIES = libs model
 
 # Collection of common libraries used by any type of process
 LIBS = console shmem util fifo lifo sem sig
@@ -35,7 +36,7 @@ clean:
 # Directive for building any main component
 bin/%: %/*.c model/model.c $(LIBS_FULL_PATHS)
 	$(eval DEF := $(shell tr '[:lower:]' '[:upper:]' <<< $*))
-	$(CC) $(CFLAGS) -D$(DEF) $(filter %.c,$^) -o $@ -Ilibs -Imodel -Lbin/libs -lm $(addprefix -l:,$(LIBS))
+	$(CC) $(CFLAGS) -D$(DEF) $(filter %.c,$^) -o $@ $(addprefix -I,$(HEADER_DIRECTORIES)) -Lbin/libs -lm $(addprefix -l:,$(LIBS))
 
 # Directive for making any library
 bin/libs/%: libs/impl/%.c | makedir

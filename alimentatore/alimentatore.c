@@ -7,7 +7,6 @@
 #include "model.h"
 #include "lib/sem.h"
 #include "lib/ipc.h"
-#include "lib/sig.h"
 #include "lib/fifo.h"
 #include "lib/shmem.h"
 
@@ -83,8 +82,6 @@ void cleanup() {
 
 void signal_handler(int signum) {
     if (signum == SIGTERM) {
-        set_sighandler(SIGTERM, SIG_IGN);
-        kill(0, SIGTERM);
         interrupted = 1;
     }
 }

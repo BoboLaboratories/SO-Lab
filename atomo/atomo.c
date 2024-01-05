@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <errno.h>
 
 #ifdef FISSION_HALF
 #include <math.h>
@@ -13,8 +14,8 @@ void signal_handler(int signum);
 
 void split(int *atomic_number, int *child_atomic_number);
 
-sig_atomic_t sig;
 struct Model *model;
+sig_atomic_t sig;
 sig_atomic_t interrupted = 0;
 
 int main(int argc, char *argv[]) {
@@ -29,7 +30,6 @@ int main(int argc, char *argv[]) {
     init();
 
     if (parse_int(argv[1], &model->res->shmid) == -1) {
-        DEBUG_BREAKPOINT;
         print(E, "Could not parse shmid (%s).\n", argv[1]);
         exit(EXIT_FAILURE);
     }
@@ -49,24 +49,57 @@ int main(int argc, char *argv[]) {
     attach_model(model->res->shmaddr);
 
     set_sighandler(SIGACTV, &signal_handler);
+    set_sighandler(SIGWAST, &signal_handler);
     sem_sync(model->ipc->semid, SEM_SYNC);
 
     pid_t pid = getpid();
     srand(pid);
 
-    char *buf = NULL;
-    char **argvc = NULL;
     while (!interrupted) {
+        // wait until no action is requested
         pause();
+
+        // if fission was requested
         if (sig == SIGACTV) {
-            if (argvc == NULL) {
-                prargs("atomo", &argvc, &buf, 2, ITC_SIZE);
-                sprintf(argvc[1], "%d", model->res->shmid);
+            // if this atom should become waste
+            if (atomic_number < MIN_N_ATOMICO) {
+                sem_acquire(model->ipc->semid, SEM_MASTER, 0);
+                model->stats->n_wastes++;
+                model->stats->n_atoms--;
+                sem_release(model->ipc->semid, SEM_MASTER, 0);
+                print(W, "%d(%d) became waste\n", pid, atomic_number);
+                break;
             }
+
+            // prepare child arguments and fork a new atom
             split(&atomic_number, &child_atomic_number);
-            sprintf(argvc[2], "%d", child_atomic_number);
-            pid_t child_pid = fork_execve(argvc);
+            sprintf(argv[2], "%d", child_atomic_number);
+            pid_t child_pid = fork_execve(argv);
+
             if (child_pid != -1) {
+                // if fork was successful
+                // produce energy and update stats
+                long energy = (atomic_number * child_atomic_number) - max(atomic_number, child_atomic_number);
+                print(W, "%d(%d) %d(%d) = %ld.\n", pid, atomic_number, child_pid, child_atomic_number, energy);
+                sem_acquire(model->ipc->semid, SEM_MASTER, 0);
+                model->stats->curr_energy += energy;
+                model->stats->n_fissions++;
+                model->stats->n_atoms++;
+
+                // wake up inhibitor, if activated, to inhibit the energy we just produced
+                struct sembuf sops;
+                sem_buf(&sops, SEM_INHIBITOR_ON, -1, IPC_NOWAIT);
+                sem_buf(&sops, SEM_INHIBITOR, 1, 0);
+                if (sem_op(model->ipc->semid, &sops, 2) == -1) {
+                    if (errno == EAGAIN) {
+                        // if inhibitor is deactivated, give control back to master process
+                        sem_release(model->ipc->semid, SEM_MASTER, 0);
+                    } else {
+                        // TODO error handling
+                    }
+                }
+
+                // put this atom and the new one on top of the lifo
                 lifo_push(model->lifo, &pid);
                 lifo_push(model->lifo, &child_pid);
             } else {
@@ -74,11 +107,6 @@ int main(int argc, char *argv[]) {
                 break;
             }
         }
-        DEBUG_BREAKPOINT;
-    }
-
-    if (argvc != NULL) {
-        frargs(argvc, buf);
     }
 
     wait_children();
@@ -95,8 +123,6 @@ void cleanup() {
 void signal_handler(int signum) {
     sig = signum;
     if (signum == SIGTERM) {
-        set_sighandler(SIGTERM, SIG_IGN);
-        kill(0, SIGTERM);
         interrupted = 1;
     }
 }

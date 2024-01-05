@@ -20,11 +20,6 @@ sig_atomic_t interrupted;
 struct Model *model;
 
 int main(int argc, char *argv[]) {
-    srand(getpid());
-    for (int i = 0; i < 100; ++i) {
-        printf("0=%d\n", rand_between(20, 40));
-    }
-
 
 
 //    int semid = semget(IPC_PRIVATE, 1, S_IWUSR | S_IRUSR);

@@ -80,6 +80,18 @@ void sem_buf(struct sembuf *sop, unsigned short sem_num, short sem_op, short sem
     sop->sem_op = sem_op;
 }
 
+int sem_acquire(int semid, unsigned short sem_num, short sem_flg) {
+    struct sembuf sops;
+    sem_buf(&sops, sem_num, 1, sem_flg);
+    return sem_op(semid, &sops, 1);
+}
+
+int sem_release(int semid, unsigned short sem_num, short sem_flg) {
+    struct sembuf sops;
+    sem_buf(&sops, sem_num, -1, sem_flg);
+    return sem_op(semid, &sops, 1);
+}
+
 int sem_op(int semid, struct sembuf *sops, int nsops) {
     return semop(semid, sops, nsops);
 }
@@ -87,3 +99,4 @@ int sem_op(int semid, struct sembuf *sops, int nsops) {
 int rmsem(int semid) {
     return semctl(semid, 0, IPC_RMID);
 }
+

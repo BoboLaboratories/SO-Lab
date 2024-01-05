@@ -9,6 +9,8 @@
 #define CHARS_PER_INT   (3 * sizeof(int) + 1)
 #define ITC_SIZE        (CHARS_PER_INT * sizeof(char))
 
+#define max(x, y) (((x) > (y)) ? (x) : (y))
+
 // misc
 void nano_sleep(long nanos);
 int rand_between(int min, int max);

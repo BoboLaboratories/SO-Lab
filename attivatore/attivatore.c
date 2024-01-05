@@ -68,7 +68,6 @@ void cleanup() {
 
 void signal_handler(int signum) {
     if (signum == SIGTERM) {
-        set_sighandler(SIGTERM, SIG_IGN);
         interrupted = 1;
     }
 }
