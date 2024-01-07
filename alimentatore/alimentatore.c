@@ -56,7 +56,7 @@ int main(int argc, char *argv[]) {
             sprintf(argvc[2], "%d", rand_between(MIN_N_ATOMICO, N_ATOM_MAX));
             pid_t child_pid = fork_execve(argvc);
             if (child_pid != -1) {
-                write(model->res->fifo_fd, &child_pid, sizeof(pid_t));
+                fifo_add(model->res->fifo_fd, &child_pid, sizeof(pid_t));
             } else {
                 // TODO signal master we meltdown :(
                 interrupted = 1;

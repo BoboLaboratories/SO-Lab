@@ -65,6 +65,7 @@ int main(int argc, char *argv[]) {
     }
 
     attach_model(model->res->shmaddr);
+    print(D, "lifo null: %d\n", model->lifo == NULL);
 
     // initialize shared data
     memset(model->stats, 0, sizeof(struct Stats));
@@ -88,7 +89,7 @@ int main(int argc, char *argv[]) {
     //               Setup lifo
     // =========================================
     // TODO 100 come segment_length a 4 occhi chiusi, meglio avere qualche euristica
-    mklifo(model->lifo, 100, sizeof(pid_t), model->ipc->semid, SEM_LIFO);
+    mklifo(model->lifo, 10, sizeof(pid_t), model->ipc->semid, SEM_LIFO);
 
 
     // =========================================
@@ -98,11 +99,11 @@ int main(int argc, char *argv[]) {
     int nproc = N_ATOMI_INIT                // atomi
                 + flags[INHIBITOR_FLAG]     // inibitore
                 + 1                         // alimentatore
-                + 0                         // attivatore
+                + 1                         // attivatore
                 + 1;                        // master
 
     int init[SEM_COUNT] = {
-            [SEM_INHIBITOR_ON] = flags[INHIBITOR_FLAG],
+            [SEM_INHIBITOR_ON] = flags[INHIBITOR_FLAG] ? 0 : 1,
             [SEM_ALIMENTATORE] = 0,
             [SEM_ATTIVATORE] = 1,   // TODO scrivi bene che una fork ce la lasciamo di sicuro perche' assumiamo di avere almeno uno slot processi
             [SEM_INHIBITOR] = 0,
@@ -152,9 +153,6 @@ int main(int argc, char *argv[]) {
     }
 
 
-    // TODO: remove
-    model->stats->n_atoms = N_ATOMI_INIT;
-
     // =========================================
     //              Forking atoms
     // =========================================
@@ -164,7 +162,7 @@ int main(int argc, char *argv[]) {
         sprintf(argvc[2], "%d", rand_between(MIN_N_ATOMICO, N_ATOM_MAX));
         child_pid = fork_execve(argvc);
         if (child_pid != -1) {
-            write(model->res->fifo_fd, &child_pid, sizeof(pid_t));
+            fifo_add(model->res->fifo_fd, &child_pid, sizeof(pid_t));
         }
     }
 
@@ -179,7 +177,7 @@ int main(int argc, char *argv[]) {
     model->res->fifo_fd = -1;
 
     // Waiting for child processes
-    print(I, "Waiting for all process to be ready..\n");
+    print(I, "Waiting for all processes to be ready..\n");
     sem_sync(model->ipc->semid, SEM_SYNC);
 
 
@@ -200,12 +198,26 @@ int main(int argc, char *argv[]) {
         // TODO print stats and main logic
         print(I, "E: %d, W: %d, A: %d \n", model->stats->curr_energy, model->stats->n_wastes, model->stats->n_atoms);
 
+        if (model->stats->curr_energy >= ENERGY_DEMAND) {
+            model->stats->curr_energy -= ENERGY_DEMAND;
+            if (model->stats->curr_energy >= ENERGY_EXPLODE_THRESHOLD) {
+                status = EXPLODE;
+            }
+        } else {
+            status = BLACKOUT;
+        }
+
+        if (status != RUNNING) {
+            raise(SIGTERM);
+        }
+
         if (sem_release(model->ipc->semid, SEM_MASTER, 0) == -1) {
             // TODO error handling
             interrupted = 0;
         }
     }
 
+    print(I, "Status: %d\n", status);
 
     // =========================================
     //               Cleanup
@@ -223,14 +235,14 @@ void cleanup() {
     if (model->ipc->semid != -1) {
         rmsem(model->ipc->semid);
     }
-    if (model->res->shmid != -1 && model->res->shmaddr != (void *) -1) {
-        shmem_detach(model->res->shmaddr);
-    }
     if (model->res->fifo_fd != -1) {
         fifo_close(model->res->fifo_fd);
     }
     if (model->lifo != NULL) {
         rmlifo(model->lifo);
+    }
+    if (model->res->shmaddr != (void *) -1) {
+        shmem_detach(model->res->shmaddr);
     }
 }
 

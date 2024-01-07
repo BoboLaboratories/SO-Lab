@@ -40,22 +40,28 @@ void lifo_push(struct Lifo *lifo, void *data) {
     sem_op(lifo->semid, &sops, 1);
 }
 
-void lifo_pop(struct Lifo *lifo, void *data) {
+int lifo_pop(struct Lifo *lifo, void *data) {
     struct sembuf sops;
     sem_buf(&sops, lifo->sem_num, -1, 0);
     sem_op(lifo->semid, &sops, 1);
 
-    void *shmaddr;
-    if ((shmaddr = attach(lifo, POP)) != (void *) -1) {
-        lifo->length--;
-        size_t offset = lifo->length * lifo->elem_size;
-        memcpy(data, shmaddr + offset, lifo->elem_size);
+    int ret = -1;
+    if (lifo->length > 0) {
+        void *shmaddr;
+        if ((shmaddr = attach(lifo, POP)) != (void *) -1) {
+            lifo->length--;
+            size_t offset = lifo->length * lifo->elem_size;
+            memcpy(data, shmaddr + offset, lifo->elem_size);
 
-        shmem_detach(shmaddr);
+            shmem_detach(shmaddr);
+            ret = 0;
+        }
     }
 
     sem_buf(&sops, lifo->sem_num, 1, 0);
     sem_op(lifo->semid, &sops, 1);
+
+    return ret;
 }
 
 int rmlifo(struct Lifo *lifo) {

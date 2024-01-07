@@ -1,6 +1,12 @@
 #include <signal.h>
+#include <stdlib.h>
 
+#include "model.h"
 #include "lib/sig.h"
+#include "lib/sem.h"
+#include "lib/fifo.h"
+#include "lib/util.h"
+#include "lib/shmem.h"
 
 void signal_handler(int signum);
 
@@ -8,58 +14,60 @@ struct Model *model;
 sig_atomic_t interrupted = 0;
 
 int main(int argc, char *argv[]) {
-//    init_ipc(res, ATTIVATORE);
-//
-//    if (parse_int(argv[1], &res->shmid) == -1) {
-//        fail("Could not parse shmid (%s).\n", F_INFO, argv[1]);
-//    }
-//
-//    attach_shmem();
-//    attach_model();
-//
-//    open_fifo(O_RDONLY);
-//
-//    struct sigaction sa;
-//    memset(&sa, 0, sizeof(sa));
-//    sa.sa_handler = &sigterm_handler;
-//    if (sigaction(SIGTERM, &sa, NULL) == -1) {
-//        errno_fail("Could not set SIGTERM handler.\n", F_INFO);
-//    }
-//
-//    pid_t pid;
-//    while (!interrupted) {
-//        nano_sleep(&interrupted, STEP_ATTIVATORE);
-//        int i = 0;
-//        while (!interrupted && i < 1) {
-//            // TODO read ritorna il numero di byte letti se interrotta a meta' da un segnale
-//            if (read(res->fifo_fd, &pid, sizeof(pid_t)) == -1) {
-//
-//            } else {
-//                if (kill(inhib, SIGUSR1) == -1) {
-//                    pid_t atom = ...; // pid preso dalla FIFO
-//                    kill(atom, SIGUSR1);
-//                }
-//
-//                // SIGUSR1 == Segnale di scissione
-//                semop(INH_SEM, 0, ...);
-//                pid_t dest = pid;
-//                // msg = {type: dest};
-//                if (shmem->inhibitor_pid != -1) {
-//                    dest = shmem->inhibitor_pid;
-//                    // msg = {type: dest, target_atom: pid};
-//                }
-//
-//                //
-//                msq_put(msg);
-//                i++;
-//            }
-//        }
-//    }
-//
-//    free_ipc();
-//
-//    exit(EXIT_SUCCESS);
+    if (argc != 2) {
+        print(E, "Usage: %s <shmid>\n", argv[0]);
+        exit(EXIT_FAILURE);
+    }
 
+    init();
+
+
+    // =========================================
+    //          Setup shared memory
+    // =========================================
+    if (parse_int(argv[1], &model->res->shmid) == -1) {
+        print(E, "Could not parse shmid (%s).\n", argv[1]);
+        exit(EXIT_FAILURE);
+    }
+
+    if ((model->res->shmaddr = shmem_attach(model->res->shmid)) == (void *) -1) {
+        exit(EXIT_FAILURE);
+    }
+
+    attach_model(model->res->shmaddr);
+
+
+    // =========================================
+    //              Setup fifo
+    // =========================================
+    if ((model->res->fifo_fd = fifo_open(FIFO, O_RDONLY)) == -1) {
+        exit(EXIT_FAILURE);
+    }
+
+    // activate non-blocking fifo read
+    int fifo_flags = fcntl(model->res->fifo_fd, F_GETFL, 0);
+    fcntl(model->res->fifo_fd, F_SETFL, fifo_flags | O_NONBLOCK);
+
+    // Sem Sync
+    sem_sync(model->ipc->semid, SEM_SYNC);
+
+
+    while (!interrupted) {
+        nano_sleep(STEP_ATTIVATORE);
+        pid_t atom = -1;
+        if (lifo_pop(model->lifo, &atom) == -1) {
+            if (fifo_remove(model->res->fifo_fd, &atom, sizeof(pid_t)) == -1) {
+                // TODO: Error handle (check errno == EAGAIN)
+                // print(W, "Lifo and Fifo are empty, skipping stuff\n");
+                continue;
+            }
+        }
+        if (atom != -1) {
+            kill(atom, SIGACTV);
+        }
+    }
+
+    exit(EXIT_SUCCESS);
 }
 
 void cleanup() {

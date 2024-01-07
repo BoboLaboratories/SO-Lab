@@ -28,10 +28,28 @@ int fifo_open(const char *pathname, int flags) {
     return fifo_fd;
 }
 
+int fifo_add(int fifo_fd, void *data, size_t size) {
+    int ret = 0;
+    if (write(fifo_fd, data, size) != (long) size) {
+        // TODO error handling
+        ret = -1;
+    }
+    return ret;
+}
+
+int fifo_remove(int fifo_fd, void *data, size_t size) {
+    int ret = 0;
+    if (read(fifo_fd, data, size) != (long) size) {
+        // TODO error handling
+        ret = -1;
+    }
+    return ret;
+}
+
 int fifo_close(int fifo_fd) {
     int ret = close(fifo_fd);
     if (ret == -1) {
-        print(E,"Could not close fifo (%d).\n", fifo_fd);
+        print(E, "Could not close fifo (%d).\n", fifo_fd);
     }
 #if defined(DEBUG) || defined(D_FIFO)
     else {

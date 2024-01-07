@@ -28,6 +28,8 @@
   - [ ] signal interruptions
   - [ ] error handling
   - [ ] valori sopra SHRT_MAX danno ERANGE
+- [ ] le system call che ritornano -1 spesso e volentieri hanno piu info in errno e potenzialmente è good practice checkarlo
+- [ ] stostituzione nanosleep con alarm/timer
 
 
 
