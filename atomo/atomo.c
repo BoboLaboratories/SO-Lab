@@ -14,7 +14,7 @@ void signal_handler(int signum);
 
 void split(int *atomic_number, int *child_atomic_number);
 
-struct Model *model;
+struct Model *model = NULL;
 sig_atomic_t sig;
 sig_atomic_t interrupted = 0;
 
@@ -51,9 +51,14 @@ int main(int argc, char *argv[]) {
     set_sighandler(SIGACTV, &signal_handler);
     set_sighandler(SIGWAST, &signal_handler);
 
-    sem_acquire(model->ipc->semid, SEM_MASTER, 0);
+    struct sembuf sops[2];
+    sem_buf(&sops[0], SEM_MASTER, -1, 0);
+    sem_op(model->ipc->semid, sops, 1);
+
     model->stats->n_atoms++;
-    sem_release(model->ipc->semid, SEM_MASTER, 0);
+
+    sem_buf(&sops[0], SEM_MASTER, +1, 0);
+    sem_op(model->ipc->semid, &sops[0], 1);
 
     sem_sync(model->ipc->semid, SEM_SYNC);
 
@@ -68,11 +73,17 @@ int main(int argc, char *argv[]) {
             // if this atom should become waste
             if (atomic_number < MIN_N_ATOMICO) {
                 // TODO: Segnala all'alimentatore che può immettere un atomo (se l'inibitore è presente)
-                sem_acquire(model->ipc->semid, SEM_MASTER, 0);
+                // Acquire MASTER
+                sem_buf(&sops[0], SEM_MASTER, -1, 0);
+                sem_op(model->ipc->semid, &sops[0], 1);
+
                 model->stats->n_wastes++;
                 model->stats->n_atoms--;
-                sem_release(model->ipc->semid, SEM_MASTER, 0);
-                // print(W, "%d(%d) became waste\n", pid, atomic_number);
+
+                // Release MASTER
+                sem_buf(&sops[0], SEM_MASTER, +1, 0);
+                sem_op(model->ipc->semid, &sops[0], 1);
+
                 break;
             }
 
@@ -85,14 +96,14 @@ int main(int argc, char *argv[]) {
                 // if fork was successful
                 // produce energy and update stats
                 long energy = (atomic_number * child_atomic_number) - max(atomic_number, child_atomic_number);
-                // print(W, "%d(%d) %d(%d) = %ld.\n", pid, atomic_number, child_pid, child_atomic_number, energy);
 
-                struct sembuf sops[2];
                 sem_buf(&sops[0], SEM_MASTER, -1, 0);
                 sem_buf(&sops[1], SEM_ATOM, -1, 0);
 
                 sem_op(model->ipc->semid, sops, 2);
                 // TODO: Error handle
+
+                // print(W, "%d(%d) %d(%d) = %ld.\n", pid, atomic_number, child_pid, child_atomic_number, energy);
 
                 model->stats->curr_energy += energy;
                 model->stats->n_fissions++;
@@ -102,16 +113,16 @@ int main(int argc, char *argv[]) {
                 lifo_push(model->lifo, &child_pid);
 
                 // wake up inhibitor, if activated, to inhibit the energy we just produced
-                sem_buf(&sops[0], SEM_INHIBITOR_ON, 0, IPC_NOWAIT);
-                sem_buf(&sops[1], SEM_INHIBITOR, 1, 0);
+                sem_buf(&sops[0], SEM_INIBITORE_ON, 0, IPC_NOWAIT);
+                sem_buf(&sops[1], SEM_INIBITORE, +1, 0);
                 if (sem_op(model->ipc->semid, sops, 2) == -1) {
                     if (errno == EAGAIN) {
                         // if inhibitor is deactivated, give control back to master process
-                        sem_buf(&sops[0], SEM_MASTER, 1, 0);
+                        sem_buf(&sops[0], SEM_MASTER, +1, 0);
                         sem_op(model->ipc->semid, &sops[0], 1);
 
                         // and let another atom perform its job
-                        sem_buf(&sops[0], SEM_ATOM, 1, 0);
+                        sem_buf(&sops[0], SEM_ATOM, +1, 0);
                         sem_op(model->ipc->semid, &sops[0], 1);
                     } else {
                         // TODO error handling
@@ -124,14 +135,14 @@ int main(int argc, char *argv[]) {
         }
     }
 
-//    wait_children();
-
     exit(EXIT_SUCCESS);
 }
 
 void cleanup() {
-    if (model->res->shmaddr != (void *) -1) {
-        shmem_detach(model->res->shmaddr);
+    if (model != NULL) {
+        if (model->res->shmaddr != (void *) -1) {
+            shmem_detach(model->res->shmaddr);
+        }
     }
 }
 

@@ -32,6 +32,13 @@
 - [ ] stostituzione nanosleep con alarm/timer
 
 
+- SEM_ATT e SEM_ALI per controllare i componenti tramite inibitore
+- stampa delle statistiche
+- nano sleep da sostituire con wait dei children e/o pause
+- gestione degli errori tipo errno e -1 su varie sem_op e simili
+- relazione
+- soctl
+
 
 LFT     17/01   06/02
 SO      19/01   14/02

@@ -9,8 +9,8 @@
 #define SEM_MASTER          3
 #define SEM_ATTIVATORE      4
 #define SEM_ALIMENTATORE    5
-#define SEM_INHIBITOR       6
-#define SEM_INHIBITOR_ON    7
+#define SEM_INIBITORE       6
+#define SEM_INIBITORE_ON    7
 
 #define SEM_COUNT           8
 

@@ -5,7 +5,7 @@
 #include "lib/config.h"
 #include "lib/console.h"
 
-#if defined(ATTIVATORE) || defined(ATOMO)
+#if defined(ATTIVATORE) || defined(ATOMO) || defined(INIBITORE)
 #include "lib/lifo.h"
 #endif
 
@@ -34,7 +34,7 @@ struct Model {
     struct Config *config;
     struct Stats *stats;
     struct Ipc *ipc;
-#if defined(MASTER) || defined(ATTIVATORE) || defined(ATOMO)
+#if defined(MASTER) || defined(ATTIVATORE) || defined(ATOMO) || defined(INIBITORE)
     struct Lifo *lifo;
 #endif
     struct Resources {

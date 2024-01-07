@@ -103,10 +103,10 @@ int main(int argc, char *argv[]) {
                 + 1;                        // master
 
     int init[SEM_COUNT] = {
-            [SEM_INHIBITOR_ON] = flags[INHIBITOR_FLAG] ? 0 : 1,
+            [SEM_INIBITORE_ON] = flags[INHIBITOR_FLAG] ? 0 : 1,
             [SEM_ALIMENTATORE] = 0,
             [SEM_ATTIVATORE] = 1,   // TODO scrivi bene che una fork ce la lasciamo di sicuro perche' assumiamo di avere almeno uno slot processi
-            [SEM_INHIBITOR] = 0,
+            [SEM_INIBITORE] = 0,
             [SEM_SYNC] = nproc,
             [SEM_MASTER] = 1,
             [SEM_ATOM] = 1,
@@ -137,7 +137,13 @@ int main(int argc, char *argv[]) {
     //           Forking inibitore
     // =========================================
     if (flags[INHIBITOR_FLAG]) {
-        // TODO
+        prargs("inibitore", &argvc, &buf, 1, ITC_SIZE);
+        sprintf(argvc[1], "%d", model->res->shmid);
+        child_pid = fork_execve(argvc);
+        frargs(argvc, buf);
+        if (child_pid == -1) {
+            shutdown(SIGMELT, EXIT_FAILURE);
+        }
     }
 
 
@@ -189,11 +195,10 @@ int main(int argc, char *argv[]) {
 
     while (!interrupted) {
         sleep(1);
-
-        if (sem_acquire(model->ipc->semid, SEM_MASTER, 0) == -1) {
-            // TODO: Error handling
-            interrupted = 0;
-        }
+        struct sembuf sops;
+        // Acquire MASTER
+        sem_buf(&sops, SEM_MASTER, -1, 0);
+        sem_op(model->ipc->semid, &sops, 1);
 
         // TODO print stats and main logic
         print(I, "E: %d, W: %d, A: %d \n", model->stats->curr_energy, model->stats->n_wastes, model->stats->n_atoms);
@@ -211,10 +216,9 @@ int main(int argc, char *argv[]) {
             raise(SIGTERM);
         }
 
-        if (sem_release(model->ipc->semid, SEM_MASTER, 0) == -1) {
-            // TODO error handling
-            interrupted = 0;
-        }
+        // Realese MASTER
+        sem_buf(&sops, SEM_MASTER, 1, 0);
+        sem_op(model->ipc->semid, &sops, 1);
     }
 
     print(I, "Status: %d\n", status);

@@ -12,7 +12,7 @@
 
 void signal_handler(int signum);
 
-struct Model *model;
+struct Model *model = NULL;
 sig_atomic_t interrupted = 0;
 
 int main(int argc, char *argv[]) {
@@ -72,11 +72,13 @@ int main(int argc, char *argv[]) {
 }
 
 void cleanup() {
-    if (model->res->fifo_fd != -1) {
-        fifo_close(model->res->fifo_fd);
-    }
-    if (model->res->shmaddr != (void *) -1) {
-        shmem_detach(model->res->shmaddr);
+    if (model != NULL) {
+        if (model->res->fifo_fd != -1) {
+            fifo_close(model->res->fifo_fd);
+        }
+        if (model->res->shmaddr != (void *) -1) {
+            shmem_detach(model->res->shmaddr);
+        }
     }
 }
 

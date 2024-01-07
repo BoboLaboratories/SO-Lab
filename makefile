@@ -11,7 +11,7 @@ HEADER_DIRECTORIES = libs model
 
 # Collection of common libraries used by any type of process
 LIBS = console shmem util fifo lifo sem sig
-MAIN = master alimentatore attivatore atomo sandbox
+MAIN = master alimentatore attivatore atomo inibitore sandbox
 
 # Directive for building the whole project
 all: $(MAIN_FULL_PATHS)

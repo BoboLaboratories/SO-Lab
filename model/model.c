@@ -16,7 +16,7 @@ void attach_model(void *shmaddr) {
     model->stats = shmaddr + OFFSET_STATS;
     model->ipc = shmaddr + OFFSET_IPC;
 
-#if defined(MASTER) || defined(ATOMO) || defined(ATTIVATORE)
+#if defined(MASTER) || defined(ATOMO) || defined(ATTIVATORE) || defined(INIBITORE)
     model->lifo = shmaddr + OFFSET_LIFO;
 #endif
 }
@@ -27,6 +27,13 @@ static void cleanup_model();
 void init() {
     model = malloc(sizeof(struct Model));
     model->res = malloc(sizeof(struct Resources));
+
+    model->res->shmid = -1;
+    model->res->shmaddr = (void *) -1;
+#if defined(MASTER) || defined(ATTIVATORE) || defined(ALIMENTATORE)
+    model->res->fifo_fd = -1;
+#endif
+
     if (atexit(&cleanup_model) != 0) {
         print(E, "Could not register model cleanup function at exit.\n");
         cleanup();

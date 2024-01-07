@@ -10,6 +10,7 @@
 #define ITC_SIZE        (CHARS_PER_INT * sizeof(char))
 
 #define max(x, y) (((x) > (y)) ? (x) : (y))
+#define min(x, y) (((x) < (y)) ? (x) : (y))
 
 // misc
 void nano_sleep(long nanos);

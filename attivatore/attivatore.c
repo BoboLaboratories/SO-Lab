@@ -2,7 +2,6 @@
 #include <stdlib.h>
 
 #include "model.h"
-#include "lib/sig.h"
 #include "lib/sem.h"
 #include "lib/fifo.h"
 #include "lib/util.h"
@@ -10,7 +9,7 @@
 
 void signal_handler(int signum);
 
-struct Model *model;
+struct Model *model = NULL;
 sig_atomic_t interrupted = 0;
 
 int main(int argc, char *argv[]) {
@@ -71,7 +70,14 @@ int main(int argc, char *argv[]) {
 }
 
 void cleanup() {
-
+    if (model != NULL) {
+        if (model->res->fifo_fd != -1) {
+            fifo_close(model->res->fifo_fd);
+        }
+        if (model->res->shmaddr != (void *) -1) {
+            shmem_detach(model->res->shmaddr);
+        }
+    }
 }
 
 void signal_handler(int signum) {
