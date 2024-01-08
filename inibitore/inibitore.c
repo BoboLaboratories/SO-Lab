@@ -9,7 +9,7 @@
 void signal_handler(int signum);
 
 struct Model *model;
-sig_atomic_t interrupted = 0;
+sig_atomic_t running = 1;
 
 int main(int argc, char *argv[]) {
     if (argc != 2) {
@@ -36,7 +36,7 @@ int main(int argc, char *argv[]) {
 
     sem_sync(model->ipc->semid, SEM_SYNC);
 
-    while (!interrupted) {
+    while (running) {
         struct sembuf sops;
         sem_buf(&sops, SEM_INIBITORE, -1, 0);
         sem_op(model->ipc->semid, &sops, 1);
@@ -63,7 +63,7 @@ int main(int argc, char *argv[]) {
 
 void signal_handler(int signum) {
     if (signum == SIGTERM) {
-        interrupted = 1;
+        running = 0;
     }
 }
 

@@ -1,5 +1,6 @@
-#include <stdlib.h>
 #include <errno.h>
+#include <stdlib.h>
+#include <sys/wait.h>
 
 #ifdef FISSION_HALF
 #include <math.h>
@@ -10,13 +11,16 @@
 #include "lib/shmem.h"
 #include "lib/sig.h"
 
+int running();
+
 void signal_handler(int signum);
+
+void waste();
 
 void split(int *atomic_number, int *child_atomic_number);
 
 struct Model *model = NULL;
 sig_atomic_t sig;
-sig_atomic_t interrupted = 0;
 
 int main(int argc, char *argv[]) {
     if (argc != 3) {
@@ -60,30 +64,23 @@ int main(int argc, char *argv[]) {
     sem_buf(&sops[0], SEM_MASTER, +1, 0);
     sem_op(model->ipc->semid, &sops[0], 1);
 
-    sem_sync(model->ipc->semid, SEM_SYNC);
-
     pid_t pid = getpid();
     srand(pid);
 
-    while (!interrupted) {
-        // wait until no action is requested
-        pause();
+    sem_sync(model->ipc->semid, SEM_SYNC);
+
+    while (running()) {
+        // if inhibitor wasted this atom
+        if (sig == SIGWAST) {
+            waste();
+            break;
+        }
+
         // if fission was requested
         if (sig == SIGACTV) {
             // if this atom should become waste
             if (atomic_number < MIN_N_ATOMICO) {
-                // TODO: Segnala all'alimentatore che può immettere un atomo (se l'inibitore è presente)
-                // Acquire MASTER
-                sem_buf(&sops[0], SEM_MASTER, -1, 0);
-                sem_op(model->ipc->semid, &sops[0], 1);
-
-                model->stats->n_wastes++;
-                model->stats->n_atoms--;
-
-                // Release MASTER
-                sem_buf(&sops[0], SEM_MASTER, +1, 0);
-                sem_op(model->ipc->semid, &sops[0], 1);
-
+                waste();
                 break;
             }
 
@@ -146,11 +143,47 @@ void cleanup() {
     }
 }
 
+int running() {
+    // while no meaningful signal is received
+    // - SIGTERM, means termination
+    // - SIGACTV, means fission was requested
+    // - SIGWAST, means this atom was wasted
+    while (sig != SIGTERM && sig != SIGACTV && sig != SIGWAST) {
+        // wait for children processes to terminate
+        while (wait(NULL) == -1) {
+            // if this process has no children
+            if (errno == ECHILD) {
+                // wait until a signal is received
+                pause();
+                // when pause is interrupted by a signal,
+                // break the inner loop so that meaningful
+                // signals are checked by the outer one
+                break;
+            }
+        }
+    }
+
+    return sig != SIGTERM;
+}
+
 void signal_handler(int signum) {
     sig = signum;
-    if (signum == SIGTERM) {
-        interrupted = 1;
-    }
+}
+
+void waste() {
+    // TODO: Segnala all'alimentatore che può immettere un atomo (se l'inibitore è presente)
+    // Acquire MASTER
+    struct sembuf sops;
+    sem_buf(&sops, SEM_MASTER, -1, 0);
+    sem_op(model->ipc->semid, &sops, 1);
+
+    model->stats->n_wastes++;
+    model->stats->n_atoms--;
+
+    // Release MASTER
+    sem_buf(&sops, SEM_MASTER, +1, 0);
+    sem_op(model->ipc->semid, &sops, 1);
+
 }
 
 void split(int *atomic_number, int *child_atomic_number) {

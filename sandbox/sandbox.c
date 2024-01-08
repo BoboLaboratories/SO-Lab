@@ -1,63 +1,58 @@
-#include <fcntl.h>
 #include <stdio.h>
-#include <sys/stat.h>
 #include <unistd.h>
-#include <limits.h>
 #include <string.h>
-#include <dirent.h>
-#include <malloc.h>
-#include <stdlib.h>
 #include <signal.h>
-
-#include "lib/lifo.h"
-#include "lib/sem.h"
-#include "lib/util.h"
-#include "lib/shmem.h"
+#include <sys/time.h>
+#include <time.h>
 
 #define MASTER
 
-sig_atomic_t interrupted;
+sig_atomic_t interrupted = 0;
 struct Model *model;
 
+
+void signal_handler() {
+    printf("Ciao mamma sono in tv\n");
+    interrupted++;
+}
+
+timer_t timerr(long nanos) {
+    // 1s -> 1e9 (nano)
+    // 1s -> 1e6 (micro)
+    timer_t timerid;
+    timer_create(CLOCK_REALTIME, NULL, &timerid);
+
+    struct itimerspec spec;
+    spec.it_value.tv_sec = nanos / (long) 1e9;
+    spec.it_value.tv_nsec = nanos % (long) 1e9;
+    spec.it_interval = spec.it_value;
+
+    printf("%ld %ld\n", spec.it_value.tv_sec, spec.it_value.tv_nsec);
+    timer_settime(CLOCK_REALTIME, 0, &spec, NULL);
+
+    return timerid;
+}
+
+
 int main(int argc, char *argv[]) {
+    signal(SIGALRM, &signal_handler);
+
+    timer_t timerid = timerr((long) 1e9);
+
+    while (1) {
+        pause();
+        printf("(%d)", interrupted);
+        if (interrupted == 10) {
+            timer_delete(timerid);
+        }
+    }
 
 
-//    int semid = semget(IPC_PRIVATE, 1, S_IWUSR | S_IRUSR);
-//
-//    union semun se;
-//    se.val = SHRT_MAX + 1;
-//    int res = semctl(semid, 0, SETVAL, se);
-//    printf("res: %d\n", res);
 
-//
-//    struct Lifo lifo;
-//    mklifo(&lifo, 2, sizeof(int), semid, 0);
-//
-//    for (int i = 0; i < 5; i++) {
-//        lifo_push(&lifo, &i);
-//        printf("Pushing: %d, length: %d\n", i, lifo.length);
-//    }
-//
-//    for (int i = 0; i < 5; i++) {
-//        int n = 0;
-//        lifo_pop(&lifo, &n);
-//        printf("Popping: %d, length: %d\n", n, lifo.length);
-//    }
-//
-//
-//    int n = 12312;
-//    lifo_push(&lifo, &n);
-//    printf("push: %d, length: %d\n", n, lifo.length);
-//    n = 0;
-//    lifo_pop(&lifo, &n);
-//    printf("pop: %d, length: %d\n", n, lifo.length);
-//
-//    rmlifo(&lifo);
+    printf("Done.\n");
 }
 
 void cleanup() {
 
 }
 
-void signal_handler(int signum) {
-}

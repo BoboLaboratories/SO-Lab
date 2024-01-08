@@ -3,6 +3,8 @@
 #include <fcntl.h>
 #include <stdlib.h>
 #include <signal.h>
+#include <sys/wait.h>
+#include <errno.h>
 
 #include "model.h"
 #include "lib/sem.h"
@@ -10,10 +12,12 @@
 #include "lib/fifo.h"
 #include "lib/shmem.h"
 
+int running();
+
 void signal_handler(int signum);
 
 struct Model *model = NULL;
-sig_atomic_t interrupted = 0;
+sig_atomic_t sig = -1;
 
 int main(int argc, char *argv[]) {
     if (argc != 2) {
@@ -50,19 +54,20 @@ int main(int argc, char *argv[]) {
     char **argvc;
     prargs("atomo", &argvc, &buf, 2, ITC_SIZE);
     sprintf(argvc[1], "%d", model->res->shmid);
-    while (!interrupted) {
-        nano_sleep(STEP_ALIMENTAZIONE);
-        for (int i = 0; !interrupted && i < N_NUOVI_ATOMI; i++) {
+
+    timer_t timer = timer_start(STEP_ALIMENTAZIONE);
+    while (running()) {
+        for (int i = 0; sig != SIGTERM && i < N_NUOVI_ATOMI; i++) {
             sprintf(argvc[2], "%d", rand_between(MIN_N_ATOMICO, N_ATOM_MAX));
             pid_t child_pid = fork_execve(argvc);
             if (child_pid != -1) {
                 fifo_add(model->res->fifo_fd, &child_pid, sizeof(pid_t));
             } else {
-                // TODO signal master we meltdown :(
-                interrupted = 1;
+                kill(model->ipc->master, SIGMELT);
             }
         }
     }
+    timer_delete(timer);
 
     frargs(argvc, buf);
 
@@ -82,8 +87,31 @@ void cleanup() {
     }
 }
 
-void signal_handler(int signum) {
-    if (signum == SIGTERM) {
-        interrupted = 1;
+
+int running() {
+    // while no meaningful signal is received
+    // - SIGTERM, means termination
+    // - SIGALRM, means STEP_ALIMENTAZIONE expired
+    while (sig != SIGTERM && sig != SIGALRM) {
+        // wait for children processes to terminate
+        while (wait(NULL) == -1) {
+            // if this process has no children
+            if (errno == ECHILD) {
+                // wait until a signal is received
+                pause();
+                // when pause is interrupted by a signal,
+                // break the inner loop so that meaningful
+                // signals are checked by the outer one
+                break;
+            }
+        }
     }
+
+    int ret = sig != SIGTERM;
+    sig = -1;
+    return ret;
+}
+
+void signal_handler(int signum) {
+    sig = signum;
 }

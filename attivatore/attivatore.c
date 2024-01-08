@@ -1,3 +1,4 @@
+#include <time.h>
 #include <signal.h>
 #include <stdlib.h>
 
@@ -7,10 +8,11 @@
 #include "lib/util.h"
 #include "lib/shmem.h"
 
+int running();
+
 void signal_handler(int signum);
 
 struct Model *model = NULL;
-sig_atomic_t interrupted = 0;
 
 int main(int argc, char *argv[]) {
     if (argc != 2) {
@@ -50,9 +52,8 @@ int main(int argc, char *argv[]) {
     // Sem Sync
     sem_sync(model->ipc->semid, SEM_SYNC);
 
-
-    while (!interrupted) {
-        nano_sleep(STEP_ATTIVATORE);
+    timer_t timer = timer_start(STEP_ATTIVATORE);
+    while (running()) {
         pid_t atom = -1;
         if (lifo_pop(model->lifo, &atom) == -1) {
             if (fifo_remove(model->res->fifo_fd, &atom, sizeof(pid_t)) == -1) {
@@ -65,6 +66,7 @@ int main(int argc, char *argv[]) {
             kill(atom, SIGACTV);
         }
     }
+    timer_delete(timer);
 
     exit(EXIT_SUCCESS);
 }
@@ -80,8 +82,18 @@ void cleanup() {
     }
 }
 
+sig_atomic_t sig = -1;
+
+int running() {
+    do {
+        pause();
+    } while (sig != SIGTERM && sig != SIGALRM);
+
+    int ret = sig != SIGTERM;
+    sig = -1;
+    return ret;
+}
+
 void signal_handler(int signum) {
-    if (signum == SIGTERM) {
-        interrupted = 1;
-    }
+    sig = signum;
 }

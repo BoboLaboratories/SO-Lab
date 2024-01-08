@@ -13,7 +13,7 @@
 #define min(x, y) (((x) < (y)) ? (x) : (y))
 
 // misc
-void nano_sleep(long nanos);
+timer_t timer_start(long nanos);
 int rand_between(int min, int max);
 
 // numerical parsing

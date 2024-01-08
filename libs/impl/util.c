@@ -7,17 +7,25 @@
 #include <printf.h>
 #include <sys/wait.h>
 
+#include "lib/sig.h"
 #include "lib/util.h"
 #include "lib/console.h"
 
-void nano_sleep(long nanos) {
-    extern sig_atomic_t interrupted;
+timer_t timer_start(long nanos) {
+    timer_t timerid;
+    timer_create(CLOCK_REALTIME, NULL, &timerid);
 
-    struct timespec t;
-    t.tv_sec = nanos / 1000000000;
-    t.tv_nsec = nanos % 1000000000;
-    while (!interrupted && nanosleep(&t, &t) == -1)
-        ;
+    struct itimerspec spec;
+    spec.it_value.tv_sec = nanos / (long) 1e9;
+    spec.it_value.tv_nsec = nanos % (long) 1e9;
+    spec.it_interval = spec.it_value;
+
+    extern void signal_handler(int signum);
+    set_sighandler(SIGALRM, &signal_handler);
+
+    timer_settime(CLOCK_REALTIME, 0, &spec, NULL);
+
+    return timerid;
 }
 
 int rand_between(int min, int max) {

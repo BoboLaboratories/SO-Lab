@@ -1,10 +1,13 @@
+#include <time.h>
 #include <fcntl.h>
+#include <errno.h>
 #include <malloc.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <sys/shm.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
 
 #include "model.h"
 #include "config.h"
@@ -16,6 +19,8 @@
 
 static void shutdown(int signum, int exit_status);
 
+int running();
+
 void signal_handler(int signum);
 
 #define INHIBITOR_FLAG  0
@@ -25,9 +30,7 @@ static int flags[1] = {
 };
 
 enum Status status = STARTING;
-
 struct Model *model;
-sig_atomic_t interrupted = 0;
 
 int main(int argc, char *argv[]) {
     // check for flags
@@ -193,8 +196,8 @@ int main(int argc, char *argv[]) {
     status = RUNNING;
     print(I, "All processes ready, simulation start.\n");
 
-    while (!interrupted) {
-        sleep(1);
+    timer_t timer = timer_start((long) 1e9);
+    while (running()) {
         struct sembuf sops;
         // Acquire MASTER
         sem_buf(&sops, SEM_MASTER, -1, 0);
@@ -203,36 +206,31 @@ int main(int argc, char *argv[]) {
         // TODO print stats and main logic
         print(I, "E: %d, W: %d, A: %d \n", model->stats->curr_energy, model->stats->n_wastes, model->stats->n_atoms);
 
-        if (model->stats->curr_energy >= ENERGY_DEMAND) {
-            model->stats->curr_energy -= ENERGY_DEMAND;
-            if (model->stats->curr_energy >= ENERGY_EXPLODE_THRESHOLD) {
-                status = EXPLODE;
-            }
-        } else {
-            status = BLACKOUT;
-        }
-
-        if (status != RUNNING) {
-            raise(SIGTERM);
-        }
+//        if (model->stats->curr_energy >= ENERGY_DEMAND) {
+//            model->stats->curr_energy -= ENERGY_DEMAND;
+//            if (model->stats->curr_energy >= ENERGY_EXPLODE_THRESHOLD) {
+//                status = EXPLODE;
+//            }
+//        } else {
+//            status = BLACKOUT;
+//        }
+//
+//        if (status != RUNNING) {
+//            raise(SIGTERM);
+//        }
 
         // Realese MASTER
         sem_buf(&sops, SEM_MASTER, 1, 0);
         sem_op(model->ipc->semid, &sops, 1);
     }
-
+    print(D, "Deleting timer\n");
+    timer_delete(timer);
     print(I, "Status: %d\n", status);
 
     // =========================================
     //               Cleanup
     // =========================================
     shutdown(SIGTERM, EXIT_SUCCESS);
-}
-
-static void shutdown(int signum, int exit_status) {
-    raise(signum);
-    wait_children();
-    exit(exit_status);
 }
 
 void cleanup() {
@@ -250,7 +248,36 @@ void cleanup() {
     }
 }
 
+static void shutdown(int signum, int exit_status) {
+    raise(signum);
+    wait_children();
+    exit(exit_status);
+}
+
+sig_atomic_t sig = -1;
+
+int running() {
+    // while no meaningful signal is received
+    // - SIGTERM, means termination
+    // - SIGMELT, means the simulation reached meltdown
+    // - SIGALRM, means a second has passed and stats should be printed
+    while (sig != SIGTERM && sig != SIGALRM && sig != SIGMELT) {
+        // wait for children processes to terminate,
+        // used for clearing N_ATOMI_INIT initial atoms
+        // then simulating a pause by waiting for
+        // other processes that will remain active
+        // for the whole simulation duration
+        while (wait(NULL) != -1)
+            ;
+    }
+
+    int ret = sig != SIGTERM;
+    sig = -1;
+    return ret;
+}
+
 void signal_handler(int signum) {
+    sig = signum;
     if (signum == SIGMELT) {
         status = MELTDOWN;
     }
@@ -258,6 +285,5 @@ void signal_handler(int signum) {
     if (signum == SIGMELT || signum == SIGTERM) {
         set_sighandler(SIGTERM, SIG_IGN);
         kill(0, SIGTERM);
-        interrupted = 1;
     }
 }
