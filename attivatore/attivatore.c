@@ -8,13 +8,13 @@
 #include "lib/util.h"
 #include "lib/shmem.h"
 
-int running();
 
-void signal_handler(int signum);
+int MEANINGFUL_SIGNALS[] = { SIGALRM, -1 };
 
 struct Model *model = NULL;
 
 int main(int argc, char *argv[]) {
+    print(D, "Attivatore: %d\n", getpid());
     if (argc != 2) {
         print(E, "Usage: %s <shmid>\n", argv[0]);
         exit(EXIT_FAILURE);
@@ -82,18 +82,18 @@ void cleanup() {
     }
 }
 
-sig_atomic_t sig = -1;
+//sig_atomic_t sig = -1;
 
-int running() {
-    do {
-        pause();
-    } while (sig != SIGTERM && sig != SIGALRM);
-
-    int ret = sig != SIGTERM;
-    sig = -1;
-    return ret;
-}
-
-void signal_handler(int signum) {
-    sig = signum;
-}
+//int running() {
+//    do {
+//        pause();
+//    } while (sig != SIGTERM && sig != SIGALRM);
+//
+//    int ret = sig != SIGTERM;
+//    sig = -1;
+//    return ret;
+//}
+//
+//void signal_handler(int signum) {
+//    sig = signum;
+//}

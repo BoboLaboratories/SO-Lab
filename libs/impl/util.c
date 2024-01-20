@@ -20,9 +20,6 @@ timer_t timer_start(long nanos) {
     spec.it_value.tv_nsec = nanos % (long) 1e9;
     spec.it_interval = spec.it_value;
 
-    extern void signal_handler(int signum);
-    set_sighandler(SIGALRM, &signal_handler);
-
     timer_settime(CLOCK_REALTIME, 0, &spec, NULL);
 
     return timerid;

@@ -16,7 +16,7 @@ union semun {
 };
 
 int mksem(key_t key, int nsems, int semflg, const int *init);
-void sem_sync(int semid, int sem_num);
+int sem_sync(int semid, int sem_num);
 void sem_buf(struct sembuf *sop, unsigned short sem_num, short sem_op, short sem_flg);
 /*int sem_acquire(int semid, unsigned short sem_num, short sem_flg);
 int sem_release(int semid, unsigned short sem_num, short sem_flg);*/

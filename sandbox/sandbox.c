@@ -2,7 +2,6 @@
 #include <unistd.h>
 #include <string.h>
 #include <signal.h>
-#include <sys/time.h>
 #include <time.h>
 
 #define MASTER
@@ -10,11 +9,13 @@
 sig_atomic_t interrupted = 0;
 struct Model *model;
 
+int MEANINGFUL_SIGNALS[] = {-1};
 
-void signal_handler() {
-    printf("Ciao mamma sono in tv\n");
-    interrupted++;
-}
+
+//void signal_handler() {
+//    printf("Ciao mamma sono in tv\n");
+//    interrupted++;
+//}
 
 timer_t timerr(long nanos) {
     // 1s -> 1e9 (nano)
@@ -35,7 +36,6 @@ timer_t timerr(long nanos) {
 
 
 int main(int argc, char *argv[]) {
-    signal(SIGALRM, &signal_handler);
 
     timer_t timerid = timerr((long) 1e9);
 

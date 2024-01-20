@@ -61,17 +61,19 @@ int mksem(key_t key, int nsems, int semflg, const int *init) {
     return res == -1 ? -1 : semid;
 }
 
-void sem_sync(int semid, int sem_num) {
+int sem_sync(int semid, int sem_num) {
     struct sembuf sops;
     sem_buf(&sops, sem_num, -1, IPC_NOWAIT);
     if (sem_op(semid, &sops, 1) == -1) {
         if (errno == EAGAIN) {
-            return;
+            return -1;
         }
     }
 
     sem_buf(&sops, sem_num, 0, 0);
     sem_op(semid, &sops, 1);
+
+    return 0;
 }
 
 void sem_buf(struct sembuf *sop, unsigned short sem_num, short sem_op, short sem_flg) {

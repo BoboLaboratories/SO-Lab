@@ -11,6 +11,6 @@
 void print(int mode, char *file, int line, char *format, ...);
 
 // TODO remove
-#define DEBUG_BREAKPOINT printf("%s:%d\n", __FILE__, __LINE__)
+#define DEBUG_BREAKPOINT printf("%d %s:%d\n", getpid(), __FILE__, __LINE__)
 
 #endif

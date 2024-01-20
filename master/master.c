@@ -1,13 +1,11 @@
 #include <time.h>
 #include <fcntl.h>
-#include <errno.h>
 #include <malloc.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <sys/shm.h>
 #include <sys/stat.h>
-#include <sys/wait.h>
 
 #include "model.h"
 #include "config.h"
@@ -19,20 +17,20 @@
 
 static void shutdown(int signum, int exit_status);
 
-int running();
-
-void signal_handler(int signum);
-
 #define INHIBITOR_FLAG  0
 
 static int flags[1] = {
         [INHIBITOR_FLAG] = 0
 };
 
+int MEANINGFUL_SIGNALS[] = { SIGALRM, SIGMELT, -1 };
+
 enum Status status = STARTING;
-struct Model *model;
+struct Model *model = NULL;
+extern sig_atomic_t sig;
 
 int main(int argc, char *argv[]) {
+    print(D, "Master: %d\n", getpid());
     // check for flags
     for (int i = 1; i < argc; i++) {
         if (strcmp("--inhibitor", argv[i]) == 0) {
@@ -41,9 +39,6 @@ int main(int argc, char *argv[]) {
     }
 
     init();
-
-    setbuf(stdout, NULL);   // TODO si vuole?
-    setbuf(stderr, NULL);   // TODO si vuole?
 
 
     // =========================================
@@ -68,7 +63,6 @@ int main(int argc, char *argv[]) {
     }
 
     attach_model(model->res->shmaddr);
-    print(D, "lifo null: %d\n", model->lifo == NULL);
 
     // initialize shared data
     memset(model->stats, 0, sizeof(struct Stats));
@@ -108,7 +102,6 @@ int main(int argc, char *argv[]) {
     int init[SEM_COUNT] = {
             [SEM_INIBITORE_ON] = flags[INHIBITOR_FLAG] ? 0 : 1,
             [SEM_ALIMENTATORE] = 0,
-            [SEM_ATTIVATORE] = 1,   // TODO scrivi bene che una fork ce la lasciamo di sicuro perche' assumiamo di avere almeno uno slot processi
             [SEM_INIBITORE] = 0,
             [SEM_SYNC] = nproc,
             [SEM_MASTER] = 1,
@@ -130,6 +123,7 @@ int main(int argc, char *argv[]) {
     prargs("alimentatore", &argvc, &buf, 1, ITC_SIZE);
     sprintf(argvc[1], "%d", model->res->shmid);
     pid_t child_pid = fork_execve(argvc);
+    model->ipc->alimentatore = child_pid;
     frargs(argvc, buf);
     if (child_pid == -1) {
         shutdown(SIGMELT, EXIT_FAILURE);
@@ -198,33 +192,42 @@ int main(int argc, char *argv[]) {
 
     timer_t timer = timer_start((long) 1e9);
     while (running()) {
-        struct sembuf sops;
-        // Acquire MASTER
-        sem_buf(&sops, SEM_MASTER, -1, 0);
-        sem_op(model->ipc->semid, &sops, 1);
+        if (sig == SIGMELT) {
+            status = MELTDOWN;
+        } else {
+            struct sembuf sops;
+            sem_buf(&sops, SEM_MASTER, -1, 0);
+            sem_op(model->ipc->semid, &sops, 1);
 
-        // TODO print stats and main logic
-        print(I, "E: %d, W: %d, A: %d \n", model->stats->curr_energy, model->stats->n_wastes, model->stats->n_atoms);
+            if (model->stats->curr_energy >= ENERGY_DEMAND) {
+                model->stats->curr_energy -= ENERGY_DEMAND;
+                if (model->stats->curr_energy >= ENERGY_EXPLODE_THRESHOLD) {
+                    status = EXPLODE;
+                }
+            } else {
+                status = BLACKOUT;
+            }
 
-//        if (model->stats->curr_energy >= ENERGY_DEMAND) {
-//            model->stats->curr_energy -= ENERGY_DEMAND;
-//            if (model->stats->curr_energy >= ENERGY_EXPLODE_THRESHOLD) {
-//                status = EXPLODE;
-//            }
-//        } else {
-//            status = BLACKOUT;
-//        }
-//
-//        if (status != RUNNING) {
-//            raise(SIGTERM);
-//        }
+            // TODO print stats and main logic
+            print(I, "E: %d, W: %d, A: %d \n", model->stats->curr_energy, model->stats->n_wastes, model->stats->n_atoms);
 
-        // Realese MASTER
-        sem_buf(&sops, SEM_MASTER, 1, 0);
-        sem_op(model->ipc->semid, &sops, 1);
+            sem_buf(&sops, SEM_MASTER, +1, 0);
+            sem_op(model->ipc->semid, &sops, 1);
+        }
+
+        // stop simulation by terminated all processes
+        if (status != RUNNING) {
+            break;
+        }
     }
-    print(D, "Deleting timer\n");
     timer_delete(timer);
+
+    // terminate child processes
+    if (status == RUNNING) {
+        status = TERMINATED;
+    }
+    set_sighandler(SIGTERM, SIG_IGN);
+    kill(0, SIGTERM);
     print(I, "Status: %d\n", status);
 
     // =========================================
@@ -254,36 +257,36 @@ static void shutdown(int signum, int exit_status) {
     exit(exit_status);
 }
 
-sig_atomic_t sig = -1;
+//sig_atomic_t sig = -1;
 
-int running() {
-    // while no meaningful signal is received
-    // - SIGTERM, means termination
-    // - SIGMELT, means the simulation reached meltdown
-    // - SIGALRM, means a second has passed and stats should be printed
-    while (sig != SIGTERM && sig != SIGALRM && sig != SIGMELT) {
-        // wait for children processes to terminate,
-        // used for clearing N_ATOMI_INIT initial atoms
-        // then simulating a pause by waiting for
-        // other processes that will remain active
-        // for the whole simulation duration
-        while (wait(NULL) != -1)
-            ;
-    }
+//int running() {
+//    // while no meaningful signal is received
+//    // - SIGTERM, means termination
+//    // - SIGMELT, means the simulation reached meltdown
+//    // - SIGALRM, means a second has passed and stats should be printed
+//    while (sig != SIGTERM && sig != SIGALRM && sig != SIGMELT) {
+//        // wait for children processes to terminate,
+//        // used for clearing N_ATOMI_INIT initial atoms
+//        // then simulating a pause by waiting for
+//        // other processes that will remain active
+//        // for the whole simulation duration
+//        while (wait(NULL) != -1)
+//            ;
+//    }
+//
+//    int ret = sig != SIGTERM;
+//    sig = -1;
+//    return ret;
+//}
 
-    int ret = sig != SIGTERM;
-    sig = -1;
-    return ret;
-}
-
-void signal_handler(int signum) {
-    sig = signum;
-    if (signum == SIGMELT) {
-        status = MELTDOWN;
-    }
-
-    if (signum == SIGMELT || signum == SIGTERM) {
-        set_sighandler(SIGTERM, SIG_IGN);
-        kill(0, SIGTERM);
-    }
-}
+//void signal_handler(int signum) {
+//    sig = signum;
+//    if (signum == SIGMELT) {
+//        status = MELTDOWN;
+//    }
+//
+//    if (signum == SIGMELT || signum == SIGTERM) {
+//        set_sighandler(SIGTERM, SIG_IGN);
+//        kill(0, SIGTERM);
+//    }
+//}

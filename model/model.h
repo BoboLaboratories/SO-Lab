@@ -16,7 +16,8 @@ enum Status {
     TIMEOUT,
     EXPLODE,
     BLACKOUT,
-    MELTDOWN
+    MELTDOWN,
+    TERMINATED
 };
 #endif
 
@@ -47,6 +48,7 @@ struct Model {
 };
 
 void init();
+int running();
 void attach_model(void *shmaddr);
 
 #endif

@@ -6,12 +6,13 @@
 #include "lib/lifo.h"
 #include "lib/shmem.h"
 
-void signal_handler(int signum);
+
+int MEANINGFUL_SIGNALS[] = { -1 };
 
 struct Model *model;
-sig_atomic_t running = 1;
 
 int main(int argc, char *argv[]) {
+    print(D, "Inibitore: %d\n", getpid());
     if (argc != 2) {
         print(E, "Usage: %s <shmid>\n", argv[0]);
         exit(EXIT_FAILURE);
@@ -36,7 +37,7 @@ int main(int argc, char *argv[]) {
 
     sem_sync(model->ipc->semid, SEM_SYNC);
 
-    while (running) {
+    while (running()) {
         struct sembuf sops;
         sem_buf(&sops, SEM_INIBITORE, -1, 0);
         sem_op(model->ipc->semid, &sops, 1);
@@ -61,11 +62,11 @@ int main(int argc, char *argv[]) {
     exit(EXIT_SUCCESS);
 }
 
-void signal_handler(int signum) {
-    if (signum == SIGTERM) {
-        running = 0;
-    }
-}
+//void signal_handler(int signum) {
+//    if (signum == SIGTERM) {
+//        running = 0;
+//    }
+//}
 
 void cleanup() {
     if (model != NULL) {
