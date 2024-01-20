@@ -98,20 +98,19 @@ int main(int argc, char *argv[]) {
                 exit(ATOM_EXIT_NATURAL);
             }
 
-            // prepare child arguments and fork a new atom
             split(&atomic_number, &child_atomic_number);
             sprintf(argv[2], "%d", child_atomic_number);
+
+            sem_buf(&sops[0], SEM_MASTER, -1, 0);
+            sem_buf(&sops[1], SEM_ATOM, -1, 0);
+            sem_op(model->ipc->semid, sops, 2);
+
             pid_t child_pid = fork_execve(argv);
 
             if (child_pid != -1) {
                 // if fork was successful
                 // produce energy and update stats
                 long energy = (atomic_number * child_atomic_number) - max(atomic_number, child_atomic_number);
-
-                sem_buf(&sops[0], SEM_MASTER, -1, 0);
-                sem_buf(&sops[1], SEM_ATOM, -1, 0);
-                sem_op(model->ipc->semid, sops, 2);
-                // TODO: Error handle
 
                 // print(W, "%d(%d) %d(%d) = %ld.\n", pid, atomic_number, child_pid, child_atomic_number, energy);
 
