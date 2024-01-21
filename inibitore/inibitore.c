@@ -2,14 +2,15 @@
 
 #include "model.h"
 #include "lib/sem.h"
+#include "lib/sig.h"
 #include "lib/util.h"
 #include "lib/lifo.h"
 #include "lib/shmem.h"
 
-
-int MEANINGFUL_SIGNALS[] = { -1 };
-
 extern struct Model *model;
+extern sig_atomic_t sig;
+
+int running();
 
 int main(int argc, char *argv[]) {
     if (argc != 2) {
@@ -18,6 +19,7 @@ int main(int argc, char *argv[]) {
     }
 
     init();
+    sig_handle(NULL, SIGTERM);
 
 
     // =========================================
@@ -41,6 +43,7 @@ int main(int argc, char *argv[]) {
         sem_buf(&sops, SEM_INIBITORE, -1, 0);
         sem_op(model->ipc->semid, &sops, 1);
 
+        mask(SIGTERM);
         long curr_energy = min(model->stats->curr_energy, ENERGY_DEMAND + ENERGY_EXPLODE_THRESHOLD - 1);
 
         long inhibited_energy = model->stats->curr_energy - curr_energy;
@@ -56,16 +59,15 @@ int main(int argc, char *argv[]) {
 
         sem_buf(&sops, SEM_ATOM, +1, 0);
         sem_op(model->ipc->semid, &sops, 1);
+        unmask(SIGTERM);
     }
 
     exit(EXIT_SUCCESS);
 }
 
-//void signal_handler(int signum) {
-//    if (signum == SIGTERM) {
-//        running = 0;
-//    }
-//}
+int running() {
+    return sig_reset(sig != SIGTERM);
+}
 
 void cleanup() {
     if (model != NULL) {

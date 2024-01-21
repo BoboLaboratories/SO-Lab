@@ -14,37 +14,41 @@ int sig_handler(int signal, void (*handler)(int)) {
     return sigaction(signal, &sa, NULL);
 }
 
-static void signal_handler(int signum) {
+static void default_handler(int signum) {
     sig = signum;
 }
 
-static sigset_t va_to_mask(int set_handler, int signums, va_list args) {
+static sigset_t va_to_mask(int set_handler, void (*handler)(int), int signums, va_list args) {
     sigset_t mask;
     sigemptyset(&mask);
 
     int signum = signums;
-    do {
+    while (signum != -1) {
         sigaddset(&mask, signum);
         if (set_handler) {
-            sig_handler(signum, &signal_handler);
+            sig_handler(signum, handler);
         }
-    } while ((signum = va_arg(args, int)) != -1);
+        signum = va_arg(args, int);
+    }
 
     return mask;
 }
 
-void sig_handle(int signums, ...) {
+void sig_set_handler_(void (*handler)(int), int signums, ...) {
     va_list args;
+    if (handler == NULL) {
+        handler = &default_handler;
+    }
     va_start(args, signums);
-    signals = va_to_mask(1, signums, args);
+    signals = va_to_mask(1, handler, signums, args);
     va_end(args);
 }
 
 int sig_is_handled(int signum) {
-    return sigismember(&signals, sig);
+    return sigismember(&signals, signum) == 1;
 }
 
-void sig_set_mask(int how, int signums, ...) {
+void sig_set_mask_(int how, int signums, ...) {
     if (how != SIG_BLOCK && how != SIG_UNBLOCK) {
         print(E, "Invalid operation on sig_set_mask(%d, ...), please use corresponding macros.\n", how);
         return;
@@ -52,7 +56,7 @@ void sig_set_mask(int how, int signums, ...) {
 
     va_list args;
     va_start(args, signums);
-    sigset_t mask = va_to_mask(0, signums, args);
+    sigset_t mask = va_to_mask(0, NULL, signums, args);
     sigprocmask(how, &mask, NULL);
     va_end(args);
 }

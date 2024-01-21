@@ -1,13 +1,8 @@
 #include <stdio.h>
-#include <unistd.h>
-#include <string.h>
 #include <stdarg.h>
-#include <errno.h>
 #include "lib/sig.h"
 
 extern struct Model *model;
-
-int MEANINGFUL_SIGNALS[] = {-1};
 
 static sigset_t va_to_mask(int signums, va_list args) {
     sigset_t mask;

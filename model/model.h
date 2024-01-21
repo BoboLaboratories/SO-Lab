@@ -48,7 +48,7 @@ struct Model {
 };
 
 void init();
-int running();
+//int running();
 void attach_model(void *shmaddr);
 
 #endif

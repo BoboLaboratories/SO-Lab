@@ -4,17 +4,19 @@
 #include <fcntl.h>
 #include <stdlib.h>
 #include <signal.h>
+#include <sys/wait.h>
 
 #include "model.h"
 #include "lib/sem.h"
+#include "lib/sig.h"
 #include "lib/ipc.h"
 #include "lib/fifo.h"
 #include "lib/shmem.h"
 
-int MEANINGFUL_SIGNALS[] = {SIGALRM, -1};
-
 extern struct Model *model;
 extern sig_atomic_t sig;
+
+int running();
 
 int main(int argc, char *argv[]) {
     if (argc != 2) {
@@ -23,6 +25,7 @@ int main(int argc, char *argv[]) {
     }
 
     init();
+    sig_handle(NULL, SIGALRM, SIGTERM);
 
 
     // =========================================
@@ -61,6 +64,7 @@ int main(int argc, char *argv[]) {
         int n_atoms = 0;
         while (sig != SIGTERM && n_atoms < N_NUOVI_ATOMI) {
             if (sem_op(model->ipc->semid, sops, 2) == 0 || errno == EAGAIN) {
+                mask(SIGALRM);
                 sprintf(argvc[2], "%d", rand_between(MIN_N_ATOMICO, N_ATOM_MAX));
                 pid_t child_pid = fork_execv(argvc);
 
@@ -71,6 +75,7 @@ int main(int argc, char *argv[]) {
                     kill(model->ipc->master, SIGMELT);
                     break;
                 }
+                unmask(SIGALRM);
             } else if (errno == EINTR && sig == SIGALRM) {
                 break;
             }
@@ -97,30 +102,31 @@ void cleanup() {
 }
 
 
-//int running() {
-//    // while no meaningful signal is received
-//    // - SIGTERM, means termination
-//    // - SIGALRM, means STEP_ALIMENTAZIONE expired
-//    while (sig != SIGTERM && sig != SIGALRM) {
-//        // wait for children processes to terminate
-//        while (wait(NULL) == -1) {
-//            // if this process has no children
-//            if (errno == ECHILD) {
-//                // wait until a signal is received
-//                pause();
-//                // when pause is interrupted by a signal,
-//                // break the inner loop so that meaningful
-//                // signals are checked by the outer one
-//                break;
-//            }
-//        }
-//    }
-//
-//    int ret = sig != SIGTERM;
-//    sig = -1;
-//    return ret;
-//}
-//
-//void signal_handler(int signum) {
-//    sig = signum;
-//}
+int running() {
+    // while no meaningful signal is received
+    while (!sig_is_handled(sig)) {
+        // wait for children processes to terminate
+        while (wait(NULL) != -1) {
+            // if a child atom died, check for its exit status so that
+            // other processes can perform their job accordingly
+            struct sembuf sops;
+            sem_buf(&sops, SEM_ALIMENTATORE, +1, 0);
+            if (sem_op(model->ipc->semid, &sops, 1) == -1) {
+                // TODO
+            }
+        }
+
+        // if this process has no children
+        if (errno == ECHILD) {
+            // wait until a signal is received
+            // when pause is interrupted by a signal,
+            pause();
+            // break the inner loop so that meaningful
+            // signals are checked by the outer one
+            break;
+        }
+    }
+
+    return sig_reset(sig != SIGTERM);
+}
+

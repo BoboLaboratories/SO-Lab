@@ -83,9 +83,9 @@ EPS     29/01   16/02
 
 
 
-[ ] atomo che si forka
+[x] atomo che si forka
 [x] master che aspetta che tutti abbiano fatto le loro init
-[ ] masking segnali a giro
+[x] masking segnali a giro
 [ ] setuppare bene SIGTERM su tutti
 [ ] alarm sul master
 
