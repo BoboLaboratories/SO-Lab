@@ -111,5 +111,15 @@ static void *attach(struct Lifo *lifo, int pushing) {
         dest = shmem_attach(lifo->shmid);
     }
 
+    printf("[");
+    void *tmp = dest;
+    pid_t pid;
+    for (int i = 0; i < lifo->length; i++) {
+        size_t offset = i * lifo->elem_size;
+        memcpy(&pid, tmp + offset, lifo->elem_size);
+        printf("%d, ", pid);
+    }
+    printf("]\n");
+
     return dest;
 }

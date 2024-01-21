@@ -16,6 +16,8 @@ void split(int *atomic_number, int *child_atomic_number);
 extern struct Model *model;
 extern sig_atomic_t sig;
 
+pid_t ppid;
+
 int main(int argc, char *argv[]) {
     if (argc != 3) {
         print(E, "Usage: %s <shmid> <atomic-number>\n", argv[0]);
@@ -66,7 +68,7 @@ int main(int argc, char *argv[]) {
     // =========================================
     sem_sync(model->ipc->semid, SEM_SYNC);
 
-
+    ppid = getppid();
     // =========================================
     //                Main logic
     // =========================================
@@ -88,8 +90,6 @@ int main(int argc, char *argv[]) {
             }
             // if this atom should become waste
             if (atomic_number < MIN_N_ATOMICO) {
-                sem_buf(&sops[0], SEM_ATTIVATORE, +1, 0);
-                sem_op(model->ipc->semid, &sops[0], 1);
 //                print(W, "Attivatore +1\n");
                 waste(ATOM_EXIT_NATURAL);
             }
@@ -109,6 +109,7 @@ int main(int argc, char *argv[]) {
                 case 0:
                     // Child atom
                     atomic_number = child_atomic_number;
+                    ppid = getppid();
                     break;
                 default: {
                     // Parent atom
@@ -175,12 +176,7 @@ int running() {
 }
 
 void waste(int status) {
-//    int pid = waitpid(-1, NULL, WNOHANG);
-//    if (pid == 0) {
-//        print(W, "Parent has been killed, status: %d\n", status);
-//    }
-
-    if (getppid() == model->ipc->master || getppid() == model->ipc->alimentatore) {
+    if (ppid == model->ipc->master || ppid == model->ipc->alimentatore) {
         struct sembuf sops;
         sem_buf(&sops, SEM_ALIMENTATORE, +1, 0);
         sem_op(model->ipc->semid, &sops, 1);
@@ -188,6 +184,16 @@ void waste(int status) {
 
     model->stats->n_wastes++;
     model->stats->n_atoms--;
+
+    if (status == ATOM_EXIT_NATURAL) {
+        struct sembuf sops;
+        sem_buf(&sops, SEM_MASTER, +1, 0);
+        sem_op(model->ipc->semid, &sops, 1);
+
+        sem_buf(&sops, SEM_ATTIVATORE, +1, 0);
+        sem_op(model->ipc->semid, &sops, 1);
+    }
+
     exit(status);
 }
 
