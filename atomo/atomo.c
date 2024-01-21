@@ -11,7 +11,7 @@ void split(int *atomic_number, int *child_atomic_number);
 
 int MEANINGFUL_SIGNALS[] = {SIGACTV, SIGWAST, -1};
 
-struct Model *model = NULL;
+extern struct Model *model;
 extern sig_atomic_t sig;
 
 int main(int argc, char *argv[]) {
@@ -49,38 +49,15 @@ int main(int argc, char *argv[]) {
     srand(pid);
 
     struct sembuf sops[2];
-    if (sem_sync(model->ipc->semid, SEM_SYNC) == 0) {
-        sem_buf(&sops[0], SEM_MASTER, -1, 0);
-        sem_op(model->ipc->semid, &sops[0], 1);
+    sem_buf(&sops[0], SEM_MASTER, -1, 0);
+    sem_op(model->ipc->semid, &sops[0], 1);
 
-        model->stats->n_atoms++;
+    model->stats->n_atoms++;
 
-        sem_buf(&sops[0], SEM_MASTER, +1, 0);
-        sem_op(model->ipc->semid, &sops[0], 1);
-    } else {
-        model->stats->n_atoms++;
+    sem_buf(&sops[0], SEM_MASTER, +1, 0);
+    sem_op(model->ipc->semid, &sops[0], 1);
 
-        if (getppid() != model->ipc->alimentatore && getppid() != model->ipc->master) {
-
-            // wake up inhibitor, if activated, to inhibit the energy we just produced
-            sem_buf(&sops[0], SEM_INIBITORE_ON, 0, IPC_NOWAIT);
-            sem_buf(&sops[1], SEM_INIBITORE, +1, 0);
-
-            if (sem_op(model->ipc->semid, sops, 2) == -1) {
-                if (errno == EAGAIN) {
-                    // if inhibitor is deactivated, give control back to master process
-                    sem_buf(&sops[0], SEM_MASTER, +1, 0);
-                    sem_op(model->ipc->semid, &sops[0], 1);
-
-                    // and let another atom perform its job
-                    sem_buf(&sops[0], SEM_ATOM, +1, 0);
-                    sem_op(model->ipc->semid, &sops[0], 1);
-                } else {
-                    // TODO error handling
-                }
-            }
-        }
-    }
+    sem_sync(model->ipc->semid, SEM_SYNC);
 
     while (running()) {
         // if inhibitor wasted this atom
@@ -104,8 +81,8 @@ int main(int argc, char *argv[]) {
             sem_buf(&sops[0], SEM_MASTER, -1, 0);
             sem_buf(&sops[1], SEM_ATOM, -1, 0);
             sem_op(model->ipc->semid, sops, 2);
-
-            pid_t child_pid = fork_execve(argv);
+            // TODO: Sostituire con una fork normale
+            pid_t child_pid = fork_execv(argv);
 
             if (child_pid != -1) {
                 // if fork was successful
@@ -116,32 +93,31 @@ int main(int argc, char *argv[]) {
 
                 model->stats->curr_energy += energy;
                 model->stats->n_fissions++;
+
                 // put this atom and the new one on top of the lifo
                 lifo_push(model->lifo, &pid);
                 lifo_push(model->lifo, &child_pid);
+
                 // wake up inhibitor, if activated, to inhibit the energy we just produced
-//                sem_buf(&sops[0], SEM_INIBITORE_ON, 0, IPC_NOWAIT);
-//                sem_buf(&sops[1], SEM_INIBITORE, +1, 0);
-//                if (sem_op(model->ipc->semid, sops, 2) == -1) {
-//                    if (errno == EAGAIN) {
-//                        // if inhibitor is deactivated, give control back to master process
-//                        sem_buf(&sops[0], SEM_MASTER, +1, 0);
-//                        sem_op(model->ipc->semid, &sops[0], 1);
-//
-//                        // and let another atom perform its job
-//                        sem_buf(&sops[0], SEM_ATOM, +1, 0);
-//                        sem_op(model->ipc->semid, &sops[0], 1);
-//                    } else {
-//                        // TODO error handling
-//                    }
-//                }
+                sem_buf(&sops[0], SEM_INIBITORE_ON, 0, IPC_NOWAIT);
+                sem_buf(&sops[1], SEM_INIBITORE, +1, 0);
+                if (sem_op(model->ipc->semid, sops, 2) == -1) {
+                    if (errno == EAGAIN) {
+                        // if inhibitor is deactivated, give control back to master process
+                        sem_buf(&sops[0], SEM_MASTER, +1, 0);
+                        sem_op(model->ipc->semid, &sops[0], 1);
+
+                        // and let another atom perform its job
+                        sem_buf(&sops[0], SEM_ATOM, +1, 0);
+                        sem_op(model->ipc->semid, &sops[0], 1);
+                    } else {
+                        // TODO error handling
+                    }
+                }
             } else {
                 kill(model->ipc->master, SIGMELT);
                 break;
             }
-        }
-
-        if(sig == SIGCHLD) {
         }
     }
 

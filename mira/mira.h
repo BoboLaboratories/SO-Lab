@@ -27,7 +27,7 @@ union semun {
 int *attach_shmem(int shmid);
 void detach_shmem();
 
-pid_t fork_execve(char **argv);
+pid_t fork_execv(char **argv);
 void prargs(char *executable, char ***argv, char **buf, int vargs, size_t elemsize);
 void frargs(char **argv, char *buf);
 

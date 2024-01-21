@@ -13,12 +13,10 @@
 
 int MEANINGFUL_SIGNALS[] = {SIGALRM, -1};
 
-struct Model *model = NULL;
+extern struct Model *model;
 extern sig_atomic_t sig;
 
-
 int main(int argc, char *argv[]) {
-    print(D, "Alimentatore: %d\n", getpid());
     if (argc != 2) {
         print(E, "Usage: %s <shmid>\n", argv[0]);
         exit(EXIT_FAILURE);
@@ -64,7 +62,7 @@ int main(int argc, char *argv[]) {
         while (sig != SIGTERM && n_atoms < N_NUOVI_ATOMI) {
             if (sem_op(model->ipc->semid, sops, 2) == 0 || errno == EAGAIN) {
                 sprintf(argvc[2], "%d", rand_between(MIN_N_ATOMICO, N_ATOM_MAX));
-                pid_t child_pid = fork_execve(argvc);
+                pid_t child_pid = fork_execv(argvc);
 
                 if (child_pid != -1) {
                     fifo_add(model->res->fifo_fd, &child_pid, sizeof(pid_t));

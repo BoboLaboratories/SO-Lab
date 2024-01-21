@@ -40,6 +40,9 @@
 - [x] soctl 
 - [ ] signal masking
 
+- [ ] atomo che si forka senza execve
+- [ ] logica running() meaningful signal
+- [ ] pipe e ditchare fifo !!
 
 LFT     17/01   06/02
 SO      19/01   14/02

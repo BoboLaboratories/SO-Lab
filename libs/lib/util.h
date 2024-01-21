@@ -23,7 +23,7 @@ int parse_int(char *raw, int *dest);
 // arguments and fork
 void prargs(char *executable, char ***argv, char **buf, int vargs, size_t elemsize);
 void frargs(char **argv, char *buf);
-pid_t fork_execve(char **argv);
+pid_t fork_execv(char **argv);
 void wait_children();
 
 // tmp files

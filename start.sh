@@ -1,4 +1,4 @@
 source env/base.sh
-make
+make debug
 cd bin || exit
 ./master --inhibitor

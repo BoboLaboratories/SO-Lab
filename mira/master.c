@@ -43,13 +43,13 @@ int main(int argc, char *args[]) {
     sprintf(argv[1], "%d", semid);
     sprintf(argv[2], "%d", shmid);
     for (int i = 0; i < 100; i++) {
-        if (fork_execve(argv) == -1) {
+        if (fork_execv(argv) == -1) {
             printf("Could not fork %s.\n", argv[0]);
         }
     }
 
     argv[0] = "inhibitor";
-    if (fork_execve(argv) == -1) {
+    if (fork_execv(argv) == -1) {
         printf("Could not fork %s.\n", argv[0]);
     }
 

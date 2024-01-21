@@ -70,12 +70,12 @@ void frargs(char **argv, char *buf) {
     free(buf);
 }
 
-pid_t fork_execve(char **argv) {
+pid_t fork_execv(char **argv) {
     pid_t pid = fork();
     if (pid == 0) {
-        execve(argv[0], argv, NULL);
+        execv(argv[0], argv);
         print(E, "Could not execute %s.\n", argv[0]);
-        kill(getppid(), SIGTERM);     // TODO test if working as expected
+        kill(getppid(), SIGTERM);     // TODO set_meaningful_signals if working as expected
     }
     return pid;
 }

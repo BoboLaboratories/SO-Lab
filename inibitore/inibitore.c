@@ -9,10 +9,9 @@
 
 int MEANINGFUL_SIGNALS[] = { -1 };
 
-struct Model *model;
+extern struct Model *model;
 
 int main(int argc, char *argv[]) {
-    print(D, "Inibitore: %d\n", getpid());
     if (argc != 2) {
         print(E, "Usage: %s <shmid>\n", argv[0]);
         exit(EXIT_FAILURE);

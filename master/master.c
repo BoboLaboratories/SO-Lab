@@ -26,11 +26,10 @@ static int flags[1] = {
 int MEANINGFUL_SIGNALS[] = { SIGALRM, SIGMELT, -1 };
 
 enum Status status = STARTING;
-struct Model *model = NULL;
+extern struct Model *model;
 extern sig_atomic_t sig;
 
 int main(int argc, char *argv[]) {
-    print(D, "Master: %d\n", getpid());
     // check for flags
     for (int i = 1; i < argc; i++) {
         if (strcmp("--inhibitor", argv[i]) == 0) {
@@ -122,7 +121,7 @@ int main(int argc, char *argv[]) {
     char **argvc;
     prargs("alimentatore", &argvc, &buf, 1, ITC_SIZE);
     sprintf(argvc[1], "%d", model->res->shmid);
-    pid_t child_pid = fork_execve(argvc);
+    pid_t child_pid = fork_execv(argvc);
     model->ipc->alimentatore = child_pid;
     frargs(argvc, buf);
     if (child_pid == -1) {
@@ -136,7 +135,7 @@ int main(int argc, char *argv[]) {
     if (flags[INHIBITOR_FLAG]) {
         prargs("inibitore", &argvc, &buf, 1, ITC_SIZE);
         sprintf(argvc[1], "%d", model->res->shmid);
-        child_pid = fork_execve(argvc);
+        child_pid = fork_execv(argvc);
         frargs(argvc, buf);
         if (child_pid == -1) {
             shutdown(SIGMELT, EXIT_FAILURE);
@@ -149,7 +148,7 @@ int main(int argc, char *argv[]) {
     // =========================================
     prargs("attivatore", &argvc, &buf, 1, ITC_SIZE);
     sprintf(argvc[1], "%d", model->res->shmid);
-    child_pid = fork_execve(argvc);
+    child_pid = fork_execv(argvc);
     frargs(argvc, buf);
     if (child_pid == -1) {
         shutdown(SIGMELT, EXIT_FAILURE);
@@ -163,7 +162,7 @@ int main(int argc, char *argv[]) {
     sprintf(argvc[1], "%d", model->res->shmid);
     for (int i = 0; child_pid != -1 && i < N_ATOMI_INIT; i++) {
         sprintf(argvc[2], "%d", rand_between(MIN_N_ATOMICO, N_ATOM_MAX));
-        child_pid = fork_execve(argvc);
+        child_pid = fork_execv(argvc);
         if (child_pid != -1) {
             fifo_add(model->res->fifo_fd, &child_pid, sizeof(pid_t));
         }
@@ -226,7 +225,7 @@ int main(int argc, char *argv[]) {
     if (status == RUNNING) {
         status = TERMINATED;
     }
-    set_sighandler(SIGTERM, SIG_IGN);
+    sig_handler(SIGTERM, SIG_IGN);
     kill(0, SIGTERM);
     print(I, "Status: %d\n", status);
 
@@ -286,7 +285,7 @@ static void shutdown(int signum, int exit_status) {
 //    }
 //
 //    if (signum == SIGMELT || signum == SIGTERM) {
-//        set_sighandler(SIGTERM, SIG_IGN);
+//        sig_handler(SIGTERM, SIG_IGN);
 //        kill(0, SIGTERM);
 //    }
 //}

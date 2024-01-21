@@ -43,7 +43,7 @@ void frargs(char **argv, char *buf) {
     free(buf);
 }
 
-pid_t fork_execve(char **argv) {
+pid_t fork_execv(char **argv) {
     pid_t pid = fork();
     if (pid == 0) {
         execve(argv[0], argv, NULL);
