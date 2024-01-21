@@ -57,8 +57,9 @@ int main(int argc, char *argv[]) {
         sem_buf(&sops, SEM_MASTER, +1, 0);
         sem_op(model->ipc->semid, &sops, 1);
 
-        sem_buf(&sops, SEM_ATOM, +1, 0);
+        sem_buf(&sops, SEM_ATTIVATORE, +1, 0);
         sem_op(model->ipc->semid, &sops, 1);
+
         unmask(SIGTERM);
     }
 

@@ -8,7 +8,9 @@
 #include "lib/sig.h"
 
 int running();
+
 void waste(int status);
+
 void split(int *atomic_number, int *child_atomic_number);
 
 extern struct Model *model;
@@ -72,22 +74,31 @@ int main(int argc, char *argv[]) {
         mask(SIGACTV, SIGWAST);
         // if inhibitor wasted this atom
         if (sig == SIGWAST) {
+            if (getppid() == model->ipc->master || getppid() == model->ipc->alimentatore) {
+                print(W, "Wasting: %d\n", getpid());
+            }
+
             waste(ATOM_EXIT_INHIBITED);
         }
 
         // if fission was requested
         if (sig == SIGACTV) {
+            if (getppid() != model->ipc->master && getppid() != model->ipc->alimentatore) {
+                print(W, "Activating: %d\n", getpid());
+            }
             // if this atom should become waste
             if (atomic_number < MIN_N_ATOMICO) {
+                sem_buf(&sops[0], SEM_ATTIVATORE, +1, 0);
+                sem_op(model->ipc->semid, &sops[0], 1);
+//                print(W, "Attivatore +1\n");
                 waste(ATOM_EXIT_NATURAL);
             }
 
             int child_atomic_number;
             split(&atomic_number, &child_atomic_number);
 
-//            sem_buf(&sops[0], SEM_MASTER, -1, 0);
             sem_buf(&sops[0], SEM_ATOM, -1, 0);
-            sem_op(model->ipc->semid, sops, 1);
+//            sem_op(model->ipc->semid, sops, 1);
 
             pid_t child_pid = fork();
             switch (child_pid) {
@@ -117,10 +128,6 @@ int main(int argc, char *argv[]) {
                         if (errno == EAGAIN) {
                             // if inhibitor is deactivated, give control back to master process
                             sem_buf(&sops[0], SEM_MASTER, +1, 0);
-                            sem_op(model->ipc->semid, &sops[0], 1);
-
-                            // and let another atom perform its job
-                            sem_buf(&sops[0], SEM_ATOM, +1, 0);
                             sem_op(model->ipc->semid, &sops[0], 1);
                         } else {
                             // TODO error handling
@@ -152,8 +159,7 @@ int running() {
     // - SIGWAST, means this atom was wasted
     while (!sig_is_handled(sig)) {
         // wait for children processes to terminate
-        while (wait(NULL) != -1)
-            ;
+        while (wait(NULL) != -1);
 
         if (errno == ECHILD) {
             // wait until a signal is received
@@ -169,6 +175,17 @@ int running() {
 }
 
 void waste(int status) {
+//    int pid = waitpid(-1, NULL, WNOHANG);
+//    if (pid == 0) {
+//        print(W, "Parent has been killed, status: %d\n", status);
+//    }
+
+    if (getppid() == model->ipc->master || getppid() == model->ipc->alimentatore) {
+        struct sembuf sops;
+        sem_buf(&sops, SEM_ALIMENTATORE, +1, 0);
+        sem_op(model->ipc->semid, &sops, 1);
+    }
+
     model->stats->n_wastes++;
     model->stats->n_atoms--;
     exit(status);

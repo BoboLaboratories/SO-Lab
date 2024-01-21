@@ -105,6 +105,7 @@ int main(int argc, char *argv[]) {
     int init[SEM_COUNT] = {
             [SEM_INIBITORE_ON] = flags[INHIBITOR_FLAG] ? 0 : 1,
             [SEM_ALIMENTATORE] = 0,
+            [SEM_ATTIVATORE] = 1,
             [SEM_INIBITORE] = 0,
             [SEM_SYNC] = nproc,
             [SEM_MASTER] = 1,
@@ -272,11 +273,11 @@ int running() {
         // for the whole simulation duration
         // wait for children processes to terminate
         while (wait(NULL) != -1) {
-            struct sembuf sops;
-            sem_buf(&sops, SEM_ALIMENTATORE, +1, 0);
-            if (sem_op(model->ipc->semid, &sops, 1) == -1) {
-                // TODO
-            }
+//            struct sembuf sops;
+//            sem_buf(&sops, SEM_ALIMENTATORE, +1, 0);
+//            if (sem_op(model->ipc->semid, &sops, 1) == -1) {
+//                // TODO
+//            }
         }
     }
 

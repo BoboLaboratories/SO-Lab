@@ -108,11 +108,11 @@ int running() {
         while (wait(NULL) != -1) {
             // if a child atom died, check for its exit status so that
             // other processes can perform their job accordingly
-            struct sembuf sops;
-            sem_buf(&sops, SEM_ALIMENTATORE, +1, 0);
-            if (sem_op(model->ipc->semid, &sops, 1) == -1) {
-                // TODO
-            }
+//            struct sembuf sops;
+//            sem_buf(&sops, SEM_ALIMENTATORE, +1, 0);
+//            if (sem_op(model->ipc->semid, &sops, 1) == -1) {
+//                // TODO
+//            }
         }
 
         // if this process has no children

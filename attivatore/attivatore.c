@@ -54,21 +54,29 @@ int main(int argc, char *argv[]) {
     // Sem Sync
     sem_sync(model->ipc->semid, SEM_SYNC);
 
+    struct sembuf sops;
     timer_t timer = timer_start(STEP_ATTIVATORE);
     while (running()) {
         pid_t atom = -1;
+
+        sem_buf(&sops, SEM_ATTIVATORE, -1, 0);
+        if (sem_op(model->ipc->semid, &sops, 1) == -1) {
+            if (errno == EINTR) {
+                sem_buf(&sops, SEM_ATTIVATORE, +1, 0);
+                sem_op(model->ipc->semid, &sops, 1);
+                continue;
+            }
+        }
+
         mask(SIGALRM);
         if (lifo_pop(model->lifo, &atom) == -1) {
             unmask(SIGALRM);
-            if (sig != SIGALRM && fifo_remove(model->res->fifo_fd, &atom, sizeof(pid_t)) == -1) {
-                if (errno == EINTR && sig == SIGALRM) {
-                    continue;
-                }
+            if (sig != SIGALRM) {
+                fifo_remove(model->res->fifo_fd, &atom, sizeof(pid_t));
             }
         }
         if (atom != -1) {
             mask(SIGALRM);
-            struct sembuf sops;
             sem_buf(&sops, SEM_MASTER, -1, 0);
             sem_op(model->ipc->semid, &sops, 1);
             if (kill(atom, SIGACTV) == -1) {
@@ -79,6 +87,9 @@ int main(int argc, char *argv[]) {
                 model->stats->n_activations++;
             }
             unmask(SIGALRM);
+        } else {
+            sem_buf(&sops, SEM_ATTIVATORE, +1, 0);
+            sem_op(model->ipc->semid, &sops, 1);
         }
     }
     timer_delete(timer);
