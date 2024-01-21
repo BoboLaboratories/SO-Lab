@@ -62,12 +62,11 @@ int main(int argc, char *argv[]) {
     timer_t timer = timer_start(STEP_ALIMENTAZIONE);
     while (running()) {
         int n_atoms = 0;
-        while (sig != SIGTERM && n_atoms < N_NUOVI_ATOMI) {
+        while (n_atoms < N_NUOVI_ATOMI) {
             if (sem_op(model->ipc->semid, sops, 2) == 0 || errno == EAGAIN) {
                 mask(SIGALRM);
                 sprintf(argvc[2], "%d", rand_between(MIN_N_ATOMICO, N_ATOM_MAX));
                 pid_t child_pid = fork_execv(argvc);
-
                 if (child_pid != -1) {
                     fifo_add(model->res->fifo_fd, &child_pid, sizeof(pid_t));
                     n_atoms++;
@@ -77,6 +76,7 @@ int main(int argc, char *argv[]) {
                 }
                 unmask(SIGALRM);
             } else if (errno == EINTR && sig == SIGALRM) {
+                sig = -1;
                 break;
             }
         }
@@ -101,7 +101,6 @@ void cleanup() {
     }
 }
 
-
 int running() {
     // while no meaningful signal is received
     while (!sig_is_handled(sig)) {
@@ -119,7 +118,7 @@ int running() {
         // if this process has no children
         if (errno == ECHILD) {
             // wait until a signal is received
-            // when pause is interrupted by a signal,
+            // when pause is interrupted by a signal
             pause();
             // break the inner loop so that meaningful
             // signals are checked by the outer one

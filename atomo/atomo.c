@@ -85,11 +85,11 @@ int main(int argc, char *argv[]) {
             int child_atomic_number;
             split(&atomic_number, &child_atomic_number);
 
-            DEBUG_BREAKPOINT;
+
 //            sem_buf(&sops[0], SEM_MASTER, -1, 0);
             sem_buf(&sops[0], SEM_ATOM, -1, 0);
             sem_op(model->ipc->semid, sops, 1);
-            DEBUG_BREAKPOINT;
+
             pid_t child_pid = fork();
             switch (child_pid) {
                 case -1:
@@ -104,7 +104,6 @@ int main(int argc, char *argv[]) {
                     // Parent atom
                     long energy = (atomic_number * child_atomic_number) - max(atomic_number, child_atomic_number);
                     model->stats->curr_energy += energy;
-                    print(D, "Updating current energy (%d)\n", energy);
                     model->stats->n_fissions++;
                     model->stats->n_atoms++;
 

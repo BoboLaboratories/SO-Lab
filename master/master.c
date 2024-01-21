@@ -221,6 +221,8 @@ int main(int argc, char *argv[]) {
 
         sem_buf(&sops, SEM_MASTER, +1, 0);
         sem_op(model->ipc->semid, &sops, 1);
+
+        sig = -1;
     }
     timer_delete(timer);
 
@@ -262,7 +264,6 @@ int running() {
     // - SIGTERM, means termination (masked)
     // - SIGMELT, means the simulation reached meltdown
     // - SIGALRM, means a second has passed and stats should be printed
-    print(W, "Master is waiting (1)\n");
     while (!sig_is_handled(sig)) {
         // wait for children processes to terminate,
         // used for clearing N_ATOMI_INIT initial atoms
@@ -270,7 +271,6 @@ int running() {
         // other processes that will remain active
         // for the whole simulation duration
         // wait for children processes to terminate
-        print(W, "Master is waiting (2)\n");
         while (wait(NULL) != -1) {
             struct sembuf sops;
             sem_buf(&sops, SEM_ALIMENTATORE, +1, 0);

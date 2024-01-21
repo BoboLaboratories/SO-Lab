@@ -56,7 +56,6 @@ int main(int argc, char *argv[]) {
 
     timer_t timer = timer_start(STEP_ATTIVATORE);
     while (running()) {
-        print(D, "Executing attivatore stuff\n");
         pid_t atom = -1;
         mask(SIGALRM);
         if (lifo_pop(model->lifo, &atom) == -1) {
@@ -72,7 +71,6 @@ int main(int argc, char *argv[]) {
             struct sembuf sops;
             sem_buf(&sops, SEM_MASTER, -1, 0);
             sem_op(model->ipc->semid, &sops, 1);
-            print(D, "Attivando atomo %d\n", atom);
             if (kill(atom, SIGACTV) == -1) {
                 print(E, "Could not activate atom %d.\n", atom);
                 sem_buf(&sops, SEM_MASTER, +1, 0);
