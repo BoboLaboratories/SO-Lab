@@ -7,8 +7,8 @@
 #include "lib/shmem.h"
 #include "lib/sig.h"
 
-void waste();
 int running();
+void waste(int status);
 void split(int *atomic_number, int *child_atomic_number);
 
 extern struct Model *model;
@@ -72,19 +72,18 @@ int main(int argc, char *argv[]) {
         mask(SIGACTV, SIGWAST);
         // if inhibitor wasted this atom
         if (sig == SIGWAST) {
-            waste();
+            waste(ATOM_EXIT_INHIBITED);
         }
 
         // if fission was requested
         if (sig == SIGACTV) {
             // if this atom should become waste
             if (atomic_number < MIN_N_ATOMICO) {
-                waste();
+                waste(ATOM_EXIT_NATURAL);
             }
 
             int child_atomic_number;
             split(&atomic_number, &child_atomic_number);
-
 
 //            sem_buf(&sops[0], SEM_MASTER, -1, 0);
             sem_buf(&sops[0], SEM_ATOM, -1, 0);
@@ -147,41 +146,32 @@ void cleanup() {
 }
 
 int running() {
-    sig = -1;
     // while no meaningful signal is received
     // - SIGTERM, means termination
     // - SIGACTV, means fission was requested
     // - SIGWAST, means this atom was wasted
     while (!sig_is_handled(sig)) {
         // wait for children processes to terminate
-        while (wait(NULL) != -1) {
-            // if this process has no children
-            if (errno == ECHILD) {
-                // wait until a signal is received
-                pause();
-                // when pause is interrupted by a signal,
-                // break the inner loop so that meaningful
-                // signals are checked by the outer one
-                break;
-            }
+        while (wait(NULL) != -1)
+            ;
+
+        if (errno == ECHILD) {
+            // wait until a signal is received
+            pause();
+            // when pause is interrupted by a signal,
+            // break the inner loop so that meaningful
+            // signals are checked by the outer one
+            break;
         }
     }
 
     return sig != SIGTERM;
 }
 
-void waste() {
-    struct sembuf sops;
-    sem_buf(&sops, SEM_MASTER, -1, 0);
-    sem_op(model->ipc->semid, &sops, 1);
-
+void waste(int status) {
     model->stats->n_wastes++;
     model->stats->n_atoms--;
-
-    sem_buf(&sops, SEM_MASTER, +1, 0);
-    sem_op(model->ipc->semid, &sops, 1);
-
-    exit(sig != SIGWAST ? ATOM_EXIT_NATURAL : ATOM_EXIT_INHIBITED);
+    exit(status);
 }
 
 void split(int *atomic_number, int *child_atomic_number) {
