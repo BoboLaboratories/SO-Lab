@@ -16,10 +16,6 @@ int sig_handler(int signal, void (*handler)(int)) {
 
 static void default_handler(int signum) {
     sig = signum;
-//#ifdef ATOMO
-//    if (sig == 12)
-//        print(D, "Recieved SIGWAST: %d\n", getpid());
-//#endif
 }
 
 static sigset_t va_to_mask(int set_handler, void (*handler)(int), int signums, va_list args) {
@@ -45,6 +41,42 @@ void sig_set_handler_(void (*handler)(int), int signums, ...) {
     }
     va_start(args, signums);
     signals = va_to_mask(1, handler, signums, args);
+    va_end(args);
+}
+
+//void sig_handle(void (*handler)(int), int signums, ...) {
+//    va_list args;
+//    if (handler == NULL) {
+//        handler = &default_handler;
+//    }
+//    va_start(args, signums);
+//    signals = va_to_mask(1, handler, signums, args);
+//    va_end(args);
+//}
+
+void sig_setup_(/*void (*handler)(int), */sigset_t *mask, sigset_t *complementary, int signums, ...) {
+    /*if (handler == NULL) {
+        handler = &default_handler;
+    }*/
+
+    sigemptyset(mask);
+    if (complementary != NULL) {
+        sigfillset(complementary);
+    }
+
+    va_list args;
+    va_start(args, signums);
+
+    int signum = signums;
+    while (signum != -1) {
+        if (complementary != NULL) {
+            sigdelset(complementary, signum);
+        }
+        sigaddset(mask, signum);
+        sig_handler(signum, &default_handler);
+        signum = va_arg(args, int);
+    }
+
     va_end(args);
 }
 

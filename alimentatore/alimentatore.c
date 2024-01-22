@@ -55,9 +55,8 @@ int main(int argc, char *argv[]) {
 
     char *buf;
     char **argvc;
-    prargs("atomo", &argvc, &buf, 3, ITC_SIZE);
+    prargs("atomo", &argvc, &buf, 2, ITC_SIZE);
     sprintf(argvc[1], "%d", model->res->shmid);
-    sprintf(argvc[3], "%s", "Att");
 
     struct sembuf sops[2];
     sem_buf(&sops[0], SEM_INIBITORE_ON, 0, IPC_NOWAIT);
