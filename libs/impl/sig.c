@@ -16,6 +16,10 @@ int sig_handler(int signal, void (*handler)(int)) {
 
 static void default_handler(int signum) {
     sig = signum;
+//#ifdef ATOMO
+//    if (sig == 12)
+//        print(D, "Recieved SIGWAST: %d\n", getpid());
+//#endif
 }
 
 static sigset_t va_to_mask(int set_handler, void (*handler)(int), int signums, va_list args) {

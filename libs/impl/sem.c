@@ -3,6 +3,7 @@
 #include <string.h>
 #include <errno.h>
 
+#include "lib/ipc.h"
 #include "lib/sem.h"
 
 struct Init {
@@ -76,11 +77,25 @@ int sem_sync(int semid, int sem_num) {
     return 0;
 }
 
+int sem_end_activation(int semid) {
+    struct sembuf sops;
+    sem_buf(&sops, SEM_MASTER, +1, 0);
+    if (sem_op(semid, &sops, 1) == -1) {
+        print(E, "Could not release master semaphore.\n");
+    }
+
+    sem_buf(&sops, SEM_ATTIVATORE, +1, 0);
+    if (sem_op(semid, &sops, 1) == -1) {
+        print(E, "Could not increase activator semaphore.\n");
+    }
+}
+
 void sem_buf(struct sembuf *sop, unsigned short sem_num, short sem_op, short sem_flg) {
     sop->sem_num = sem_num;
     sop->sem_flg = sem_flg;
     sop->sem_op = sem_op;
 }
+
 /*
 int sem_acquire(int semid, unsigned short sem_num, short sem_flg) {
     struct sembuf sops;

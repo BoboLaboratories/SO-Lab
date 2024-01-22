@@ -31,7 +31,8 @@ int fifo_open(const char *pathname, int flags) {
 int fifo_add(int fifo_fd, void *data, size_t size) {
     int ret = 0;
     if (write(fifo_fd, data, size) != (long) size) {
-        // TODO error handling
+        // TODO: Error handling
+        print(E, "Error while adding data from fifo.\n");
         ret = -1;
     }
     return ret;
@@ -40,7 +41,8 @@ int fifo_add(int fifo_fd, void *data, size_t size) {
 int fifo_remove(int fifo_fd, void *data, size_t size) {
     int ret = 0;
     if (read(fifo_fd, data, size) != (long) size) {
-        // TODO error handling
+        // TODO: Error handling
+        print(E, "Error while removing data from fifo.\n");
         ret = -1;
     }
     return ret;

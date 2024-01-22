@@ -13,7 +13,7 @@ struct Lifo {
 };
 
 void mklifo(struct Lifo *lifo, int segment_length, size_t elem_size, int semid, int sem_num);
-void lifo_push(struct Lifo *lifo, void *data);
+int lifo_push(struct Lifo *lifo, void *data);
 int lifo_pop(struct Lifo *lifo, void *data);
 int rmlifo(struct Lifo *lifo);
 

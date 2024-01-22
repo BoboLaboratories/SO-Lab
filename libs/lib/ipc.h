@@ -11,8 +11,9 @@
 #define SEM_ATTIVATORE      5
 #define SEM_INIBITORE       6
 #define SEM_INIBITORE_ON    7
+#define SEM_SIMULATION_ON   8
 
-#define SEM_COUNT           8
+#define SEM_COUNT           9
 
 #define SIGMELT     SIGUSR1     // when received by master it means meltdown
 #define SIGACTV     SIGUSR1     // when received by atom it means it should perform a fission

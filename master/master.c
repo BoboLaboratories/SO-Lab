@@ -87,6 +87,7 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
+
     // =========================================
     //             Setup semaphore
     // =========================================
@@ -99,6 +100,7 @@ int main(int argc, char *argv[]) {
 
     int init[SEM_COUNT] = {
             [SEM_INIBITORE_ON] = flags[INHIBITOR_FLAG] ? 0 : 1,
+            [SEM_SIMULATION_ON] = 0,
             [SEM_ALIMENTATORE] = 0,
             [SEM_ATTIVATORE] = 1,
             [SEM_INIBITORE] = 0,
@@ -165,8 +167,9 @@ int main(int argc, char *argv[]) {
     // =========================================
     //              Forking atoms
     // =========================================
-    prargs("atomo", &argvc, &buf, 2, ITC_SIZE);
+    prargs("atomo", &argvc, &buf, 3, ITC_SIZE);
     sprintf(argvc[1], "%d", model->res->shmid);
+    sprintf(argvc[3], "%s", "M");
     for (int i = 0; child_pid != -1 && i < N_ATOMI_INIT; i++) {
         sprintf(argvc[2], "%d", rand_between(MIN_N_ATOMICO, N_ATOM_MAX));
         child_pid = fork_execv(argvc);
@@ -195,10 +198,13 @@ int main(int argc, char *argv[]) {
     // =========================================
     status = RUNNING;
     print(I, "All processes ready, simulation start.\n");
+    struct sembuf sops;
+    sem_buf(&sops, SEM_SIMULATION_ON, +1, 0);
+    sem_op(model->ipc->semid, &sops, 1);
 
     timer_t timer = timer_start((long) 1e9);
     while (running()) {
-        struct sembuf sops;
+
         sem_buf(&sops, SEM_MASTER, -1, 0);
         sem_op(model->ipc->semid, &sops, 1);
 
@@ -274,12 +280,12 @@ int running() {
         // other processes that will remain active
         // for the whole simulation duration
         // wait for children processes to terminate
-        while (wait(NULL) != -1) {
-            struct sembuf sops;
-            sem_buf(&sops, SEM_ALIMENTATORE, +1, 0);
-            if (sem_op(model->ipc->semid, &sops, 1) == -1) {
-                // TODO
-            }
+        while (waitpid(-getpgrp(), NULL, 0) != -1) {
+//            struct sembuf sops;
+//            sem_buf(&sops, SEM_ALIMENTATORE, +1, 0);
+//            if (sem_op(model->ipc->semid, &sops, 1) == -1) {
+//                // TODO
+//            }
         }
     }
 

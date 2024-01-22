@@ -32,17 +32,17 @@ static int release(struct Lifo *lifo) {
 
 void mklifo(struct Lifo *lifo, int segment_length, size_t elem_size, int semid, int sem_num) {
     struct Lifo tmp = {
-        .shmid = -1,
-        .length = 0,
-        .semid = semid,
-        .sem_num = sem_num,
-        .segment_length = segment_length,
-        .elem_size = elem_size
+            .shmid = -1,
+            .length = 0,
+            .semid = semid,
+            .sem_num = sem_num,
+            .segment_length = segment_length,
+            .elem_size = elem_size
     };
     memcpy(lifo, &tmp, sizeof(struct Lifo));
 }
 
-void lifo_push(struct Lifo *lifo, void *data) {
+int lifo_push(struct Lifo *lifo, void *data) {
     if (acquire(lifo) != -1) {
         void *shmaddr;
         if ((shmaddr = attach(lifo, PUSH)) != (void *) -1) {
@@ -53,7 +53,9 @@ void lifo_push(struct Lifo *lifo, void *data) {
             shmem_detach(shmaddr);
         }
         release(lifo);
+        return 0;
     }
+    return -1;
 }
 
 int lifo_pop(struct Lifo *lifo, void *data) {
@@ -67,8 +69,8 @@ int lifo_pop(struct Lifo *lifo, void *data) {
                 memcpy(data, shmaddr + offset, lifo->elem_size);
 
                 shmem_detach(shmaddr);
-                ret = 0;
             }
+            ret = 0;
         }
         release(lifo);
     }

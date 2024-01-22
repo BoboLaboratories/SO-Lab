@@ -55,13 +55,11 @@ int main(int argc, char *argv[]) {
 
         pid_t pid;
         lifo_pop(model->lifo, &pid);
-        kill(pid, SIGWAST);
-
-        sem_buf(&sops, SEM_MASTER, +1, 0);
-        sem_op(model->ipc->semid, &sops, 1);
-
-        sem_buf(&sops, SEM_ATTIVATORE, +1, 0);
-        sem_op(model->ipc->semid, &sops, 1);
+        if (kill(pid, SIGWAST) == -1) {
+            print(E, "Error wasting atom %d.\n", pid);
+        }
+//        print(D, "inhibitor wasting: %d\n", pid);
+//        sem_end_activation(model->ipc->semid);
         unmask(SIGTERM);
     }
 

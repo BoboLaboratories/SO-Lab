@@ -1,6 +1,5 @@
 #include <errno.h>
 #include <stdlib.h>
-#include <sys/wait.h>
 
 #include "model.h"
 #include "lib/sem.h"
@@ -15,16 +14,23 @@ void waste(int status);
 void split(int *atomic_number, int *child_atomic_number);
 
 extern struct Model *model;
+extern sigset_t signals;
 extern sig_atomic_t sig;
 
-pid_t ppid;
+static pid_t ppid;
+static pid_t pid;
+
+static sigset_t mask;
+static sigset_t oldmask;
 
 int main(int argc, char *argv[]) {
-    if (argc != 3) {
+    if (argc != 4) {
         print(E, "Usage: %s <shmid> <atomic-number>\n", argv[0]);
         exit(EXIT_FAILURE);
     }
 
+    pid = getpid();
+    ppid = getppid();
     int atomic_number;
 
     init();
@@ -51,46 +57,74 @@ int main(int argc, char *argv[]) {
     attach_model(model->res->shmaddr);
 
 
+    // =========================================
+    //               Setup FIFO
+    // =========================================
     if ((model->res->fifo_fd = fifo_open(FIFO, O_WRONLY)) == -1) {
         exit(EXIT_FAILURE);
     }
+
+
     // =========================================
     //              Update stats
     // =========================================
     struct sembuf sops[2];
     sem_buf(&sops[0], SEM_MASTER, -1, 0);
-    sem_op(model->ipc->semid, &sops[0], 1);
-
-    model->stats->n_atoms++;
-    pid_t tmp = getpid();
-    if (fifo_add(model->res->fifo_fd, &tmp, sizeof(pid_t)) == -1) {
-        print(E, "Could not insert atom %d in FIFO.\n", tmp);
+    if (sem_op(model->ipc->semid, &sops[0], 1) == -1) {
+        print(E, "Could not acquire master semaphore.\n");
+        exit(EXIT_FAILURE);
     }
 
+    model->stats->n_atoms++;
+    fifo_add(model->res->fifo_fd, &pid, sizeof(pid_t));
+
     sem_buf(&sops[0], SEM_MASTER, +1, 0);
-    sem_op(model->ipc->semid, &sops[0], 1);
+    if (sem_op(model->ipc->semid, &sops[0], 1) == -1) {
+        print(E, "Could not release master semaphore.\n");
+        // TODO ammazzare simulazione
+        exit(EXIT_FAILURE);
+    }
+
 
     // =========================================
     //        Sync with other processes
     // =========================================
     sem_sync(model->ipc->semid, SEM_SYNC);
 
-    ppid = getppid();
+
     // =========================================
     //                Main logic
     // =========================================
-    while (running()) {
-        mask(SIGACTV, SIGWAST);
-        // if inhibitor wasted this atom
+
+
+
+    sigemptyset(&mask);
+    sigaddset(&mask, SIGWAST);
+    sigaddset(&mask, SIGACTV);
+    sigaddset(&mask, SIGTERM);
+    sigprocmask(SIG_BLOCK, &mask, &oldmask);
+
+    while (1) {
+        sigset_t critical;
+        sigfillset(&critical);
+        sigdelset(&critical, SIGWAST);
+        sigdelset(&critical, SIGACTV);
+        sigdelset(&critical, SIGTERM);
+
+        sigsuspend(&critical);
+
+        if (sig == SIGTERM) {
+            break;
+        }
+
         if (sig == SIGWAST) {
             waste(ATOM_EXIT_INHIBITED);
         }
 
-        // if fission was requested
         if (sig == SIGACTV) {
+            // if fission was requested
             // if this atom should become waste
             if (atomic_number < MIN_N_ATOMICO) {
-//                print(W, "Attivatore +1\n");
                 waste(ATOM_EXIT_NATURAL);
             }
 
@@ -107,39 +141,40 @@ int main(int argc, char *argv[]) {
                     // Child atom
                     atomic_number = child_atomic_number;
                     ppid = getppid();
+                    pid = getpid();
                     break;
                 default: {
                     // Parent atom
-                    long energy = (atomic_number * child_atomic_number) - max(atomic_number, child_atomic_number);
+                    long energy =
+                            (atomic_number * child_atomic_number) - max(atomic_number, child_atomic_number);
+
+                    // update stats
                     model->stats->curr_energy += energy;
                     model->stats->n_fissions++;
                     model->stats->n_atoms++;
 
-                    pid_t pid = getpid();
-                    lifo_push(model->lifo, &pid);
-                    lifo_push(model->lifo, &child_pid);
+                    // push both atoms back on lifo
+                    if (lifo_push(model->lifo, &pid) == -1) {
+                        print(E, "Could not push parent pid to lifo.\n");
+                        // TODO
+                    }
+                    if (lifo_push(model->lifo, &child_pid) == -1) {
+                        print(E, "Could not push child atom to lifo.\n");
+                        // TODO
+                    }
 
                     // wake up inhibitor, if activated, to inhibit the energy we just produced
                     sem_buf(&sops[0], SEM_INIBITORE_ON, 0, IPC_NOWAIT);
                     sem_buf(&sops[1], SEM_INIBITORE, +1, 0);
                     if (sem_op(model->ipc->semid, sops, 2) == -1) {
                         if (errno == EAGAIN) {
-                            // if inhibitor is deactivated, give control back to master process
-                            sem_buf(&sops[0], SEM_MASTER, +1, 0);
-                            sem_op(model->ipc->semid, &sops[0], 1);
-
-                            sem_buf(&sops[0], SEM_ATTIVATORE, +1, 0);
-                            sem_op(model->ipc->semid, &sops[0], 1);
-                        } else {
-                            // TODO
+                            sem_end_activation(model->ipc->semid);
                         }
                     }
                     break;
                 }
             }
         }
-        sig = -1;
-        unmask(SIGACTV, SIGWAST);
     }
 
     exit(EXIT_SUCCESS);
@@ -154,44 +189,31 @@ void cleanup() {
 }
 
 int running() {
-    // while no meaningful signal is received
-    // - SIGTERM, means termination
-    // - SIGACTV, means fission was requested
-    // - SIGWAST, means this atom was wasted
-    while (!sig_is_handled(sig)) {
-        // wait for children processes to terminate
-        while (wait(NULL) != -1)
-            ;
+    sigset_t sigset;
+    sigfillset(&sigset);
+    sigdelset(&sigset, SIGWAST);
+    sigdelset(&sigset, SIGACTV);
+    sigdelset(&sigset, SIGTERM);
 
-        if (errno == ECHILD) {
-            // wait until a signal is received
-            pause();
-            // when pause is interrupted by a signal,
-            // break the inner loop so that meaningful
-            // signals are checked by the outer one
-            break;
-        }
-    }
-
+    sigsuspend(&sigset);
+    mask(SIGWAST, SIGACTV, SIGTERM);
     return sig != SIGTERM;
 }
 
 void waste(int status) {
-    /*if (ppid == model->ipc->master || ppid == model->ipc->alimentatore) {
-        struct sembuf sops;
-        sem_buf(&sops, SEM_ALIMENTATORE, +1, 0);
-        sem_op(model->ipc->semid, &sops, 1);
-    }*/
+    // TODO what happens when inhibitor releases master semaphore before stats are updated?
 
     model->stats->n_wastes++;
     model->stats->n_atoms--;
 
-    if (status == ATOM_EXIT_NATURAL) {
-        struct sembuf sops;
-        sem_buf(&sops, SEM_MASTER, +1, 0);
-        sem_op(model->ipc->semid, &sops, 1);
+//    if (status == ATOM_EXIT_NATURAL) {
+//        sem_end_activation(model->ipc->semid);
+//    }
+    sem_end_activation(model->ipc->semid);
 
-        sem_buf(&sops, SEM_ATTIVATORE, +1, 0);
+    if (ppid == model->ipc->master || ppid == model->ipc->alimentatore) {
+        struct sembuf sops;
+        sem_buf(&sops, SEM_ALIMENTATORE, +1, 0);
         sem_op(model->ipc->semid, &sops, 1);
     }
 
