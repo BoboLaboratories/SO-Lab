@@ -20,21 +20,30 @@ extern sig_atomic_t sig;
 static pid_t ppid;
 static pid_t pid;
 
-static sigset_t mask;
-static sigset_t oldmask;
-
 int main(int argc, char *argv[]) {
     if (argc != 3) {
         print(E, "Usage: %s <shmid> <atomic-number>\n", argv[0]);
         exit(EXIT_FAILURE);
     }
 
-    pid = getpid();
-    ppid = getppid();
-    int atomic_number;
-
     init();
-    sig_handle(NULL, SIGACTV, SIGWAST, SIGTERM);
+
+
+    // =========================================
+    //               Mask setup
+    // =========================================
+    sigset_t mask;
+    sigset_t critical;
+    sig_setup(&mask, &critical, SIGACTV, SIGWAST, SIGTERM);
+    sigprocmask(SIG_BLOCK, &mask, NULL);
+
+
+    // =========================================
+    //            Argument parsing
+    // =========================================
+    int atomic_number;
+    ppid = getppid();
+    pid = getpid();
 
     if (parse_int(argv[1], &model->res->shmid) == -1) {
         print(E, "Could not parse shmid (%s).\n", argv[1]);
@@ -96,21 +105,7 @@ int main(int argc, char *argv[]) {
     //                Main logic
     // =========================================
 
-
-
-    sigemptyset(&mask);
-    sigaddset(&mask, SIGWAST);
-    sigaddset(&mask, SIGACTV);
-    sigaddset(&mask, SIGTERM);
-    sigprocmask(SIG_BLOCK, &mask, &oldmask);
-
     while (1) {
-        sigset_t critical;
-        sigfillset(&critical);
-        sigdelset(&critical, SIGWAST);
-        sigdelset(&critical, SIGACTV);
-        sigdelset(&critical, SIGTERM);
-
         sigsuspend(&critical);
 
         if (sig == SIGTERM) {
@@ -186,18 +181,6 @@ void cleanup() {
             shmem_detach(model->res->shmaddr);
         }
     }
-}
-
-int running() {
-    sigset_t sigset;
-    sigfillset(&sigset);
-    sigdelset(&sigset, SIGWAST);
-    sigdelset(&sigset, SIGACTV);
-    sigdelset(&sigset, SIGTERM);
-
-    sigsuspend(&sigset);
-    mask(SIGWAST, SIGACTV, SIGTERM);
-    return sig != SIGTERM;
 }
 
 void waste(int status) {
