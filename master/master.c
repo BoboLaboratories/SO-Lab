@@ -1,5 +1,4 @@
 #include <time.h>
-#include <errno.h>
 #include <fcntl.h>
 #include <malloc.h>
 #include <stdlib.h>
@@ -7,7 +6,6 @@
 #include <unistd.h>
 #include <sys/shm.h>
 #include <sys/stat.h>
-#include <sys/wait.h>
 
 #include "model.h"
 #include "config.h"
@@ -29,10 +27,6 @@ extern sig_atomic_t sig;
 
 static void shutdown(int signum, int exit_status);
 
-int running();
-void signal_handler(int signum);
-void update_status(enum Status new);
-
 int main(int argc, char *argv[]) {
 #ifdef D_PID
     print(D, "Master: %d\n", getpid());
@@ -52,7 +46,6 @@ int main(int argc, char *argv[]) {
     // =========================================
     sigset_t mask;
     sigset_t critical;
-    sig_handle(&signal_handler, SIGALRM, SIGMELT, SIGTERM);
     sig_setup(&mask, &critical, SIGALRM, SIGMELT, SIGTERM);
     sigprocmask(SIG_BLOCK, &mask, NULL);
 
@@ -204,41 +197,46 @@ int main(int argc, char *argv[]) {
     // =========================================
     //               Main logic
     // =========================================
-    status = RUNNING;
     print(I, "All processes ready, simulation start.\n");
-    struct sembuf sops;
 
+    status = RUNNING;
+    struct sembuf sops;
     timer_t timer = timer_start((long) 1e9);
-    while (1) {
+    while (status == RUNNING) {
         sigsuspend(&critical);
 
         sem_buf(&sops, SEM_MASTER, -1, 0);
         sem_op(model->ipc->semid, &sops, 1);
 
-        if (status == RUNNING) {
-            if (model->stats->curr_energy < ENERGY_DEMAND) {
-                update_status(BLACKOUT);
-//                print(W, "Blackout happened here!\n");
-            } else {
-                model->stats->curr_energy -= ENERGY_DEMAND;
-                if (model->stats->curr_energy >= ENERGY_EXPLODE_THRESHOLD) {
-                    update_status(EXPLODE);
+        switch (sig) {
+            case SIGMELT:
+                status = MELTDOWN;
+                break;
+            case SIGTERM:
+                status = TERMINATED;
+                break;
+            case SIGALRM:
+                // TODO handle TIMEOUT
+                if (model->stats->curr_energy < ENERGY_DEMAND) {
+                    status = BLACKOUT;
+                } else {
+                    model->stats->curr_energy -= ENERGY_DEMAND;
+                    if (model->stats->curr_energy >= ENERGY_EXPLODE_THRESHOLD) {
+                        status = EXPLODE;
+                    }
                 }
-            }
+                break;
+            default:
+                break;
         }
 
-        print(I, "S: %d, E: %d, W: %d, A: %d \n", status, model->stats->curr_energy, model->stats->n_wastes, model->stats->n_atoms);
+        print(I, "S: %d, E: %d, W: %d, A: %d \n", status, model->stats->curr_energy, model->stats->n_wastes,
+              model->stats->n_atoms);
 
-        unmask(SIGTERM);
-
-        if (status != RUNNING) {
-            break;
+        if (status == RUNNING) {
+            sem_buf(&sops, SEM_MASTER, +1, 0);
+            sem_op(model->ipc->semid, &sops, 1);
         }
-
-        sem_buf(&sops, SEM_MASTER, +1, 0);
-        sem_op(model->ipc->semid, &sops, 1);
-
-        sig = -1;
     }
     timer_delete(timer);
 
@@ -254,17 +252,19 @@ int main(int argc, char *argv[]) {
 }
 
 void cleanup() {
-    if (model->ipc->semid != -1) {
-        rmsem(model->ipc->semid);
-    }
-    if (model->res->fifo_fd != -1) {
-        fifo_close(model->res->fifo_fd);
-    }
-    if (model->lifo != NULL) {
-        rmlifo(model->lifo);
-    }
-    if (model->res->shmaddr != (void *) -1) {
-        shmem_detach(model->res->shmaddr);
+    if (model != NULL) {
+        if (model->ipc->semid != -1) {
+            rmsem(model->ipc->semid);
+        }
+        if (model->res->fifo_fd != -1) {
+            fifo_close(model->res->fifo_fd);
+        }
+        if (model->lifo != NULL) {
+            rmlifo(model->lifo);
+        }
+        if (model->res->shmaddr != (void *) -1) {
+            shmem_detach(model->res->shmaddr);
+        }
     }
 }
 
@@ -272,47 +272,4 @@ static void shutdown(int signum, int exit_status) {
     raise(signum);
     wait_children();
     exit(exit_status);
-}
-
-int running() {
-    mask(SIGTERM);
-    // while no meaningful signal is received
-    // - SIGTERM, means termination (masked)
-    // - SIGMELT, means the simulation reached meltdown
-    // - SIGALRM, means a second has passed and stats should be printed
-    while (!sig_is_handled(sig)) {
-        // wait for children processes to terminate,
-        // used for clearing N_ATOMI_INIT initial atoms
-        // then simulating a pause by waiting for
-        // other processes that will remain active
-        // for the whole simulation duration
-        // wait for children processes to terminate
-        while (waitpid(-getpgrp(), NULL, 0) != -1) {
-//            struct sembuf sops;
-//            sem_buf(&sops, SEM_ALIMENTATORE, +1, 0);
-//            if (sem_op(model->ipc->semid, &sops, 1) == -1) {
-//                // TODO
-//            }
-        }
-    }
-
-    return sig_reset(1);
-}
-
-void update_status(enum Status new) {
-    if (status == RUNNING) {
-        status = new;
-    }
-}
-
-void signal_handler(int signum) {
-    sig = signum;
-
-    if (signum == SIGMELT) {
-        update_status(MELTDOWN);
-    }
-
-    if (signum == SIGTERM) {
-        update_status(TERMINATED);
-    }
 }
