@@ -13,6 +13,9 @@ extern sig_atomic_t sig;
 int running();
 
 int main(int argc, char *argv[]) {
+#ifdef D_PID
+    print(D, "Inibitore: %d\n", getpid());
+#endif
     if (argc != 2) {
         print(E, "Usage: %s <shmid>\n", argv[0]);
         exit(EXIT_FAILURE);
@@ -59,7 +62,6 @@ int main(int argc, char *argv[]) {
 
         sem_buf(&sops, SEM_ATTIVATORE, +1, 0);
         sem_op(model->ipc->semid, &sops, 1);
-
         unmask(SIGTERM);
     }
 

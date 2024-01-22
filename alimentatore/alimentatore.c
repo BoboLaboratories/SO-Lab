@@ -19,6 +19,9 @@ extern sig_atomic_t sig;
 int running();
 
 int main(int argc, char *argv[]) {
+#ifdef D_PID
+    print(D, "Alimentatore: %d\n", getpid());
+#endif
     if (argc != 2) {
         print(E, "Usage: %s <shmid>\n", argv[0]);
         exit(EXIT_FAILURE);
@@ -52,8 +55,9 @@ int main(int argc, char *argv[]) {
 
     char *buf;
     char **argvc;
-    prargs("atomo", &argvc, &buf, 2, ITC_SIZE);
+    prargs("atomo", &argvc, &buf, 3, ITC_SIZE);
     sprintf(argvc[1], "%d", model->res->shmid);
+    sprintf(argvc[3], "%s", "Att");
 
     struct sembuf sops[2];
     sem_buf(&sops[0], SEM_INIBITORE_ON, 0, IPC_NOWAIT);
@@ -66,17 +70,26 @@ int main(int argc, char *argv[]) {
             if (sem_op(model->ipc->semid, sops, 2) == 0 || errno == EAGAIN) {
                 mask(SIGALRM);
                 sprintf(argvc[2], "%d", rand_between(MIN_N_ATOMICO, N_ATOM_MAX));
-                pid_t child_pid = fork_execv(argvc);
-                if (child_pid != -1) {
-                    fifo_add(model->res->fifo_fd, &child_pid, sizeof(pid_t));
-                    n_atoms++;
-                } else {
-                    kill(model->ipc->master, SIGMELT);
-                    break;
+                pid_t child_pid = fork();
+                switch (child_pid) {
+                    case -1:
+                        kill(model->ipc->master, SIGMELT);
+                        break;
+                    case 0:
+                        execv(argvc[0], argvc);
+                        print(E, "Could not execute %s.\n", argvc[0]);
+                        kill(model->ipc->master, SIGMELT);     // TODO set_meaningful_signals if working as expected
+                        break;
+                    default:
+                        n_atoms++;
+                        break;
                 }
                 unmask(SIGALRM);
             } else if (errno == EINTR && sig == SIGALRM) {
                 sig = -1;
+                break;
+            }
+            if (sig == SIGALRM) {
                 break;
             }
         }

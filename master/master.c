@@ -34,6 +34,9 @@ void signal_handler(int signum);
 void update_status(enum Status new);
 
 int main(int argc, char *argv[]) {
+#ifdef D_PID
+    print(D, "Master: %d\n", getpid());
+#endif
     // check for flags
     for (int i = 1; i < argc; i++) {
         if (strcmp("--inhibitor", argv[i]) == 0) {
@@ -84,14 +87,6 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
-
-    // =========================================
-    //               Setup lifo
-    // =========================================
-    // TODO 100 come segment_length a 4 occhi chiusi, meglio avere qualche euristica
-    mklifo(model->lifo, 10, sizeof(pid_t), model->ipc->semid, SEM_LIFO);
-
-
     // =========================================
     //             Setup semaphore
     // =========================================
@@ -117,6 +112,13 @@ int main(int argc, char *argv[]) {
     if (model->ipc->semid == -1) {
         exit(EXIT_FAILURE);
     }
+
+
+    // =========================================
+    //               Setup lifo
+    // =========================================
+    // TODO 100 come segment_length a 4 occhi chiusi, meglio avere qualche euristica
+    mklifo(model->lifo, 10, sizeof(pid_t), model->ipc->semid, SEM_LIFO);
 
 
     // =========================================
@@ -163,13 +165,14 @@ int main(int argc, char *argv[]) {
     // =========================================
     //              Forking atoms
     // =========================================
-    prargs("atomo", &argvc, &buf, 2, ITC_SIZE);
+    prargs("atomo", &argvc, &buf, 3, ITC_SIZE);
     sprintf(argvc[1], "%d", model->res->shmid);
+    sprintf(argvc[3], "%s", "M");
     for (int i = 0; child_pid != -1 && i < N_ATOMI_INIT; i++) {
         sprintf(argvc[2], "%d", rand_between(MIN_N_ATOMICO, N_ATOM_MAX));
         child_pid = fork_execv(argvc);
         if (child_pid != -1) {
-            fifo_add(model->res->fifo_fd, &child_pid, sizeof(pid_t));
+            // fifo_add(model->res->fifo_fd, &child_pid, sizeof(pid_t));
         }
     }
 

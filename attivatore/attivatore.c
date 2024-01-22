@@ -16,6 +16,9 @@ extern sig_atomic_t sig;
 int running();
 
 int main(int argc, char *argv[]) {
+#ifdef D_PID
+    print(D, "Attivatore: %d\n", getpid());
+#endif
     if (argc != 2) {
         print(E, "Usage: %s <shmid>\n", argv[0]);
         exit(EXIT_FAILURE);
@@ -54,19 +57,18 @@ int main(int argc, char *argv[]) {
     // Sem Sync
     sem_sync(model->ipc->semid, SEM_SYNC);
 
-    struct sembuf sops;
+    struct sembuf sops[2];
     timer_t timer = timer_start(STEP_ATTIVATORE);
     while (running()) {
         pid_t atom = -1;
-
-        sem_buf(&sops, SEM_ATTIVATORE, -1, 0);
-        if (sem_op(model->ipc->semid, &sops, 1) == -1) {
+        sem_buf(&sops[0], SEM_MASTER, -1, 0);
+        sem_buf(&sops[1], SEM_ATTIVATORE, -1, 0);
+        if (sem_op(model->ipc->semid, sops, 2) == -1) {
             if (errno == EINTR) {
-                sem_buf(&sops, SEM_ATTIVATORE, +1, 0);
-                sem_op(model->ipc->semid, &sops, 1);
                 continue;
             }
         }
+
 
         mask(SIGALRM);
         if (lifo_pop(model->lifo, &atom) == -1) {
@@ -75,22 +77,20 @@ int main(int argc, char *argv[]) {
                 fifo_remove(model->res->fifo_fd, &atom, sizeof(pid_t));
             }
         }
+
         if (atom != -1) {
             mask(SIGALRM);
-            sem_buf(&sops, SEM_MASTER, -1, 0);
-            sem_op(model->ipc->semid, &sops, 1);
             if (kill(atom, SIGACTV) == -1) {
                 print(E, "Could not activate atom %d.\n", atom);
-                sem_buf(&sops, SEM_MASTER, +1, 0);
-                sem_op(model->ipc->semid, &sops, 1);
             } else {
                 model->stats->n_activations++;
             }
             unmask(SIGALRM);
         } else {
-            sem_buf(&sops, SEM_ATTIVATORE, +1, 0);
-            sem_op(model->ipc->semid, &sops, 1);
+            sem_buf(&sops[0], SEM_ATTIVATORE, +1, 0);
+            sem_op(model->ipc->semid, &sops[0], 1);
         }
+
     }
     timer_delete(timer);
 

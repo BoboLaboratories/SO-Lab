@@ -6,6 +6,7 @@
 #include "lib/sem.h"
 #include "lib/shmem.h"
 #include "lib/sig.h"
+#include "lib/fifo.h"
 
 int running();
 
@@ -19,7 +20,7 @@ extern sig_atomic_t sig;
 pid_t ppid;
 
 int main(int argc, char *argv[]) {
-    if (argc != 3) {
+    if (argc != 4) {
         print(E, "Usage: %s <shmid> <atomic-number>\n", argv[0]);
         exit(EXIT_FAILURE);
     }
@@ -50,6 +51,9 @@ int main(int argc, char *argv[]) {
     attach_model(model->res->shmaddr);
 
 
+    if ((model->res->fifo_fd = fifo_open(FIFO, O_WRONLY)) == -1) {
+        exit(EXIT_FAILURE);
+    }
     // =========================================
     //              Update stats
     // =========================================
@@ -58,10 +62,11 @@ int main(int argc, char *argv[]) {
     sem_op(model->ipc->semid, &sops[0], 1);
 
     model->stats->n_atoms++;
+    pid_t tmp = getpid();
+    fifo_add(model->res->fifo_fd, &tmp, sizeof(pid_t));
 
     sem_buf(&sops[0], SEM_MASTER, +1, 0);
     sem_op(model->ipc->semid, &sops[0], 1);
-
 
     // =========================================
     //        Sync with other processes
@@ -76,18 +81,11 @@ int main(int argc, char *argv[]) {
         mask(SIGACTV, SIGWAST);
         // if inhibitor wasted this atom
         if (sig == SIGWAST) {
-            if (getppid() == model->ipc->master || getppid() == model->ipc->alimentatore) {
-                print(W, "Wasting: %d\n", getpid());
-            }
-
             waste(ATOM_EXIT_INHIBITED);
         }
 
         // if fission was requested
         if (sig == SIGACTV) {
-            if (getppid() != model->ipc->master && getppid() != model->ipc->alimentatore) {
-                print(W, "Activating: %d\n", getpid());
-            }
             // if this atom should become waste
             if (atomic_number < MIN_N_ATOMICO) {
 //                print(W, "Attivatore +1\n");
@@ -96,9 +94,6 @@ int main(int argc, char *argv[]) {
 
             int child_atomic_number;
             split(&atomic_number, &child_atomic_number);
-
-            sem_buf(&sops[0], SEM_ATOM, -1, 0);
-//            sem_op(model->ipc->semid, sops, 1);
 
             pid_t child_pid = fork();
             switch (child_pid) {
@@ -130,16 +125,19 @@ int main(int argc, char *argv[]) {
                             // if inhibitor is deactivated, give control back to master process
                             sem_buf(&sops[0], SEM_MASTER, +1, 0);
                             sem_op(model->ipc->semid, &sops[0], 1);
+
+                            sem_buf(&sops[0], SEM_ATTIVATORE, +1, 0);
+                            sem_op(model->ipc->semid, &sops[0], 1);
                         } else {
-                            // TODO error handling
+                            // TODO
                         }
                     }
                     break;
                 }
             }
-            sig = -1;
-            unmask(SIGACTV, SIGWAST);
         }
+        sig = -1;
+        unmask(SIGACTV, SIGWAST);
     }
 
     exit(EXIT_SUCCESS);
@@ -160,7 +158,8 @@ int running() {
     // - SIGWAST, means this atom was wasted
     while (!sig_is_handled(sig)) {
         // wait for children processes to terminate
-        while (wait(NULL) != -1);
+        while (wait(NULL) != -1)
+            ;
 
         if (errno == ECHILD) {
             // wait until a signal is received

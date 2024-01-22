@@ -5,9 +5,9 @@
 #include "lib/config.h"
 #include "lib/console.h"
 
-#if defined(ATTIVATORE) || defined(ATOMO) || defined(INIBITORE)
+//#if defined(ATTIVATORE) || defined(ATOMO) || defined(INIBITORE)
 #include "lib/lifo.h"
-#endif
+//#endif
 
 #ifdef MASTER
 enum Status {
@@ -41,9 +41,9 @@ struct Model {
     struct Resources {
         void *shmaddr;
         int shmid;
-#if defined(MASTER) || defined(ATTIVATORE) || defined(ALIMENTATORE)
+//#if defined(MASTER) || defined(ATTIVATORE) || defined(ALIMENTATORE)
         int fifo_fd;
-#endif
+//#endif
     } *res;
 };
 

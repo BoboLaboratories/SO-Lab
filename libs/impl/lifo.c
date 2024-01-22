@@ -10,6 +10,26 @@
 
 static void *attach(struct Lifo *lifo, int pushing);
 
+static int acquire(struct Lifo *lifo) {
+    struct sembuf sops;
+    sem_buf(&sops, lifo->sem_num, -1, 0);
+    int ret = sem_op(lifo->semid, &sops, 1);
+    if (ret == -1) {
+        print(E, "Could not acquire LIFO semaphore.\n");
+    }
+    return ret;
+}
+
+static int release(struct Lifo *lifo) {
+    struct sembuf sops;
+    sem_buf(&sops, lifo->sem_num, +1, 0);
+    int ret = sem_op(lifo->semid, &sops, 1);
+    if (ret == -1) {
+        print(E, "Could not release LIFO semaphore.\n");
+    }
+    return ret;
+}
+
 void mklifo(struct Lifo *lifo, int segment_length, size_t elem_size, int semid, int sem_num) {
     struct Lifo tmp = {
         .shmid = -1,
@@ -23,57 +43,44 @@ void mklifo(struct Lifo *lifo, int segment_length, size_t elem_size, int semid, 
 }
 
 void lifo_push(struct Lifo *lifo, void *data) {
-    struct sembuf sops;
-    sem_buf(&sops, lifo->sem_num, -1, 0);
-    sem_op(lifo->semid, &sops, 1);
+    if (acquire(lifo) != -1) {
+        void *shmaddr;
+        if ((shmaddr = attach(lifo, PUSH)) != (void *) -1) {
+            size_t offset = lifo->length * lifo->elem_size;
+            memcpy(shmaddr + offset, data, lifo->elem_size);
+            lifo->length++;
 
-    void *shmaddr;
-    if ((shmaddr = attach(lifo, PUSH)) != (void *) -1) {
-        size_t offset = lifo->length * lifo->elem_size;
-        memcpy(shmaddr + offset, data, lifo->elem_size);
-        lifo->length++;
-
-        shmem_detach(shmaddr);
+            shmem_detach(shmaddr);
+        }
+        release(lifo);
     }
-
-    sem_buf(&sops, lifo->sem_num, 1, 0);
-    sem_op(lifo->semid, &sops, 1);
 }
 
 int lifo_pop(struct Lifo *lifo, void *data) {
-    struct sembuf sops;
-    sem_buf(&sops, lifo->sem_num, -1, 0);
-    sem_op(lifo->semid, &sops, 1);
-
     int ret = -1;
-    if (lifo->length > 0) {
-        void *shmaddr;
-        if ((shmaddr = attach(lifo, POP)) != (void *) -1) {
-            lifo->length--;
-            size_t offset = lifo->length * lifo->elem_size;
-            memcpy(data, shmaddr + offset, lifo->elem_size);
+    if (acquire(lifo) != -1) {
+        if (lifo->length > 0) {
+            void *shmaddr;
+            if ((shmaddr = attach(lifo, POP)) != (void *) -1) {
+                lifo->length--;
+                size_t offset = lifo->length * lifo->elem_size;
+                memcpy(data, shmaddr + offset, lifo->elem_size);
 
-            shmem_detach(shmaddr);
-            ret = 0;
+                shmem_detach(shmaddr);
+                ret = 0;
+            }
         }
+        release(lifo);
     }
-
-    sem_buf(&sops, lifo->sem_num, 1, 0);
-    sem_op(lifo->semid, &sops, 1);
-
     return ret;
 }
 
 int rmlifo(struct Lifo *lifo) {
-    struct sembuf sops;
-    sem_buf(&sops, lifo->sem_num, -1, 0);
-    sem_op(lifo->semid, &sops, 1);
-
-    int ret = shmem_rmark(lifo->shmid);
-
-    sem_buf(&sops, lifo->sem_num, 1, 0);
-    sem_op(lifo->semid, &sops, 1);
-
+    int ret = -1;
+    if (acquire(lifo) != -1) {
+        ret = shmem_rmark(lifo->shmid);
+        release(lifo);
+    }
     return ret;
 }
 
@@ -85,6 +92,7 @@ static void swap(struct Lifo *lifo, size_t size, void **dest) {
             dest = shmem_attach(tmp);
             memcpy(dest, src, lifo->length * lifo->elem_size);
             shmem_rmark(lifo->shmid);
+            shmem_detach(src);
         }
         lifo->shmid = tmp;
     }
@@ -111,7 +119,8 @@ static void *attach(struct Lifo *lifo, int pushing) {
         dest = shmem_attach(lifo->shmid);
     }
 
-    printf("[");
+
+    /*printf("[");
     void *tmp = dest;
     pid_t pid;
     for (int i = 0; i < lifo->length; i++) {
@@ -119,7 +128,7 @@ static void *attach(struct Lifo *lifo, int pushing) {
         memcpy(&pid, tmp + offset, lifo->elem_size);
         printf("%d, ", pid);
     }
-    printf("]\n");
+    printf("]\n");*/
 
     return dest;
 }
