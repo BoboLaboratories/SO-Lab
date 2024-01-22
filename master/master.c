@@ -45,7 +45,17 @@ int main(int argc, char *argv[]) {
     }
 
     init();
+
+
+    // =========================================
+    //               Mask setup
+    // =========================================
+    sigset_t mask;
+    sigset_t critical;
     sig_handle(&signal_handler, SIGALRM, SIGMELT, SIGTERM);
+    sig_setup(&mask, &critical, SIGALRM, SIGMELT, SIGTERM);
+    sigprocmask(SIG_BLOCK, &mask, NULL);
+
 
     // =========================================
     //           Setup shared memory
@@ -199,7 +209,8 @@ int main(int argc, char *argv[]) {
     struct sembuf sops;
 
     timer_t timer = timer_start((long) 1e9);
-    while (running()) {
+    while (1) {
+        sigsuspend(&critical);
 
         sem_buf(&sops, SEM_MASTER, -1, 0);
         sem_op(model->ipc->semid, &sops, 1);

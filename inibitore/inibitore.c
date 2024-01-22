@@ -22,6 +22,14 @@ int main(int argc, char *argv[]) {
     }
 
     init();
+
+
+    // =========================================
+    //               Mask setup
+    // =========================================
+    sigset_t mask;
+    sigset_t critical;
+    sig_setup(&mask, &critical, SIGTERM);
     sig_handle(NULL, SIGTERM);
 
 

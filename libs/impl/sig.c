@@ -60,6 +60,7 @@ void sig_setup_(/*void (*handler)(int), */sigset_t *mask, sigset_t *complementar
     }*/
 
     sigemptyset(mask);
+    sigprocmask(SIG_SETMASK, mask, NULL);   // resets every process signal mask regardless of its parent
     if (complementary != NULL) {
         sigfillset(complementary);
     }

@@ -19,17 +19,31 @@ static int select_atom(pid_t *atom);
 static int acquire(int sem_num);
 static int release(int sem_num);
 
+static void default_handler(int signum) {
+    sig = signum;
+}
+
 int main(int argc, char *argv[]) {
 #ifdef D_PID
     print(D, "Attivatore: %d\n", getpid());
 #endif
+
     if (argc != 2) {
         print(E, "Usage: %s <shmid>\n", argv[0]);
         exit(EXIT_FAILURE);
     }
 
     init();
-    sig_handle(NULL, SIGALRM, SIGTERM);
+
+
+    // =========================================
+    //               Mask setup
+    // =========================================
+    sigset_t mask;
+    sigset_t critical;
+    sig_setup(&mask, &critical, SIGACTV, SIGWAST, SIGTERM);
+    sigprocmask(SIG_BLOCK, &mask, NULL);
+    sig_handle(&default_handler, SIGALRM, SIGTERM);
 
 
     // =========================================
