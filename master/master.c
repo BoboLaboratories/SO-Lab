@@ -274,7 +274,7 @@ int running() {
         // other processes that will remain active
         // for the whole simulation duration
         // wait for children processes to terminate
-        while (waitpid(-getpgrp(), NULL, 0) != -1) {
+        while (wait(NULL) != -1) {
             struct sembuf sops;
             sem_buf(&sops, SEM_ALIMENTATORE, +1, 0);
             if (sem_op(model->ipc->semid, &sops, 1) == -1) {
