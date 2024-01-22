@@ -100,7 +100,6 @@ int main(int argc, char *argv[]) {
 
     int init[SEM_COUNT] = {
             [SEM_INIBITORE_ON] = flags[INHIBITOR_FLAG] ? 0 : 1,
-            [SEM_SIMULATION_ON] = 0,
             [SEM_ALIMENTATORE] = 0,
             [SEM_ATTIVATORE] = 1,
             [SEM_INIBITORE] = 0,
@@ -198,8 +197,6 @@ int main(int argc, char *argv[]) {
     status = RUNNING;
     print(I, "All processes ready, simulation start.\n");
     struct sembuf sops;
-    sem_buf(&sops, SEM_SIMULATION_ON, +1, 0);
-    sem_op(model->ipc->semid, &sops, 1);
 
     timer_t timer = timer_start((long) 1e9);
     while (running()) {
