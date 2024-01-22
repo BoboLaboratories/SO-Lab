@@ -20,7 +20,7 @@ extern sig_atomic_t sig;
 pid_t ppid;
 
 int main(int argc, char *argv[]) {
-    if (argc != 4) {
+    if (argc != 3) {
         print(E, "Usage: %s <shmid> <atomic-number>\n", argv[0]);
         exit(EXIT_FAILURE);
     }
@@ -63,7 +63,9 @@ int main(int argc, char *argv[]) {
 
     model->stats->n_atoms++;
     pid_t tmp = getpid();
-    fifo_add(model->res->fifo_fd, &tmp, sizeof(pid_t));
+    if (fifo_add(model->res->fifo_fd, &tmp, sizeof(pid_t)) == -1) {
+        print(E, "Could not insert atom %d in FIFO.\n", tmp);
+    }
 
     sem_buf(&sops[0], SEM_MASTER, +1, 0);
     sem_op(model->ipc->semid, &sops[0], 1);
@@ -175,11 +177,11 @@ int running() {
 }
 
 void waste(int status) {
-    if (ppid == model->ipc->master || ppid == model->ipc->alimentatore) {
+    /*if (ppid == model->ipc->master || ppid == model->ipc->alimentatore) {
         struct sembuf sops;
         sem_buf(&sops, SEM_ALIMENTATORE, +1, 0);
         sem_op(model->ipc->semid, &sops, 1);
-    }
+    }*/
 
     model->stats->n_wastes++;
     model->stats->n_atoms--;

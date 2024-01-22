@@ -55,9 +55,8 @@ int main(int argc, char *argv[]) {
 
     char *buf;
     char **argvc;
-    prargs("atomo", &argvc, &buf, 3, ITC_SIZE);
+    prargs("atomo", &argvc, &buf, 2, ITC_SIZE);
     sprintf(argvc[1], "%d", model->res->shmid);
-    sprintf(argvc[3], "%s", "Att");
 
     struct sembuf sops[2];
     sem_buf(&sops[0], SEM_INIBITORE_ON, 0, IPC_NOWAIT);
@@ -70,26 +69,16 @@ int main(int argc, char *argv[]) {
             if (sem_op(model->ipc->semid, sops, 2) == 0 || errno == EAGAIN) {
                 mask(SIGALRM);
                 sprintf(argvc[2], "%d", rand_between(MIN_N_ATOMICO, N_ATOM_MAX));
-                pid_t child_pid = fork();
-                switch (child_pid) {
-                    case -1:
-                        kill(model->ipc->master, SIGMELT);
-                        break;
-                    case 0:
-                        execv(argvc[0], argvc);
-                        print(E, "Could not execute %s.\n", argvc[0]);
-                        kill(model->ipc->master, SIGMELT);     // TODO set_meaningful_signals if working as expected
-                        break;
-                    default:
-                        n_atoms++;
-                        break;
+                pid_t child_pid = fork_execv(argvc);
+                if (child_pid != -1) {
+                    n_atoms++;
+                } else {
+                    kill(model->ipc->master, SIGMELT);
+                    break;
                 }
                 unmask(SIGALRM);
             } else if (errno == EINTR && sig == SIGALRM) {
                 sig = -1;
-                break;
-            }
-            if (sig == SIGALRM) {
                 break;
             }
         }
@@ -121,11 +110,11 @@ int running() {
         while (wait(NULL) != -1) {
             // if a child atom died, check for its exit status so that
             // other processes can perform their job accordingly
-//            struct sembuf sops;
-//            sem_buf(&sops, SEM_ALIMENTATORE, +1, 0);
-//            if (sem_op(model->ipc->semid, &sops, 1) == -1) {
-//                // TODO
-//            }
+            struct sembuf sops;
+            sem_buf(&sops, SEM_ALIMENTATORE, +1, 0);
+            if (sem_op(model->ipc->semid, &sops, 1) == -1) {
+                // TODO
+            }
         }
 
         // if this process has no children

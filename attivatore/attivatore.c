@@ -61,14 +61,13 @@ int main(int argc, char *argv[]) {
     timer_t timer = timer_start(STEP_ATTIVATORE);
     while (running()) {
         pid_t atom = -1;
-        sem_buf(&sops[0], SEM_MASTER, -1, 0);
+
         sem_buf(&sops[1], SEM_ATTIVATORE, -1, 0);
-        if (sem_op(model->ipc->semid, sops, 2) == -1) {
+        if (sem_op(model->ipc->semid, &sops[1], 1) == -1) {
             if (errno == EINTR) {
                 continue;
             }
         }
-
 
         mask(SIGALRM);
         if (lifo_pop(model->lifo, &atom) == -1) {
@@ -77,8 +76,11 @@ int main(int argc, char *argv[]) {
                 fifo_remove(model->res->fifo_fd, &atom, sizeof(pid_t));
             }
         }
-
         if (atom != -1) {
+            sem_buf(&sops[0], SEM_MASTER, -1, 0);
+            if (sem_op(model->ipc->semid, &sops[0], 1) == -1) {
+                print(E, "Piangi\n");
+            }
             mask(SIGALRM);
             if (kill(atom, SIGACTV) == -1) {
                 print(E, "Could not activate atom %d.\n", atom);

@@ -165,9 +165,8 @@ int main(int argc, char *argv[]) {
     // =========================================
     //              Forking atoms
     // =========================================
-    prargs("atomo", &argvc, &buf, 3, ITC_SIZE);
+    prargs("atomo", &argvc, &buf, 2, ITC_SIZE);
     sprintf(argvc[1], "%d", model->res->shmid);
-    sprintf(argvc[3], "%s", "M");
     for (int i = 0; child_pid != -1 && i < N_ATOMI_INIT; i++) {
         sprintf(argvc[2], "%d", rand_between(MIN_N_ATOMICO, N_ATOM_MAX));
         child_pid = fork_execv(argvc);
@@ -275,12 +274,12 @@ int running() {
         // other processes that will remain active
         // for the whole simulation duration
         // wait for children processes to terminate
-        while (wait(NULL) != -1) {
-//            struct sembuf sops;
-//            sem_buf(&sops, SEM_ALIMENTATORE, +1, 0);
-//            if (sem_op(model->ipc->semid, &sops, 1) == -1) {
-//                // TODO
-//            }
+        while (waitpid(-getpgrp(), NULL, 0) != -1) {
+            struct sembuf sops;
+            sem_buf(&sops, SEM_ALIMENTATORE, +1, 0);
+            if (sem_op(model->ipc->semid, &sops, 1) == -1) {
+                // TODO
+            }
         }
     }
 
