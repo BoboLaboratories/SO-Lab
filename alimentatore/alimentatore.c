@@ -34,7 +34,7 @@ int main(int argc, char *argv[]) {
     // =========================================
     sigset_t mask;
     sigset_t critical;
-    sig_setup(&mask, &critical,  SIGALRM, SIGTERM);
+    sig_setup(&mask, &critical, SIGALRM, SIGTERM);
     sig_handle(NULL, SIGALRM, SIGTERM);
     sigprocmask(SIG_BLOCK, &mask, NULL);
 
@@ -70,12 +70,12 @@ int main(int argc, char *argv[]) {
     sem_buf(&sops[0], SEM_INIBITORE_ON, 0, IPC_NOWAIT);
     sem_buf(&sops[1], SEM_ALIMENTATORE, -1, 0);
 
+    int terminated = 0;
     timer_t timer = timer_start(STEP_ALIMENTAZIONE);
-    while (1) {
+    while (!terminated) {
         sigsuspend(&critical);
 
-        while (waitpid(-1, NULL, WNOHANG) > 0)
-            ;
+        while (waitpid(-1, NULL, WNOHANG) > 0);
 
         if (sig == SIGTERM) {
             break;
@@ -85,26 +85,18 @@ int main(int argc, char *argv[]) {
         while (n_atoms < N_NUOVI_ATOMI) {
             if (sem_op(model->ipc->semid, sops, 2) == 0 || errno == EAGAIN) {
                 sprintf(argvc[2], "%d", rand_between(MIN_N_ATOMICO, N_ATOM_MAX));
-                pid_t child_pid = fork();
-                switch (child_pid) {
-                    case -1:
-                        kill(model->ipc->master, SIGMELT);
-                        break;
-                    case 0:
-                        execv(argvc[0], argvc);
-                        print(E, "Could not execute %s.\n", argvc[0]);
-                        kill(model->ipc->master, SIGMELT);
-                        break;
-                    default:
-                        n_atoms++;
-                        break;
+                if (fork_execv(argvc) == -1) {
+                    kill(model->ipc->master, SIGMELT);
+                    terminated = 1;
+                    break;
                 }
+                n_atoms++;
+
                 sig = -1;
                 unmask(SIGALRM);
                 if (sig == SIGALRM) {
                     n_atoms = 0;
-                    while (waitpid(-1, NULL, WNOHANG) > 0)
-                        ;
+                    while (waitpid(-1, NULL, WNOHANG) > 0);
                 }
                 mask(SIGALRM);
             }

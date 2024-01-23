@@ -70,7 +70,6 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
-
     // =========================================
     //              Update stats
     // =========================================
@@ -81,8 +80,8 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    model->stats->n_atoms++;
     fifo_add(model->res->fifo_fd, &pid, sizeof(pid_t));
+    model->stats->n_atoms++;
 
     sem_buf(&sops[0], SEM_MASTER, +1, 0);
     if (sem_op(model->ipc->semid, &sops[0], 1) == -1) {
@@ -110,8 +109,8 @@ int main(int argc, char *argv[]) {
             waste(ATOM_EXIT_INHIBITED);
         } else if (sig == SIGACTV) {
             // if fission was requested
-            // if this atom should become waste
             if (atomic_number < MIN_N_ATOMICO) {
+                // if this atom should become waste
                 waste(ATOM_EXIT_NATURAL);
             }
 
@@ -177,10 +176,6 @@ void cleanup() {
 void waste(int status) {
     model->stats->n_wastes++;
     model->stats->n_atoms--;
-
-    if(model->stats->n_atoms < 0) {
-        print(D, "WTF is happening?\n");
-    }
 
     struct sembuf sops;
     if (status == ATOM_EXIT_INHIBITED) {

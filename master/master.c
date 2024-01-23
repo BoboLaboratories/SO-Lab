@@ -91,6 +91,7 @@ int main(int argc, char *argv[]) {
         // nothing else to be done if fifo_open fails
         exit(EXIT_FAILURE);
     }
+    fcntl(model->res->fifo_fd, F_SETPIPE_SZ, 70000 * sizeof(pid_t));
 
 
     // =========================================
