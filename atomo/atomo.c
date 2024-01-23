@@ -110,13 +110,9 @@ int main(int argc, char *argv[]) {
 
         if (sig == SIGTERM) {
             break;
-        }
-
-        if (sig == SIGWAST) {
+        } else if (sig == SIGWAST) {
             waste(ATOM_EXIT_INHIBITED);
-        }
-
-        if (sig == SIGACTV) {
+        } else if (sig == SIGACTV) {
             // if fission was requested
             // if this atom should become waste
             if (atomic_number < MIN_N_ATOMICO) {
