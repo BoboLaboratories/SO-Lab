@@ -7,7 +7,7 @@
 #include "lib/sig.h"
 #include "lib/fifo.h"
 
-void waste();
+void waste(int status);
 void split(int *atomic_number, int *child_atomic_number);
 
 extern struct Model *model;
@@ -87,7 +87,6 @@ int main(int argc, char *argv[]) {
     sem_buf(&sops[0], SEM_MASTER, +1, 0);
     if (sem_op(model->ipc->semid, &sops[0], 1) == -1) {
         print(E, "Could not release master semaphore.\n");
-        // TODO ammazzare simulazione
         exit(EXIT_FAILURE);
     }
 
@@ -108,12 +107,12 @@ int main(int argc, char *argv[]) {
         if (sig == SIGTERM) {
             break;
         } else if (sig == SIGWAST) {
-            waste();
+            waste(ATOM_EXIT_INHIBITED);
         } else if (sig == SIGACTV) {
             // if fission was requested
             // if this atom should become waste
             if (atomic_number < MIN_N_ATOMICO) {
-                waste();
+                waste(ATOM_EXIT_NATURAL);
             }
 
             int child_atomic_number;
@@ -175,16 +174,25 @@ void cleanup() {
     }
 }
 
-void waste() {
-    // TODO what happens when inhibitor releases master semaphore before stats are updated?
-
+void waste(int status) {
     model->stats->n_wastes++;
     model->stats->n_atoms--;
 
-    sem_end_activation(model->ipc->semid);
+    if(model->stats->n_atoms < 0) {
+        print(D, "WTF is happening?\n");
+    }
+
+    struct sembuf sops;
+    if (status == ATOM_EXIT_INHIBITED) {
+        sem_buf(&sops, SEM_ATOM, -1, 0);
+        if (sem_op(model->ipc->semid, &sops, 1) == -1) {
+            print(E, "Could not update stats.\n");
+        }
+    } else if (status == ATOM_EXIT_NATURAL) {
+        sem_end_activation(model->ipc->semid);
+    }
 
     if (ppid == model->ipc->master || ppid == model->ipc->alimentatore) {
-        struct sembuf sops;
         sem_buf(&sops, SEM_ALIMENTATORE, +1, 0);
         sem_op(model->ipc->semid, &sops, 1);
     }

@@ -110,7 +110,7 @@ int main(int argc, char *argv[]) {
             [SEM_INIBITORE] = 0,
             [SEM_SYNC] = nproc,
             [SEM_MASTER] = 1,
-            [SEM_ATOM] = 1,
+            [SEM_ATOM] = 0,
             [SEM_LIFO] = 1
     };
 
@@ -175,9 +175,6 @@ int main(int argc, char *argv[]) {
     for (int i = 0; child_pid != -1 && i < N_ATOMI_INIT; i++) {
         sprintf(argvc[2], "%d", rand_between(MIN_N_ATOMICO, N_ATOM_MAX));
         child_pid = fork_execv(argvc);
-        if (child_pid != -1) {
-            // fifo_add(model->res->fifo_fd, &child_pid, sizeof(pid_t));
-        }
     }
 
     frargs(argvc, buf);
@@ -206,7 +203,7 @@ int main(int argc, char *argv[]) {
     while (status == RUNNING) {
         sigsuspend(&critical);
 
-        while (waitpid(-getpgrp(), NULL, WNOHANG) > 0)
+        while (waitpid(-1, NULL, WNOHANG) > 0)
             ;
 
         sem_buf(&sops, SEM_MASTER, -1, 0);

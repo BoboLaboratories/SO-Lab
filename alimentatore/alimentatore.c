@@ -16,7 +16,6 @@
 extern struct Model *model;
 extern sig_atomic_t sig;
 
-int running();
 
 int main(int argc, char *argv[]) {
 #ifdef D_PID
@@ -37,6 +36,7 @@ int main(int argc, char *argv[]) {
     sigset_t critical;
     sig_setup(&mask, &critical,  SIGALRM, SIGTERM);
     sig_handle(NULL, SIGALRM, SIGTERM);
+    sigprocmask(SIG_BLOCK, &mask, NULL);
 
 
     // =========================================
@@ -71,11 +71,19 @@ int main(int argc, char *argv[]) {
     sem_buf(&sops[1], SEM_ALIMENTATORE, -1, 0);
 
     timer_t timer = timer_start(STEP_ALIMENTAZIONE);
-    while (running()) {
+    while (1) {
+        sigsuspend(&critical);
+
+        while (waitpid(-1, NULL, WNOHANG) > 0)
+            ;
+
+        if (sig == SIGTERM) {
+            break;
+        }
+
         int n_atoms = 0;
         while (n_atoms < N_NUOVI_ATOMI) {
             if (sem_op(model->ipc->semid, sops, 2) == 0 || errno == EAGAIN) {
-                mask(SIGALRM);
                 sprintf(argvc[2], "%d", rand_between(MIN_N_ATOMICO, N_ATOM_MAX));
                 pid_t child_pid = fork();
                 switch (child_pid) {
@@ -85,19 +93,20 @@ int main(int argc, char *argv[]) {
                     case 0:
                         execv(argvc[0], argvc);
                         print(E, "Could not execute %s.\n", argvc[0]);
-                        kill(model->ipc->master, SIGMELT);     // TODO set_meaningful_signals if working as expected
+                        kill(model->ipc->master, SIGMELT);
                         break;
                     default:
                         n_atoms++;
                         break;
                 }
-                unmask(SIGALRM);
-            } else if (errno == EINTR && sig == SIGALRM) {
                 sig = -1;
-                break;
-            }
-            if (sig == SIGALRM) {
-                break;
+                unmask(SIGALRM);
+                if (sig == SIGALRM) {
+                    n_atoms = 0;
+                    while (waitpid(-1, NULL, WNOHANG) > 0)
+                        ;
+                }
+                mask(SIGALRM);
             }
         }
     }
@@ -120,32 +129,3 @@ void cleanup() {
         }
     }
 }
-
-int running() {
-    // while no meaningful signal is received
-    while (!sig_is_handled(sig)) {
-        // wait for children processes to terminate
-        while (wait(NULL) != -1) {
-            // if a child atom died, check for its exit status so that
-            // other processes can perform their job accordingly
-//            struct sembuf sops;
-//            sem_buf(&sops, SEM_ALIMENTATORE, +1, 0);
-//            if (sem_op(model->ipc->semid, &sops, 1) == -1) {
-//                // TODO
-//            }
-        }
-
-        // if this process has no children
-        if (errno == ECHILD) {
-            // wait until a signal is received
-            // when pause is interrupted by a signal
-            pause();
-            // break the inner loop so that meaningful
-            // signals are checked by the outer one
-            break;
-        }
-    }
-
-    return sig_reset(sig != SIGTERM);
-}
-

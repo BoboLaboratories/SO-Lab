@@ -61,9 +61,9 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    // activate non-blocking fifo read
-    int fifo_flags = fcntl(model->res->fifo_fd, F_GETFL, 0);
-    fcntl(model->res->fifo_fd, F_SETFL, fifo_flags | O_NONBLOCK);
+//    activate non-blocking fifo read
+//    int fifo_flags = fcntl(model->res->fifo_fd, F_GETFL, 0);
+//    fcntl(model->res->fifo_fd, F_SETFL, fifo_flags | O_NONBLOCK);
 
     // Sem Sync
     sem_sync(model->ipc->semid, SEM_SYNC);
@@ -92,7 +92,6 @@ int main(int argc, char *argv[]) {
                 if (sem_op(model->ipc->semid, &sops, 1) == -1) {
                     print(E, "Could not release SEM_ATTIVATORE semaphore.\n");
                 }
-                break;
             }
         }
 

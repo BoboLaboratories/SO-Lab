@@ -56,19 +56,31 @@ int main(int argc, char *argv[]) {
         }
 
         sigprocmask(SIG_BLOCK, &mask, NULL);
+
         long curr_energy = min(model->stats->curr_energy, ENERGY_DEMAND + ENERGY_EXPLODE_THRESHOLD - 1);
-
         long inhibited_energy = model->stats->curr_energy - curr_energy;
-        model->stats->curr_energy = curr_energy;
         model->stats->inhibited_energy += inhibited_energy;
+        model->stats->curr_energy = curr_energy;
 
-        pid_t pid;
+        pid_t pid = -1;
         lifo_pop(model->lifo, &pid);
         if (kill(pid, SIGWAST) == -1) {
             print(E, "Error wasting atom %d.\n", pid);
         }
 
+        sem_buf(&sops, SEM_ATOM, +1, 0);
+        if (sem_op(model->ipc->semid, &sops, 1) == -1) {
+            print (E, "Could not allow atom to update stats.\n");
+        }
+
+        sem_buf(&sops, SEM_ATOM, 0, 0);
+        if (sem_op(model->ipc->semid, &sops, 1) == -1) {
+            print(E, "Could not wait for atom to update stats.\n");
+        }
+
         sem_end_activation(model->ipc->semid);
+
+
 
         sigprocmask(SIG_UNBLOCK, &mask, NULL);
     }

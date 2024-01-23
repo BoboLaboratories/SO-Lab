@@ -39,13 +39,7 @@ int fifo_add(int fifo_fd, void *data, size_t size) {
 }
 
 int fifo_remove(int fifo_fd, void *data, size_t size) {
-    int ret = 0;
-    if (read(fifo_fd, data, size) != (long) size) {
-        // TODO: Error handling
-        print(E, "Error while removing data from fifo.\n");
-        ret = -1;
-    }
-    return ret;
+    return (int) read(fifo_fd, data, size);
 }
 
 int fifo_close(int fifo_fd) {

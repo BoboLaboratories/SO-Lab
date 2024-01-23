@@ -24,7 +24,8 @@
 #define SIGACTV SIGUSR1     // when received by atom it means it should perform a fission
 #define SIGWAST SIGUSR2     // when received by atom it means it should become waste
 
-#define ATOM_EXIT 3
+#define ATOM_EXIT_NATURAL   3
+#define ATOM_EXIT_INHIBITED 4
 
 struct Ipc {
     int semid;
