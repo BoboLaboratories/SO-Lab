@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <sys/shm.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
 
 #include "model.h"
 #include "config.h"
@@ -204,6 +205,9 @@ int main(int argc, char *argv[]) {
     timer_t timer = timer_start((long) 1e9);
     while (status == RUNNING) {
         sigsuspend(&critical);
+        
+        while (waitpid(-getpgrp(), NULL, WNOHANG) > 0)
+            ;
 
         sem_buf(&sops, SEM_MASTER, -1, 0);
         sem_op(model->ipc->semid, &sops, 1);
