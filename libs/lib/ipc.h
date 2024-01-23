@@ -14,16 +14,22 @@
 
 #define SEM_COUNT           8
 
-#define SIGMELT     SIGUSR1     // when received by master it means meltdown
-#define SIGACTV     SIGUSR1     // when received by atom it means it should perform a fission
-#define SIGWAST     SIGUSR2     // when received by atom it means it should become waste
+// master signals
+#define SIGMELT SIGUSR1     // when received by master it means meltdown
 
-#define ATOM_EXIT_NATURAL   3
-#define ATOM_EXIT_INHIBITED 4
+// inhibitor signals
+#define SIGINHB SIGUSR1     // when received by inhibitor it means it should inhibit something
+
+// atom signals
+#define SIGACTV SIGUSR1     // when received by atom it means it should perform a fission
+#define SIGWAST SIGUSR2     // when received by atom it means it should become waste
+
+#define ATOM_EXIT 3
 
 struct Ipc {
     int semid;
     pid_t master;
+    pid_t inibitore;
     pid_t alimentatore;
 };
 

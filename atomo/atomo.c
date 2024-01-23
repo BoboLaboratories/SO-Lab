@@ -7,10 +7,7 @@
 #include "lib/sig.h"
 #include "lib/fifo.h"
 
-int running();
-
-void waste(int status);
-
+void waste();
 void split(int *atomic_number, int *child_atomic_number);
 
 extern struct Model *model;
@@ -111,12 +108,12 @@ int main(int argc, char *argv[]) {
         if (sig == SIGTERM) {
             break;
         } else if (sig == SIGWAST) {
-            waste(ATOM_EXIT_INHIBITED);
+            waste();
         } else if (sig == SIGACTV) {
             // if fission was requested
             // if this atom should become waste
             if (atomic_number < MIN_N_ATOMICO) {
-                waste(ATOM_EXIT_NATURAL);
+                waste();
             }
 
             int child_atomic_number;
@@ -136,8 +133,7 @@ int main(int argc, char *argv[]) {
                     break;
                 default: {
                     // Parent atom
-                    long energy =
-                            (atomic_number * child_atomic_number) - max(atomic_number, child_atomic_number);
+                    long energy = (atomic_number * child_atomic_number) - max(atomic_number, child_atomic_number);
 
                     // update stats
                     model->stats->curr_energy += energy;
@@ -179,15 +175,12 @@ void cleanup() {
     }
 }
 
-void waste(int status) {
+void waste() {
     // TODO what happens when inhibitor releases master semaphore before stats are updated?
 
     model->stats->n_wastes++;
     model->stats->n_atoms--;
 
-//    if (status == ATOM_EXIT_NATURAL) {
-//        sem_end_activation(model->ipc->semid);
-//    }
     sem_end_activation(model->ipc->semid);
 
     if (ppid == model->ipc->master || ppid == model->ipc->alimentatore) {
@@ -196,7 +189,7 @@ void waste(int status) {
         sem_op(model->ipc->semid, &sops, 1);
     }
 
-    exit(status);
+    exit(EXIT_SUCCESS);
 }
 
 void split(int *atomic_number, int *child_atomic_number) {

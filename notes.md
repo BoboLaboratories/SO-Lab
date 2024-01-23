@@ -91,6 +91,11 @@ EPS     29/01   16/02
 
 
 
+## Controlli pre esame
+- [ ] error handling ovunque
+- [ ] memory leak
+- [ ] risorse IPC leak
+
 
 
 1)

@@ -76,6 +76,7 @@ int main(int argc, char *argv[]) {
 
     // initialize shared data
     memset(model->stats, 0, sizeof(struct Stats));
+    memset(model->ipc, -1, sizeof(struct Ipc));
     model->ipc->master = getpid();
     if (load_config() == -1) {
         exit(EXIT_FAILURE);
@@ -133,10 +134,9 @@ int main(int argc, char *argv[]) {
     char **argvc;
     prargs("alimentatore", &argvc, &buf, 1, ITC_SIZE);
     sprintf(argvc[1], "%d", model->res->shmid);
-    pid_t child_pid = fork_execv(argvc);
-    model->ipc->alimentatore = child_pid;
+    model->ipc->alimentatore = fork_execv(argvc);
     frargs(argvc, buf);
-    if (child_pid == -1) {
+    if (model->ipc->alimentatore == -1) {
         shutdown(SIGMELT, EXIT_FAILURE);
     }
 
@@ -147,9 +147,9 @@ int main(int argc, char *argv[]) {
     if (flags[INHIBITOR_FLAG]) {
         prargs("inibitore", &argvc, &buf, 1, ITC_SIZE);
         sprintf(argvc[1], "%d", model->res->shmid);
-        child_pid = fork_execv(argvc);
+        model->ipc->inibitore = fork_execv(argvc);
         frargs(argvc, buf);
-        if (child_pid == -1) {
+        if (model->ipc->inibitore == -1) {
             shutdown(SIGMELT, EXIT_FAILURE);
         }
     }
@@ -160,7 +160,7 @@ int main(int argc, char *argv[]) {
     // =========================================
     prargs("attivatore", &argvc, &buf, 1, ITC_SIZE);
     sprintf(argvc[1], "%d", model->res->shmid);
-    child_pid = fork_execv(argvc);
+    pid_t child_pid = fork_execv(argvc);
     frargs(argvc, buf);
     if (child_pid == -1) {
         shutdown(SIGMELT, EXIT_FAILURE);
@@ -205,7 +205,7 @@ int main(int argc, char *argv[]) {
     timer_t timer = timer_start((long) 1e9);
     while (status == RUNNING) {
         sigsuspend(&critical);
-        
+
         while (waitpid(-getpgrp(), NULL, WNOHANG) > 0)
             ;
 

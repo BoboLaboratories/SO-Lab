@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <errno.h>
 
 #include "model.h"
 #include "lib/sem.h"
@@ -9,8 +10,6 @@
 
 extern struct Model *model;
 extern sig_atomic_t sig;
-
-int running();
 
 int main(int argc, char *argv[]) {
 #ifdef D_PID
@@ -28,9 +27,7 @@ int main(int argc, char *argv[]) {
     //               Mask setup
     // =========================================
     sigset_t mask;
-    sigset_t critical;
-    sig_setup(&mask, &critical, SIGTERM);
-    sig_handle(NULL, SIGTERM);
+    sig_setup(&mask, NULL, SIGTERM);
 
 
     // =========================================
@@ -49,12 +46,16 @@ int main(int argc, char *argv[]) {
 
     sem_sync(model->ipc->semid, SEM_SYNC);
 
-    while (running()) {
-        struct sembuf sops;
+    struct sembuf sops;
+    while (sig != SIGTERM) {
         sem_buf(&sops, SEM_INIBITORE, -1, 0);
-        sem_op(model->ipc->semid, &sops, 1);
+        if (sem_op(model->ipc->semid, &sops, 1) == -1) {
+            if (errno == EINTR && sig == SIGTERM) {
+                break;
+            }
+        }
 
-        mask(SIGTERM);
+        sigprocmask(SIG_BLOCK, &mask, NULL);
         long curr_energy = min(model->stats->curr_energy, ENERGY_DEMAND + ENERGY_EXPLODE_THRESHOLD - 1);
 
         long inhibited_energy = model->stats->curr_energy - curr_energy;
@@ -66,16 +67,13 @@ int main(int argc, char *argv[]) {
         if (kill(pid, SIGWAST) == -1) {
             print(E, "Error wasting atom %d.\n", pid);
         }
-//        print(D, "inhibitor wasting: %d\n", pid);
-//        sem_end_activation(model->ipc->semid);
-        unmask(SIGTERM);
+
+        sem_end_activation(model->ipc->semid);
+
+        sigprocmask(SIG_UNBLOCK, &mask, NULL);
     }
 
     exit(EXIT_SUCCESS);
-}
-
-int running() {
-    return sig_reset(sig != SIGTERM);
 }
 
 void cleanup() {
