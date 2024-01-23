@@ -1,6 +1,6 @@
 export SIM_DURATION=60 # seconds
 
-export N_ATOMI_INIT=5
+export N_ATOMI_INIT=500
 export N_NUOVI_ATOMI=5000
 
 export N_ATOM_MAX=40

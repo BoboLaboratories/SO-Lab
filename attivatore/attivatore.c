@@ -1,7 +1,6 @@
 #include <time.h>
 #include <signal.h>
 #include <stdlib.h>
-#include <errno.h>
 
 #include "model.h"
 #include "lib/sem.h"
@@ -31,7 +30,7 @@ int main(int argc, char *argv[]) {
     // =========================================
     sigset_t mask;
     sigset_t critical;
-    sig_setup(&mask, &critical, SIGALRM, SIGTERM);
+    sig_setup(&mask, &critical, SIGALRM);
     sigprocmask(SIG_BLOCK, &mask, NULL);
 
 
@@ -115,11 +114,11 @@ int main(int argc, char *argv[]) {
             // we do not release SEM_MASTER given
             // the activation transaction has begun
 
-//            unmask(SIGTERM);
-//            if (sig == SIGTERM) {
-//                break;
-//            }
-//            mask(SIGTERM);
+            /*unmask(SIGTERM);
+            if (sig == SIGTERM) {
+                break;
+            }
+            mask(SIGTERM);*/
         }
     }
     timer_delete(timer);

@@ -31,7 +31,7 @@ int main(int argc, char *argv[]) {
     // =========================================
     sigset_t mask;
     sigset_t critical;
-    sig_setup(&mask, &critical, SIGACTV, SIGWAST, SIGTERM);
+    sig_setup(&mask, &critical, SIGACTV, SIGWAST);
     sigprocmask(SIG_BLOCK, &mask, NULL);
 
 
@@ -99,7 +99,6 @@ int main(int argc, char *argv[]) {
     // =========================================
     //                Main logic
     // =========================================
-
     while (1) {
         sigsuspend(&critical);
 

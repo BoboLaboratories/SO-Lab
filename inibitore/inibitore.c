@@ -27,7 +27,7 @@ int main(int argc, char *argv[]) {
     //               Mask setup
     // =========================================
     sigset_t mask;
-    sig_setup(&mask, NULL, SIGTERM);
+    sig_setup(&mask, NULL, -1);
 
 
     // =========================================
@@ -79,8 +79,6 @@ int main(int argc, char *argv[]) {
         }
 
         sem_end_activation(model->ipc->semid);
-
-
 
         sigprocmask(SIG_UNBLOCK, &mask, NULL);
     }

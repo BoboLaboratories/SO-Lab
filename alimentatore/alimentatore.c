@@ -16,11 +16,15 @@
 extern struct Model *model;
 extern sig_atomic_t sig;
 
+static char **argvc = NULL;
+static char *buf = NULL;
+static timer_t timer;
 
 int main(int argc, char *argv[]) {
 #ifdef D_PID
     print(D, "Alimentatore: %d\n", getpid());
 #endif
+
     if (argc != 2) {
         print(E, "Usage: %s <shmid>\n", argv[0]);
         exit(EXIT_FAILURE);
@@ -34,8 +38,7 @@ int main(int argc, char *argv[]) {
     // =========================================
     sigset_t mask;
     sigset_t critical;
-    sig_setup(&mask, &critical, SIGALRM, SIGTERM);
-    sig_handle(NULL, SIGALRM, SIGTERM);
+    sig_setup(&mask, &critical, SIGALRM);
     sigprocmask(SIG_BLOCK, &mask, NULL);
 
 
@@ -54,15 +57,23 @@ int main(int argc, char *argv[]) {
     attach_model(model->res->shmaddr);
 
 
-    // Open fifo
+    // =========================================
+    //              Setup FIFO
+    // =========================================
     if ((model->res->fifo_fd = fifo_open(FIFO, O_WRONLY)) == -1) {
         exit(EXIT_FAILURE);
     }
 
+
+    // =========================================
+    //         Sync with master process
+    // =========================================
     sem_sync(model->ipc->semid, SEM_SYNC);
 
-    char *buf;
-    char **argvc;
+
+    // =========================================
+    //                Main logic
+    // =========================================
     prargs("atomo", &argvc, &buf, 2, ITC_SIZE);
     sprintf(argvc[1], "%d", model->res->shmid);
 
@@ -71,15 +82,12 @@ int main(int argc, char *argv[]) {
     sem_buf(&sops[1], SEM_ALIMENTATORE, -1, 0);
 
     int terminated = 0;
-    timer_t timer = timer_start(STEP_ALIMENTAZIONE);
+    timer = timer_start(STEP_ALIMENTAZIONE);
     while (!terminated) {
         sigsuspend(&critical);
 
-        while (waitpid(-1, NULL, WNOHANG) > 0);
-
-        if (sig == SIGTERM) {
-            break;
-        }
+        while (waitpid(-1, NULL, WNOHANG) > 0)
+            ;
 
         int n_atoms = 0;
         while (n_atoms < N_NUOVI_ATOMI) {
@@ -92,26 +100,29 @@ int main(int argc, char *argv[]) {
                 }
                 n_atoms++;
 
+                // is a new step begun, reset the main logic
+                // so that we can begin the next step
                 sig = -1;
                 unmask(SIGALRM);
                 if (sig == SIGALRM) {
                     n_atoms = 0;
-                    while (waitpid(-1, NULL, WNOHANG) > 0);
+                    while (waitpid(-1, NULL, WNOHANG) > 0)
+                        ;
                 }
                 mask(SIGALRM);
             }
         }
     }
-    timer_delete(timer);
-
-    frargs(argvc, buf);
-
-    wait_children();
 
     exit(EXIT_SUCCESS);
 }
 
 void cleanup() {
+    // clear misc data
+    frargs(argvc, buf);
+    timer_delete(timer);
+
+    // detach IPC resources
     if (model != NULL) {
         if (model->res->fifo_fd != -1) {
             fifo_close(model->res->fifo_fd);
@@ -120,4 +131,6 @@ void cleanup() {
             shmem_detach(model->res->shmaddr);
         }
     }
+
+    wait_children();
 }

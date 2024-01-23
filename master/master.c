@@ -25,8 +25,9 @@ static int flags[1] = {
 enum Status status = STARTING;
 extern struct Model *model;
 extern sig_atomic_t sig;
+timer_t timer;
 
-static void shutdown(int signum, int exit_status);
+void sigterm_handler();
 
 int main(int argc, char *argv[]) {
 #ifdef D_PID
@@ -47,8 +48,9 @@ int main(int argc, char *argv[]) {
     // =========================================
     sigset_t mask;
     sigset_t critical;
-    sig_setup(&mask, &critical, SIGALRM, SIGMELT, SIGTERM);
+    sig_setup(&mask, &critical, SIGALRM, SIGMELT);
     sigprocmask(SIG_BLOCK, &mask, NULL);
+    sig_handler(SIGTERM, &sigterm_handler);
 
 
     // =========================================
@@ -138,7 +140,8 @@ int main(int argc, char *argv[]) {
     model->ipc->alimentatore = fork_execv(argvc);
     frargs(argvc, buf);
     if (model->ipc->alimentatore == -1) {
-        shutdown(SIGMELT, EXIT_FAILURE);
+        // TODO meltdown
+        exit(EXIT_FAILURE);
     }
 
 
@@ -151,7 +154,8 @@ int main(int argc, char *argv[]) {
         model->ipc->inibitore = fork_execv(argvc);
         frargs(argvc, buf);
         if (model->ipc->inibitore == -1) {
-            shutdown(SIGMELT, EXIT_FAILURE);
+            // TODO meltdown
+            exit(EXIT_FAILURE);
         }
     }
 
@@ -164,7 +168,8 @@ int main(int argc, char *argv[]) {
     pid_t child_pid = fork_execv(argvc);
     frargs(argvc, buf);
     if (child_pid == -1) {
-        shutdown(SIGMELT, EXIT_FAILURE);
+        // TODO meltdown
+        exit(EXIT_FAILURE);
     }
 
 
@@ -180,7 +185,8 @@ int main(int argc, char *argv[]) {
 
     frargs(argvc, buf);
     if (child_pid == -1) {
-        shutdown(SIGMELT, EXIT_FAILURE);
+        // TODO meltdown
+        exit(EXIT_FAILURE);
     }
 
     // master will fork no more atoms,
@@ -200,7 +206,7 @@ int main(int argc, char *argv[]) {
 
     status = RUNNING;
     struct sembuf sops;
-    timer_t timer = timer_start((long) 1e9);
+    timer = timer_start((long) 1e9);
     while (status == RUNNING) {
         sigsuspend(&critical);
 
@@ -250,19 +256,23 @@ int main(int argc, char *argv[]) {
     // =========================================
     //               Cleanup
     // =========================================
-    shutdown(SIGTERM, EXIT_SUCCESS);
+    while (waitpid(-1, NULL, WNOHANG) > 0)
+        ;
+
+    exit(EXIT_SUCCESS);
 }
 
 void cleanup() {
     if (model != NULL) {
+        timer_delete(timer);
+        if (model->lifo != NULL) {
+            rmlifo(model->lifo);
+        }
         if (model->ipc->semid != -1) {
             rmsem(model->ipc->semid);
         }
         if (model->res->fifo_fd != -1) {
             fifo_close(model->res->fifo_fd);
-        }
-        if (model->lifo != NULL) {
-            rmlifo(model->lifo);
         }
         if (model->res->shmaddr != (void *) -1) {
             shmem_detach(model->res->shmaddr);
@@ -270,8 +280,6 @@ void cleanup() {
     }
 }
 
-static void shutdown(int signum, int exit_status) {
-    raise(signum);
-    wait_children();
-    exit(exit_status);
+void sigterm_handler() {
+    sig = SIGTERM;
 }

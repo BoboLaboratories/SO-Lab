@@ -1,5 +1,6 @@
 #include <string.h>
 #include <stdarg.h>
+#include <stdlib.h>
 
 #include "lib/sig.h"
 #include "lib/console.h"
@@ -16,6 +17,10 @@ int sig_handler(int signal, void (*handler)(int)) {
 
 static void default_handler(int signum) {
     sig = signum;
+}
+
+static void sigterm_handler() {
+    exit(EXIT_SUCCESS);
 }
 
 static sigset_t va_to_mask(int set_handler, void (*handler)(int), int signums, va_list args) {
@@ -77,6 +82,11 @@ void sig_setup_(/*void (*handler)(int), */sigset_t *mask, sigset_t *complementar
         sig_handler(signum, &default_handler);
         signum = va_arg(args, int);
     }
+
+    // automatically handle SIGTERM
+    sigdelset(mask, SIGTERM);
+    sigdelset(complementary, SIGTERM);
+    sig_handler(SIGTERM, &sigterm_handler);
 
     va_end(args);
 }

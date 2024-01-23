@@ -66,8 +66,12 @@ void prargs(char *executable, char ***argv, char **buf, int vargs, size_t elemsi
 }
 
 void frargs(char **argv, char *buf) {
-    free(argv);
-    free(buf);
+    if (argv != NULL) {
+        free(argv);
+    }
+    if (buf != NULL) {
+        free(buf);
+    }
 }
 
 pid_t fork_execv(char **argv) {
@@ -82,10 +86,10 @@ pid_t fork_execv(char **argv) {
 
 void wait_children() {
     while (wait(NULL) != -1)
-        continue;
+        ;
 
     if (errno != ECHILD) {
-        // TODO capire come e se gestire questo errore
+        print(E, "Could not wait for all child processes.\n");
     }
 }
 
