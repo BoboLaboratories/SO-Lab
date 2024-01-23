@@ -61,7 +61,7 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
-//    activate non-blocking fifo read
+    // activate non-blocking fifo read
     int fifo_flags = fcntl(model->res->fifo_fd, F_GETFL, 0);
     fcntl(model->res->fifo_fd, F_SETFL, fifo_flags | O_NONBLOCK);
 
@@ -110,7 +110,6 @@ int main(int argc, char *argv[]) {
             // we do not release SEM_MASTER given
             // the activation transaction has begun
         }
-
     }
     timer_delete(timer);
 
