@@ -2,13 +2,11 @@
 #include <stdlib.h>
 
 #include "model.h"
+#include "atomo.h"
 #include "lib/sem.h"
 #include "lib/shmem.h"
 #include "lib/sig.h"
 #include "lib/fifo.h"
-
-void waste(int status);
-void split(int *atomic_number, int *child_atomic_number);
 
 extern struct Model *model;
 extern sigset_t signals;
@@ -64,11 +62,12 @@ int main(int argc, char *argv[]) {
 
 
     // =========================================
-    //               Setup FIFO
+    //               Setup fifo
     // =========================================
     if ((model->res->fifo_fd = fifo_open(FIFO, O_WRONLY)) == -1) {
         exit(EXIT_FAILURE);
     }
+
 
     // =========================================
     //              Update stats
@@ -99,20 +98,19 @@ int main(int argc, char *argv[]) {
     // =========================================
     //                Main logic
     // =========================================
-    while (1) {
+    int terminated = 0;
+    while (!terminated) {
         sigsuspend(&critical);
 
-        if (sig == SIGTERM) {
-            break;
-        } else if (sig == SIGWAST) {
-            waste(ATOM_EXIT_INHIBITED);
+        if (sig == SIGWAST) {
+            waste(EXIT_INHIBITED);
         } else if (sig == SIGACTV) {
             model->stats->n_activations++;
 
             // if fission was requested
             if (atomic_number < MIN_N_ATOMICO) {
                 // if this atom should become waste
-                waste(ATOM_EXIT_NATURAL);
+                waste(EXIT_NATURAL);
             }
 
             int child_atomic_number;
@@ -120,18 +118,16 @@ int main(int argc, char *argv[]) {
 
             pid_t child_pid = fork();
             switch (child_pid) {
-                case -1:
-                    // Meltdown
+                case -1: // Meltdown
                     kill(model->ipc->master, SIGMELT);
+                    terminated = 1;
                     break;
-                case 0:
-                    // Child atom
+                case 0: // Child atom
                     atomic_number = child_atomic_number;
                     ppid = getppid();
                     pid = getpid();
                     break;
-                default: {
-                    // Parent atom
+                default: { // Parent atom
                     long energy = (atomic_number * child_atomic_number) - max(atomic_number, child_atomic_number);
 
                     // update stats
@@ -142,11 +138,9 @@ int main(int argc, char *argv[]) {
                     // push both atoms back on lifo
                     if (lifo_push(model->lifo, &pid) == -1) {
                         print(E, "Could not push parent pid to lifo.\n");
-                        // TODO
                     }
                     if (lifo_push(model->lifo, &child_pid) == -1) {
                         print(E, "Could not push child atom to lifo.\n");
-                        // TODO
                     }
 
                     // wake up inhibitor, if activated, to inhibit the energy we just produced
@@ -167,37 +161,45 @@ int main(int argc, char *argv[]) {
 }
 
 void cleanup() {
+    // detach IPC resources
     if (model != NULL) {
+        if (model->res->fifo_fd != -1) {
+            fifo_close(model->res->fifo_fd);
+        }
         if (model->res->shmaddr != (void *) -1) {
             shmem_detach(model->res->shmaddr);
         }
     }
+
+    wait_children();
 }
 
-void waste(int status) {
+static void waste(int status) {
     model->stats->n_wastes++;
     model->stats->n_atoms--;
 
     struct sembuf sops;
-    if (status == ATOM_EXIT_INHIBITED) {
+    if (status == EXIT_INHIBITED) {
         sem_buf(&sops, SEM_ATOM, -1, 0);
         if (sem_op(model->ipc->semid, &sops, 1) == -1) {
             print(E, "Could not update stats.\n");
         }
-    } else if (status == ATOM_EXIT_NATURAL) {
+    } else {
         end_activation_cycle();
     }
 
     if (ppid == model->ipc->master || ppid == model->ipc->alimentatore) {
         sem_buf(&sops, SEM_ALIMENTATORE, +1, 0);
-        sem_op(model->ipc->semid, &sops, 1);
+        if (sem_op(model->ipc->semid, &sops, 1) == -1) {
+            print(E, "Could not give work back to alimentatore.\n");
+        }
     }
 
     exit(EXIT_SUCCESS);
 }
 
-void split(int *atomic_number, int *child_atomic_number) {
-    srand(getpid());
+static void split(int *atomic_number, int *child_atomic_number) {
+    srand(pid);
     *child_atomic_number = rand_between(1, *atomic_number - 1);
     *atomic_number = *atomic_number - *child_atomic_number;
 }

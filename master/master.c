@@ -17,19 +17,13 @@
 #include "lib/lifo.h"
 #include "lib/shmem.h"
 
-#define INHIBITOR_FLAG  0
-
-static int flags[1] = {
-        [INHIBITOR_FLAG] = 0
-};
-
-enum Status status = STARTING;
 extern struct Model *model;
 extern sig_atomic_t sig;
-timer_t timer;
 
-void sigterm_handler();
+static enum Status status = STARTING;
+static timer_t timer;
 
+// TODO if SIGTERM is received, frargs does not happen
 int main(int argc, char *argv[]) {
 #ifdef D_PID
     print(D, "Master: %d\n", getpid());
@@ -89,18 +83,20 @@ int main(int argc, char *argv[]) {
     // =========================================
     //               Setup fifo
     // =========================================
-    if ((fifo_create(FIFO, S_IWUSR | S_IRUSR) == -1) || (model->res->fifo_fd = fifo_open(FIFO, O_RDWR)) == -1) {
-        // fifo_create automatically setups fifo removal at exit,
-        // nothing else to be done if fifo_open fails
+    if ((fifo_create(FIFO, S_IWUSR | S_IRUSR) != -1) && (model->res->fifo_fd = fifo_open(FIFO, O_RDWR)) != -1) {
+        // TODO questa riga sotto non va proprio amici miei
+        if (fcntl(model->res->fifo_fd, F_SETPIPE_SZ, 70000 * sizeof(pid_t)) == -1) {
+            print(E, "Could not set fifo buffer.\n");
+            exit(EXIT_FAILURE);
+        }
+    } else {
         exit(EXIT_FAILURE);
     }
-    fcntl(model->res->fifo_fd, F_SETPIPE_SZ, 70000 * sizeof(pid_t));
 
 
     // =========================================
-    //             Setup semaphore
+    //             Setup semaphores
     // =========================================
-    // let other processes know semaphore set id
     int nproc = N_ATOMI_INIT                // atomi
                 + flags[INHIBITOR_FLAG]     // inibitore
                 + 1                         // alimentatore
@@ -190,12 +186,10 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    // master will fork no more atoms,
-    // no need to keep fifo open
-    fifo_close(model->res->fifo_fd);
-    model->res->fifo_fd = -1;
 
-    // Waiting for child processes
+    // =========================================
+    //       Waiting for child processes
+    // =========================================
     print(I, "Waiting for all processes to be ready..\n");
     sem_sync(model->ipc->semid, SEM_SYNC);
 
@@ -253,17 +247,14 @@ int main(int argc, char *argv[]) {
     kill(0, SIGTERM);
     print(I, "Status: %d\n", status);
 
-
-    // =========================================
-    //               Cleanup
-    // =========================================
-    while (waitpid(-1, NULL, WNOHANG) > 0)
-        ;
-
     exit(EXIT_SUCCESS);
 }
 
 void cleanup() {
+    // clear misc data
+    timer_delete(timer);
+
+    // detach and remove IPC resources
     if (model != NULL) {
         timer_delete(timer);
         if (model->lifo != NULL) {
@@ -279,8 +270,10 @@ void cleanup() {
             shmem_detach(model->res->shmaddr);
         }
     }
+
+    wait_children();
 }
 
-void sigterm_handler() {
+static void sigterm_handler() {
     sig = SIGTERM;
 }

@@ -6,7 +6,7 @@ while [ $# -gt 0 ] ; do
   case $1 in
     -e | --explode)
       if [ -z ${config+x} ]; then
-       config=env/explode.sh
+       config=explode
       else
         echo 'ERROR'
         exit 1
@@ -14,7 +14,7 @@ while [ $# -gt 0 ] ; do
       ;;
     -t | --timeout)
       if [ -z ${config+x} ]; then
-       config=env/timeout.sh
+       config=timeout
       else
         echo 'ERROR'
         exit 1
@@ -22,7 +22,7 @@ while [ $# -gt 0 ] ; do
       ;;
     -m | --meltdown)
       if [ -z ${config+x} ]; then
-       config=env/meltdown.sh
+       config=meltdown
       else
         echo 'ERROR'
         exit 1
@@ -30,7 +30,7 @@ while [ $# -gt 0 ] ; do
       ;;
     -b | --blackout)
       if [ -z ${config+x} ]; then
-       config=env/blackout.sh
+       config=blackout
       else
         echo 'ERROR'
         exit 1
@@ -45,6 +45,7 @@ done
 
 make
 cd bin || exit
+# assicurarsi che un config sia stato selezionato e farne il source
 
 if $inhibitor ; then
   ./master --inhibitor
