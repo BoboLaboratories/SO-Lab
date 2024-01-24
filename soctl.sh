@@ -58,7 +58,6 @@ function start() {
   fi
 
   source "$config"
-  make clean
   make
   cd bin || exit 1
   ./master $inhibitor

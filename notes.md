@@ -5,7 +5,7 @@
 - [ ] memory leak frargs
 
 ## soctl
-- [ ] terminarla
+- [x] terminarla
 
 ## Misc
 - [x] i file .h sono inclusi tra i file da passare a gcc nei makefile
@@ -30,7 +30,7 @@
 ## Next big steps
 - [ ] gestione TIMEOUT
 - [ ] stampa statistiche
-- [ ] pipe e ditchare fifo?
+- [x] (no) pipe e ditchare fifo?
 - [ ] prepare opportuni config in env per i vari scenari
 - [ ] relazione
 
