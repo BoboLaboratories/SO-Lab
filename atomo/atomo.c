@@ -88,6 +88,7 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
+    // TODO close fifo
 
     // =========================================
     //        Sync with other processes

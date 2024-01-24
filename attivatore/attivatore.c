@@ -54,11 +54,10 @@ int main(int argc, char *argv[]) {
     // =========================================
     //              Setup fifo
     // =========================================
-    if ((model->res->fifo_fd = fifo_open(FIFO, O_RDONLY)) != -1) {
+    if ((model->res->fifo_fd = fifo_open(FIFO, O_RDONLY)) == -1) {
         // activate non-blocking fifo read
-        int fifo_flags = fcntl(model->res->fifo_fd, F_GETFL, 0);
-        fcntl(model->res->fifo_fd, F_SETFL, fifo_flags | O_NONBLOCK);
-    } else {
+//        int fifo_flags = fcntl(model->res->fifo_fd, F_GETFL, 0);
+//        fcntl(model->res->fifo_fd, F_SETFL, fifo_flags | O_NONBLOCK);
         exit(EXIT_FAILURE);
     }
 
@@ -76,13 +75,13 @@ int main(int argc, char *argv[]) {
 
         sem_buf(&sops[0], SEM_ATTIVATORE, -1, 0);
         if (sem_op(model->ipc->semid, &sops[0], 1) == -1) {
-            print(E, "Could not acquire SEM_ATTIVATORE semaphore.\n");
+            print(E, "Could not acquire attivatore semaphore.\n");
             break;
         }
 
         sem_buf(&sops[0], SEM_MASTER, -1, 0);
         if (sem_op(model->ipc->semid, &sops[0], 1) == -1) {
-            print(E, "Could not acquire SEM_MASTER semaphore.\n");
+            print(E, "Could not acquire master semaphore.\n");
         }
 
         // first try to retrieve an atom from the lifo (recently activated atoms)
@@ -94,14 +93,13 @@ int main(int argc, char *argv[]) {
                 sem_buf(&sops[1], SEM_ATTIVATORE, +1, 0);
                 if (sem_op(model->ipc->semid, sops, 2) == -1) {
                     print(E, "Could not retrieve an atom and release semaphores.\n");
+                    break;
                 }
             }
         }
 
-        if (atom != -1) {
-            if (kill(atom, SIGACTV) == -1) {
-                print(E, "Could not activate atom %d.\n", atom);
-            }
+        if (atom != -1 && kill(atom, SIGACTV) == -1) {
+            print(E, "Could not activate atom %d.\n", atom);
         }
     }
 

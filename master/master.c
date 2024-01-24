@@ -83,13 +83,13 @@ int main(int argc, char *argv[]) {
     // =========================================
     //               Setup fifo
     // =========================================
-    if ((fifo_create(FIFO, S_IWUSR | S_IRUSR) != -1) && (model->res->fifo_fd = fifo_open(FIFO, O_RDWR)) != -1) {
+    if ((fifo_create(FIFO, S_IWUSR | S_IRUSR) == -1) /*&& (model->res->fifo_fd = fifo_open(FIFO, O_RDWR)) != -1*/) {
         // TODO questa riga sotto non va proprio amici miei
-        if (fcntl(model->res->fifo_fd, F_SETPIPE_SZ, 70000 * sizeof(pid_t)) == -1) {
-            print(E, "Could not set fifo buffer.\n");
-            exit(EXIT_FAILURE);
-        }
-    } else {
+//        if (fcntl(model->res->fifo_fd, F_SETPIPE_SZ, 70000 * sizeof(pid_t)) == -1) {
+//            print(E, "Could not set fifo buffer.\n");
+//            exit(EXIT_FAILURE);
+//        }
+//    } else {
         exit(EXIT_FAILURE);
     }
 

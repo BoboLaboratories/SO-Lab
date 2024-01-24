@@ -1,3 +1,5 @@
+#include <errno.h>
+
 #include "lib/fifo.h"
 
 int fifo_create(const char *pathname, mode_t flags) {
@@ -19,6 +21,13 @@ int fifo_open(const char *pathname, int flags) {
     if (fifo_fd == -1) {
         print(E, "Could not open fifo (%s).\n", pathname);
     }
+
+    int fifo_flags = fcntl(fifo_fd, F_GETFL, 0);
+    if (fcntl(fifo_fd, F_SETFL, fifo_flags | O_NONBLOCK) == -1) {
+        print(E, "Could not set non-blocking fifo operations.\n");
+        // TODO
+    }
+
 #if defined(DEBUG) || defined(D_FIFO)
     else {
         print(D, "Opened fifo (%s, fd=%d).\n", pathname, fifo_fd);
@@ -30,11 +39,22 @@ int fifo_open(const char *pathname, int flags) {
 
 int fifo_add(int fifo_fd, void *data, size_t size) {
     int ret = 0;
-    if (write(fifo_fd, data, size) != (long) size) {
-        // TODO: Error handling
-        print(E, "Error while adding data from fifo.\n");
-        ret = -1;
+
+    if (write(fifo_fd, data, size) == -1) {
+        if (errno == EAGAIN) {
+            ssize_t fsize = fcntl(fifo_fd, F_GETPIPE_SZ);
+            print(D, "size before: %d\n", fsize / size);
+            if (fcntl(fifo_fd, F_SETPIPE_SZ, fsize + 1) == -1) {
+                print(E, "Could not set fifo buffer.\n");
+                return -1;
+            } else {
+                fsize = fcntl(fifo_fd, F_GETPIPE_SZ);
+                print(D, "size after: %d\n\n", fsize / size);
+                return fifo_add(fifo_fd, data, size);
+            }
+        }
     }
+
     return ret;
 }
 
