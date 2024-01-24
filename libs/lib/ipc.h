@@ -18,6 +18,9 @@
 #define SIGACTV SIGUSR1     // when received by atom it means it should perform a fission
 #define SIGWAST SIGUSR2     // when received by atom it means it should become waste
 
+#define FIFO        ".so_fifo"
+#define FTOK_PROJ   'x'
+
 struct Ipc {
     int semid;
     pid_t master_pid;

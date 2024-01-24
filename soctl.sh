@@ -34,7 +34,6 @@ function start() {
     fi
   }
 
-  shift
   while [ $# -gt 0 ] ; do
     case $1 in
       -e | --explode)
@@ -65,7 +64,6 @@ function start() {
   fi
 
   source "$config"
-
   make clean
   make
   cd bin || exit 1
@@ -83,23 +81,41 @@ function stop() {
     echo "Simulation terminated!"
     exit 0
   fi
+
+  exit 0
 }
 
 function inhibitor() {
-  echo "ciao"
+  while [ $# -gt 0 ] ; do
+    case $1 in
+      start)
+      ;;
+      stop)
+      ;;
+      toggle)
+      ;;
+      *)
+        echo "ERROR: invalid option $1!"
+        exit 1
+    esac
+  done
+
+  exit 0
 }
 
 
 while [ $# -gt 0 ] ; do
   case $1 in
     start)
+      shift
       start "$@"
     ;;
     stop)
       stop
     ;;
     inhibitor)
-      inhibitor
+      shift
+      inhibitor "$@"
     ;;
     *)
       echo "ERROR: invalid operation $1!"

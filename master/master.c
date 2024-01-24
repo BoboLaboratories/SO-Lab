@@ -83,13 +83,7 @@ int main(int argc, char *argv[]) {
     // =========================================
     //               Setup fifo
     // =========================================
-    if ((fifo_create(FIFO, S_IWUSR | S_IRUSR) == -1) /*&& (model->res->fifo_fd = fifo_open(FIFO, O_RDWR)) != -1*/) {
-        // TODO questa riga sotto non va proprio amici miei
-//        if (fcntl(model->res->fifo_fd, F_SETPIPE_SZ, 70000 * sizeof(pid_t)) == -1) {
-//            print(E, "Could not set fifo buffer.\n");
-//            exit(EXIT_FAILURE);
-//        }
-//    } else {
+    if (fifo_create(FIFO, S_IWUSR | S_IRUSR) == -1) {
         exit(EXIT_FAILURE);
     }
 
@@ -114,7 +108,13 @@ int main(int argc, char *argv[]) {
             [SEM_LIFO] = 1
     };
 
-    model->ipc->semid = mksem(IPC_PRIVATE, SEM_COUNT, S_IWUSR | S_IRUSR, init);
+    key_t key;
+    if ((key = ftok(FIFO, FTOK_PROJ)) == -1) {
+        print(E, "Could not generate ftok key.\n");
+        exit(EXIT_FAILURE);
+    };
+
+    model->ipc->semid = mksem(key, SEM_COUNT, S_IWUSR | S_IRUSR, init);
     if (model->ipc->semid == -1) {
         exit(EXIT_FAILURE);
     }

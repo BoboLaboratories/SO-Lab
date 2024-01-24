@@ -7,6 +7,7 @@ export CC=gcc
 
 LIBS_FULL_PATHS = $(addprefix bin/libs/,$(LIBS))
 MAIN_FULL_PATHS = $(addprefix bin/,$(MAIN))
+MAIN_FULL_PATHS += bin/inhibitor_ctl
 HEADER_DIRECTORIES = libs model
 
 # Collection of common libraries used by any type of process
@@ -33,10 +34,14 @@ clean:
 	rm -rf bin
 	echo " done."
 
+# Directive for building inhibitor ctl
+bin/inhibitor_ctl: inhibitor_ctl/inhibitor_ctl.c bin/libs/sem
+	$(CC) $(CFLAGS) $(filter %.c,$^) -o $@ -Ilibs -Lbin/libs -l:sem
+
 # Directive for building any main component
 bin/%: %/*.c model/model.c $(LIBS_FULL_PATHS)
 	$(eval DEF := $(shell echo $* | tr '[:lower:]' '[:upper:]'))
-	$(CC) $(CFLAGS) -DD_PID -D$(DEF) $(filter %.c,$^) -o $@ $(addprefix -I,$(HEADER_DIRECTORIES)) -Lbin/libs -lm $(addprefix -l:,$(LIBS))
+	$(CC) $(CFLAGS) -DD_PID -D$(DEF) $(filter %.c,$^) -o $@ $(addprefix -I,$(HEADER_DIRECTORIES)) -Lbin/libs $(addprefix -l:,$(LIBS))
 
 # Directive for making any library
 bin/libs/%: libs/impl/%.c | makedir

@@ -8,8 +8,6 @@
 #include "util.h"
 #include "console.h"
 
-#define FIFO ".so_fifo"
-
 int fifo_create(const char *pathname, mode_t mode);
 int fifo_open(const char *pathname, int flags);
 int fifo_add(int fifo_fd, void *data, size_t size);
