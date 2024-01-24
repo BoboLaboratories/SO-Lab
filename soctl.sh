@@ -1,54 +1,124 @@
 #!/bin/bash
 
-inhibitor=false;
+#soctl run --meltdown --inhib
+#    source env/meltdown.sh
+#    ./master_pid --inhib
+#
+#soctl stop
+#    kill -SIGTERM $(preg master_pid)
+#
+#soctl inhibitor <start/stop/toggle>
+#    start  = ./inhibitor_ctl 1
+#    stop   = ./inhibitor_ctl 0
+#    toggle = ./inhibitor_ctl
+
+# function display_greeting() {
+#     local greeting='Hello'
+#     echo "$greeting, $1!"
+# }
+#
+# display_greeting 'Anton'
+
+
+# soctl start -e --inhibitor
+function start() {
+  inhibitor=
+  config=
+
+  function select_config() {
+    if [ -z "$config" ]; then
+     config="env/$1.sh"
+    else
+      echo 'ERROR: can only select one ending scenario!'
+      exit 1
+    fi
+  }
+
+  shift
+  while [ $# -gt 0 ] ; do
+    case $1 in
+      -e | --explode)
+        select_config "explode"
+        ;;
+      -t | --timeout)
+        select_config "timeout"
+        ;;
+      -m | --meltdown)
+        select_config "meltdown"
+        ;;
+      -b | --blackout)
+        select_config "blackout"
+        ;;
+      -i | --inhibitor)
+        inhibitor=--inhibitor
+        ;;
+      *)
+        echo "ERROR: invalid option $1!"
+        exit 1
+    esac
+    shift
+  done
+
+  if [ -z "$config" ]; then
+    echo "ERROR: no ending scenario was selected!"
+    exit 1
+  fi
+
+  source "$config"
+
+  make clean
+  make
+  cd bin || exit 1
+  ./master $inhibitor
+  exit 0
+}
+
+function stop() {
+  pid=$(pgrep --newest master)
+  if [ -z "$pid" ]; then
+    echo "ERROR: no simulation is running!"
+    exit 1
+  else
+    kill -SIGTERM "$pid"
+    echo "Simulation terminated!"
+    exit 0
+  fi
+}
+
+function inhibitor() {
+  echo "ciao"
+}
+
 
 while [ $# -gt 0 ] ; do
   case $1 in
-    -e | --explode)
-      if [ -z ${config+x} ]; then
-       config=explode
-      else
-        echo 'ERROR'
-        exit 1
-      fi
-      ;;
-    -t | --timeout)
-      if [ -z ${config+x} ]; then
-       config=timeout
-      else
-        echo 'ERROR'
-        exit 1
-      fi
-      ;;
-    -m | --meltdown)
-      if [ -z ${config+x} ]; then
-       config=meltdown
-      else
-        echo 'ERROR'
-        exit 1
-      fi
-      ;;
-    -b | --blackout)
-      if [ -z ${config+x} ]; then
-       config=blackout
-      else
-        echo 'ERROR'
-        exit 1
-      fi
-      ;;
-    -i | --inhibitor)
-      inhibitor=true
-      ;;
+    start)
+      start "$@"
+    ;;
+    stop)
+      stop
+    ;;
+    inhibitor)
+      inhibitor
+    ;;
+    *)
+      echo "ERROR: invalid operation $1!"
+      exit 1
+    ;;
   esac
-  shift
 done
 
-make
-cd bin || exit
-# assicurarsi che un config sia stato selezionato e farne il source
+# TODO
+# new terminal per simulazione start
+# finire inhibitor ctl
+# errore/help se comandi errati
 
-if $inhibitor ; then
-  ./master --inhibitor
-else
-  ./master
-fi
+#make
+#cd bin || exit
+## assicurarsi che un config sia stato selezionato e farne il source
+#
+#if $inhibitor ; then
+#  ./master --inhibitor
+#else
+#  ./master
+#fi
