@@ -3,6 +3,7 @@
 #include <unistd.h>
 
 #include "lib/sem.h"
+#include "lib/ipc.h"
 
 int main(int argc, char *argv[]) {
     if (argc != 2) {
