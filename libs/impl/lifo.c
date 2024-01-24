@@ -1,4 +1,3 @@
-#include <math.h>
 #include <string.h>
 
 #include "lib/lifo.h"
@@ -101,7 +100,7 @@ static void swap(struct Lifo *lifo, size_t size, void **dest) {
 }
 
 static void *attach(struct Lifo *lifo, int pushing) {
-    int n_segments = ceil((double) lifo->length / lifo->segment_length);
+    int n_segments = ceil(lifo->length / lifo->segment_length);
     int free_slots = n_segments * lifo->segment_length - lifo->length;
     int new_n_segments = n_segments;
 

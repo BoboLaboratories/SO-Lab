@@ -74,7 +74,7 @@ int main(int argc, char *argv[]) {
     // initialize shared data
     memset(model->stats, 0, sizeof(struct Stats));
     memset(model->ipc, -1, sizeof(struct Ipc));
-    model->ipc->master = getpid();
+    model->ipc->master_pid = getpid();
     if (load_config() == -1) {
         exit(EXIT_FAILURE);
     }
@@ -98,10 +98,10 @@ int main(int argc, char *argv[]) {
     //             Setup semaphores
     // =========================================
     int nproc = N_ATOMI_INIT                // atomi
-                + flags[INHIBITOR_FLAG]     // inibitore
-                + 1                         // alimentatore
+                + flags[INHIBITOR_FLAG]     // inibitore_pid
+                + 1                         // alimentatore_pid
                 + 1                         // attivatore
-                + 1;                        // master
+                + 1;                        // master_pid
 
     int init[SEM_COUNT] = {
             [SEM_INIBITORE_ON] = flags[INHIBITOR_FLAG] ? 0 : 1,
@@ -128,29 +128,29 @@ int main(int argc, char *argv[]) {
 
 
     // =========================================
-    //          Forking alimentatore
+    //          Forking alimentatore_pid
     // =========================================
     char *buf;
     char **argvc;
     prargs("alimentatore", &argvc, &buf, 1, ITC_SIZE);
     sprintf(argvc[1], "%d", model->res->shmid);
-    model->ipc->alimentatore = fork_execv(argvc);
+    model->ipc->alimentatore_pid = fork_execv(argvc);
     frargs(argvc, buf);
-    if (model->ipc->alimentatore == -1) {
+    if (model->ipc->alimentatore_pid == -1) {
         // TODO meltdown
         exit(EXIT_FAILURE);
     }
 
 
     // =========================================
-    //           Forking inibitore
+    //           Forking inibitore_pid
     // =========================================
     if (flags[INHIBITOR_FLAG]) {
         prargs("inibitore", &argvc, &buf, 1, ITC_SIZE);
         sprintf(argvc[1], "%d", model->res->shmid);
-        model->ipc->inibitore = fork_execv(argvc);
+        model->ipc->inibitore_pid = fork_execv(argvc);
         frargs(argvc, buf);
-        if (model->ipc->inibitore == -1) {
+        if (model->ipc->inibitore_pid == -1) {
             // TODO meltdown
             exit(EXIT_FAILURE);
         }

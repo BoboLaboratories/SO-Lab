@@ -62,7 +62,7 @@ int end_activation_cycle() {
     struct sembuf sops;
     sem_buf(&sops, SEM_MASTER, +1, 0);
     if (sem_op(model->ipc->semid, &sops, 1) == -1) {
-        print(E, "Could not release master semaphore.\n");
+        print(E, "Could not release master_pid semaphore.\n");
     }
 
     sem_buf(&sops, SEM_ATTIVATORE, +1, 0);

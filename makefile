@@ -35,7 +35,7 @@ clean:
 
 # Directive for building any main component
 bin/%: %/*.c model/model.c $(LIBS_FULL_PATHS)
-	$(eval DEF := $(shell tr '[:lower:]' '[:upper:]' <<< $*))
+	$(eval DEF := $(shell echo $* | tr '[:lower:]' '[:upper:]'))
 	$(CC) $(CFLAGS) -DD_PID -D$(DEF) $(filter %.c,$^) -o $@ $(addprefix -I,$(HEADER_DIRECTORIES)) -Lbin/libs -lm $(addprefix -l:,$(LIBS))
 
 # Directive for making any library

@@ -9,8 +9,10 @@
 #define CHARS_PER_INT   (3 * sizeof(int) + 1)
 #define ITC_SIZE        (CHARS_PER_INT * sizeof(char))
 
+// avoid importing whole math library for these utilities
 #define max(x, y) (((x) > (y)) ? (x) : (y))
 #define min(x, y) (((x) < (y)) ? (x) : (y))
+#define ceil(x) ((x - (int) x) == 0 ? (int) x : (int) x + 1)
 
 // misc
 timer_t timer_start(long nanos);

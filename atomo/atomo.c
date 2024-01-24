@@ -75,7 +75,7 @@ int main(int argc, char *argv[]) {
     struct sembuf sops[2];
     sem_buf(&sops[0], SEM_MASTER, -1, 0);
     if (sem_op(model->ipc->semid, &sops[0], 1) == -1) {
-        print(E, "Could not acquire master semaphore.\n");
+        print(E, "Could not acquire master_pid semaphore.\n");
         exit(EXIT_FAILURE);
     }
 
@@ -84,7 +84,7 @@ int main(int argc, char *argv[]) {
 
     sem_buf(&sops[0], SEM_MASTER, +1, 0);
     if (sem_op(model->ipc->semid, &sops[0], 1) == -1) {
-        print(E, "Could not release master semaphore.\n");
+        print(E, "Could not release master_pid semaphore.\n");
         exit(EXIT_FAILURE);
     }
 
@@ -120,7 +120,7 @@ int main(int argc, char *argv[]) {
             pid_t child_pid = fork();
             switch (child_pid) {
                 case -1: // Meltdown
-                    kill(model->ipc->master, SIGMELT);
+                    kill(model->ipc->master_pid, SIGMELT);
                     terminated = 1;
                     break;
                 case 0: // Child atom
@@ -189,10 +189,10 @@ static void waste(int status) {
         end_activation_cycle();
     }
 
-    if (ppid == model->ipc->master || ppid == model->ipc->alimentatore) {
+    if (ppid == model->ipc->master_pid || ppid == model->ipc->alimentatore_pid) {
         sem_buf(&sops, SEM_ALIMENTATORE, +1, 0);
         if (sem_op(model->ipc->semid, &sops, 1) == -1) {
-            print(E, "Could not give work back to alimentatore.\n");
+            print(E, "Could not give work back to alimentatore_pid.\n");
         }
     }
 
