@@ -9,6 +9,7 @@
 #include <sys/wait.h>
 
 #include "model.h"
+#include "master.h"
 #include "config.h"
 #include "lib/sig.h"
 #include "lib/sem.h"

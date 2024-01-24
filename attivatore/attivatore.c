@@ -12,6 +12,8 @@
 extern struct Model *model;
 extern sig_atomic_t sig;
 
+static timer_t timer;
+
 int main(int argc, char *argv[]) {
 #ifdef D_PID
     print(D, "Attivatore: %d\n", getpid());
@@ -35,7 +37,7 @@ int main(int argc, char *argv[]) {
 
 
     // =========================================
-    //          Setup shared memory
+    //           Setup shared memory
     // =========================================
     if (parse_int(argv[1], &model->res->shmid) == -1) {
         print(E, "Could not parse shmid (%s).\n", argv[1]);
@@ -52,26 +54,25 @@ int main(int argc, char *argv[]) {
     // =========================================
     //              Setup fifo
     // =========================================
-    if ((model->res->fifo_fd = fifo_open(FIFO, O_RDONLY)) == -1) {
+    if ((model->res->fifo_fd = fifo_open(FIFO, O_RDONLY)) != -1) {
+        // activate non-blocking fifo read
+        int fifo_flags = fcntl(model->res->fifo_fd, F_GETFL, 0);
+        fcntl(model->res->fifo_fd, F_SETFL, fifo_flags | O_NONBLOCK);
+    } else {
         exit(EXIT_FAILURE);
     }
 
-    // activate non-blocking fifo read
-    int fifo_flags = fcntl(model->res->fifo_fd, F_GETFL, 0);
-    fcntl(model->res->fifo_fd, F_SETFL, fifo_flags | O_NONBLOCK);
 
-    // Sem Sync
+    // =========================================
+    //         Sync with master process
+    // =========================================
     sem_sync(model->ipc->semid, SEM_SYNC);
 
 
     struct sembuf sops[2];
-    timer_t timer = timer_start(STEP_ATTIVATORE);
+    timer = timer_start(STEP_ATTIVATORE);
     while (1) {
         sigsuspend(&critical);
-
-        if (sig == SIGTERM) {
-            break;
-        }
 
         sem_buf(&sops[0], SEM_ATTIVATORE, -1, 0);
         if (sem_op(model->ipc->semid, &sops[0], 1) == -1) {
@@ -79,55 +80,40 @@ int main(int argc, char *argv[]) {
             break;
         }
 
-        //
-
         sem_buf(&sops[0], SEM_MASTER, -1, 0);
         if (sem_op(model->ipc->semid, &sops[0], 1) == -1) {
             print(E, "Could not acquire SEM_MASTER semaphore.\n");
         }
 
-        // first try to remove an atom from the lifo (recently activated atoms)
+        // first try to retrieve an atom from the lifo (recently activated atoms)
         pid_t atom = -1;
         if (lifo_pop(model->lifo, &atom) == -1) {
+            // otherwise try to retrieve an atom from the fifo (create by alimentatore)
             if (fifo_remove(model->res->fifo_fd, &atom, sizeof(pid_t)) == -1) {
                 sem_buf(&sops[0], SEM_MASTER, +1, 0);
                 sem_buf(&sops[1], SEM_ATTIVATORE, +1, 0);
                 if (sem_op(model->ipc->semid, sops, 2) == -1) {
-                    print(E, "Could not release SEM_ATTIVATORE semaphore.\n");
+                    print(E, "Could not retrieve an atom and release semaphores.\n");
                 }
             }
         }
 
         if (atom != -1) {
-//            DEBUG_BREAKPOINT;
-//            sem_buf(&sops, SEM_MASTER, -1, 0);
-//            if (sem_op(model->ipc->semid, &sops, 1) == -1) {
-//                print(E, "Could not acquire SEM_MASTER semaphore.\n");
-//            }
-//            DEBUG_BREAKPOINT;
             if (kill(atom, SIGACTV) == -1) {
                 print(E, "Could not activate atom %d.\n", atom);
-            } else {
-//                model->stats->n_activations++;
             }
-
-            // we do not release SEM_MASTER given
-            // the activation transaction has begun
-
-            /*unmask(SIGTERM);
-            if (sig == SIGTERM) {
-                break;
-            }
-            mask(SIGTERM);*/
         }
     }
-    timer_delete(timer);
 
-    exit(EXIT_SUCCESS);
+    exit(EXIT_FAILURE);
 }
 
 
 void cleanup() {
+    // clear misc data
+    timer_delete(timer);
+
+    // detach IPC resources
     if (model != NULL) {
         if (model->res->fifo_fd != -1) {
             fifo_close(model->res->fifo_fd);

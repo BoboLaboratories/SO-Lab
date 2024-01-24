@@ -10,7 +10,6 @@
 #include "lib/sem.h"
 #include "lib/sig.h"
 #include "lib/ipc.h"
-#include "lib/fifo.h"
 #include "lib/shmem.h"
 
 extern struct Model *model;
@@ -43,7 +42,7 @@ int main(int argc, char *argv[]) {
 
 
     // =========================================
-    //          Setup shared memory
+    //            Setup shared memory
     // =========================================
     if (parse_int(argv[1], &model->res->shmid) == -1) {
         print(E, "Could not parse shmid (%s).\n", argv[1]);
@@ -58,14 +57,6 @@ int main(int argc, char *argv[]) {
 
 
     // =========================================
-    //              Setup FIFO
-    // =========================================
-    if ((model->res->fifo_fd = fifo_open(FIFO, O_WRONLY)) == -1) {
-        exit(EXIT_FAILURE);
-    }
-
-
-    // =========================================
     //         Sync with master process
     // =========================================
     sem_sync(model->ipc->semid, SEM_SYNC);
@@ -74,14 +65,14 @@ int main(int argc, char *argv[]) {
     // =========================================
     //                Main logic
     // =========================================
-    prargs("atomo", &argvc, &buf, 2, ITC_SIZE);
-    sprintf(argvc[1], "%d", model->res->shmid);
-
+    int terminated = 0;
     struct sembuf sops[2];
     sem_buf(&sops[0], SEM_INIBITORE_ON, 0, IPC_NOWAIT);
     sem_buf(&sops[1], SEM_ALIMENTATORE, -1, 0);
 
-    int terminated = 0;
+    prargs("atomo", &argvc, &buf, 2, ITC_SIZE);
+    sprintf(argvc[1], "%d", model->res->shmid);
+
     timer = timer_start(STEP_ALIMENTAZIONE);
     while (!terminated) {
         sigsuspend(&critical);
@@ -124,9 +115,6 @@ void cleanup() {
 
     // detach IPC resources
     if (model != NULL) {
-        if (model->res->fifo_fd != -1) {
-            fifo_close(model->res->fifo_fd);
-        }
         if (model->res->shmaddr != (void *) -1) {
             shmem_detach(model->res->shmaddr);
         }

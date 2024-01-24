@@ -107,6 +107,8 @@ int main(int argc, char *argv[]) {
         } else if (sig == SIGWAST) {
             waste(ATOM_EXIT_INHIBITED);
         } else if (sig == SIGACTV) {
+            model->stats->n_activations++;
+
             // if fission was requested
             if (atomic_number < MIN_N_ATOMICO) {
                 // if this atom should become waste
@@ -152,7 +154,7 @@ int main(int argc, char *argv[]) {
                     sem_buf(&sops[1], SEM_INIBITORE, +1, 0);
                     if (sem_op(model->ipc->semid, sops, 2) == -1) {
                         if (errno == EAGAIN) {
-                            sem_end_activation(model->ipc->semid);
+                            end_activation_cycle();
                         }
                     }
                     break;
@@ -183,7 +185,7 @@ void waste(int status) {
             print(E, "Could not update stats.\n");
         }
     } else if (status == ATOM_EXIT_NATURAL) {
-        sem_end_activation(model->ipc->semid);
+        end_activation_cycle();
     }
 
     if (ppid == model->ipc->master || ppid == model->ipc->alimentatore) {

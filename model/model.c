@@ -1,6 +1,7 @@
 #include <stdlib.h>
 
 #include "model.h"
+#include "lib/sem.h"
 
 #define OFFSET_CONFIG   0
 #define OFFSET_STATS    (OFFSET_CONFIG + sizeof(struct Config))
@@ -24,7 +25,7 @@ void init() {
 
     model->res->shmid = -1;
     model->res->shmaddr = (void *) -1;
-#if defined(MASTER) || defined(ATTIVATORE) || defined(ALIMENTATORE)
+#if defined(MASTER) || defined(ATTIVATORE) || defined(ATOMO)
     model->res->fifo_fd = -1;
 #endif
 
@@ -56,47 +57,17 @@ static void cleanup_model() {
     free(model);
 }
 
-//
-//static int is_meaningful_signal(int signum) {
-//    int meaningful = signum == SIGTERM;
-//    for (int i = 0; !meaningful && MEANINGFUL_SIGNALS[i] != -1; i++) {
-//        meaningful = signum == MEANINGFUL_SIGNALS[i];
-//    }
-//    return meaningful;
-//}
-//
-//int running() {
-//#if !defined(ATOMO)
-//    sig = -1;
-//#endif
-//
-//    if (MEANINGFUL_SIGNALS[0] != -1) {
-//        // while no meaningful signal is received
-//        while (!is_meaningful_signal(sig)) {
-//            // wait for children processes to terminate
-//            while (wait(NULL) != -1) {
-//#if defined(MASTER) || defined(ALIMENTATORE)
-//                // if a child atom died, check for its exit status so that
-//                // other processes can perform their job accordingly
-//                struct sembuf sops;
-//                sem_buf(&sops, SEM_ALIMENTATORE, +1, 0);
-//                if (sem_op(model->ipc->semid, &sops, 1) == -1)  {
-//                    // TODO
-//                }
-//#endif
-//            }
-//
-//            // if this process has no children
-//            if (errno == ECHILD) {
-//                // wait until a signal is received
-//                // when pause is interrupted by a signal,
-//                pause();
-//                // break the inner loop so that meaningful
-//                // signals are checked by the outer one
-//                break;
-//            }
-//        }
-//    }
-//
-//    return sig != SIGTERM;
-//}
+#if defined(ATOMO) || defined(INIBITORE)
+int end_activation_cycle() {
+    struct sembuf sops;
+    sem_buf(&sops, SEM_MASTER, +1, 0);
+    if (sem_op(model->ipc->semid, &sops, 1) == -1) {
+        print(E, "Could not release master semaphore.\n");
+    }
+
+    sem_buf(&sops, SEM_ATTIVATORE, +1, 0);
+    if (sem_op(model->ipc->semid, &sops, 1) == -1) {
+        print(E, "Could not increase activator semaphore.\n");
+    }
+}
+#endif
