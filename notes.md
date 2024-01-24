@@ -11,7 +11,7 @@
 - [x] i file .h sono inclusi tra i file da passare a gcc nei makefile
 - [x] mettere o togliere i nomi dei parametri da tutte le firme dei metodi
 - [x] tutti devono gestire il SIGTERM
-- [ ] se un figlio muore per qualsiasi errore bisogna segnalarlo al master e terminare tutti i processi
+- [ ] se un figlio muore per qualsiasi errore bisogna segnalarlo al master_pid e terminare tutti i processi
 - [x] wait per aspettare tutti i figli dei vari processi
 - [x] (no) dobbiamo controllare il fail di malloc/calloc?
 - [x] (no) eventualmente, fare in modo che mklifo(<lifo>, <segment_size>, <elem_size>, -1, <ignored>) si crei in autonomia il semaforo
@@ -130,10 +130,10 @@ Energy  1234     1204   130       30
 
 soctl run --meltdown --inhib
     source env/meltdown.sh
-    ./master --inhib
+    ./master_pid --inhib
 
 soctl stop
-    kill -SIGTERM $(preg master)
+    kill -SIGTERM $(preg master_pid)
 
 soctl inhibitor <start/stop/toggle>
     start  = ./inhibitor_ctl 1

@@ -57,7 +57,7 @@ int main(int argc, char *argv[]) {
 
 
     // =========================================
-    //         Sync with master process
+    //         Sync with master_pid process
     // =========================================
     sem_sync(model->ipc->semid, SEM_SYNC);
 
@@ -85,7 +85,7 @@ int main(int argc, char *argv[]) {
             if (sem_op(model->ipc->semid, sops, 2) == 0 || errno == EAGAIN) {
                 sprintf(argvc[2], "%d", rand_between(MIN_N_ATOMICO, N_ATOM_MAX));
                 if (fork_execv(argvc) == -1) {
-                    kill(model->ipc->master, SIGMELT);
+                    kill(model->ipc->master_pid, SIGMELT);
                     terminated = 1;
                     break;
                 }

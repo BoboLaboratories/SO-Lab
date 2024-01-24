@@ -46,7 +46,7 @@ int main(int argc, char *argv[]) {
 
 
     // =========================================
-    //         Sync with master process
+    //         Sync with master_pid process
     // =========================================
     sem_sync(model->ipc->semid, SEM_SYNC);
 
