@@ -5,14 +5,15 @@ export CC=gcc
 # $^ prerequisites
 # $< first prerequisite
 
+# Collection of common libraries used by any type of process
+LIBS = console shmem util fifo lifo sem sig
+MAIN = master alimentatore attivatore atomo inibitore sandbox
+
+# Paths to all executables and libraries
 LIBS_FULL_PATHS = $(addprefix bin/libs/,$(LIBS))
 MAIN_FULL_PATHS = $(addprefix bin/,$(MAIN))
 MAIN_FULL_PATHS += bin/inhibitor_ctl
 HEADER_DIRECTORIES = libs model
-
-# Collection of common libraries used by any type of process
-LIBS = console shmem util fifo lifo sem sig
-MAIN = master alimentatore attivatore atomo inibitore sandbox
 
 # Directive for building the whole project
 all: $(MAIN_FULL_PATHS)
