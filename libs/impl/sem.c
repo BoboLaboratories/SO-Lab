@@ -3,7 +3,6 @@
 #include <string.h>
 #include <errno.h>
 
-#include "lib/ipc.h"
 #include "lib/sem.h"
 
 struct Init {

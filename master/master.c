@@ -98,7 +98,7 @@ int main(int argc, char *argv[]) {
                 + 1;                        // master_pid
 
     int init[SEM_COUNT] = {
-            [SEM_INIBITORE_ON] = flags[INHIBITOR_FLAG] ? 0 : 1,
+            [SEM_INIBITORE_OFF] = flags[INHIBITOR_FLAG] ? 0 : 1,
             [SEM_ALIMENTATORE] = 0,
             [SEM_ATTIVATORE] = 1,
             [SEM_INIBITORE] = 0,
@@ -114,7 +114,7 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     };
 
-    model->ipc->semid = mksem(key, SEM_COUNT, S_IWUSR | S_IRUSR, init);
+    model->ipc->semid = mksem(key, SEM_COUNT, IPC_CREAT | IPC_EXCL | S_IWUSR | S_IRUSR, init);
     if (model->ipc->semid == -1) {
         exit(EXIT_FAILURE);
     }
@@ -128,7 +128,7 @@ int main(int argc, char *argv[]) {
 
 
     // =========================================
-    //          Forking alimentatore_pid
+    //          Forking alimentatore
     // =========================================
     char *buf;
     char **argvc;
@@ -143,17 +143,15 @@ int main(int argc, char *argv[]) {
 
 
     // =========================================
-    //           Forking inibitore_pid
+    //           Forking inibitore
     // =========================================
-    if (flags[INHIBITOR_FLAG]) {
-        prargs("inibitore", &argvc, &buf, 1, ITC_SIZE);
-        sprintf(argvc[1], "%d", model->res->shmid);
-        model->ipc->inibitore_pid = fork_execv(argvc);
-        frargs(argvc, buf);
-        if (model->ipc->inibitore_pid == -1) {
-            // TODO meltdown
-            exit(EXIT_FAILURE);
-        }
+    prargs("inibitore", &argvc, &buf, 1, ITC_SIZE);
+    sprintf(argvc[1], "%d", model->res->shmid);
+    model->ipc->inibitore_pid = fork_execv(argvc);
+    frargs(argvc, buf);
+    if (model->ipc->inibitore_pid == -1) {
+        // TODO meltdown
+        exit(EXIT_FAILURE);
     }
 
 
@@ -253,7 +251,6 @@ int main(int argc, char *argv[]) {
 void cleanup() {
     // clear misc data
     timer_delete(timer);
-
     // detach and remove IPC resources
     if (model != NULL) {
         timer_delete(timer);

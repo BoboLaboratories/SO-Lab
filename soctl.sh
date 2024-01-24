@@ -12,12 +12,6 @@
 #    stop   = ./inhibitor_ctl 0
 #    toggle = ./inhibitor_ctl
 
-# function display_greeting() {
-#     local greeting='Hello'
-#     echo "$greeting, $1!"
-# }
-#
-# display_greeting 'Anton'
 
 
 # soctl start -e --inhibitor
@@ -86,20 +80,34 @@ function stop() {
 }
 
 function inhibitor() {
+  op=
+
+  function select_op() {
+    if [ -z "$op" ]; then
+     op=$1
+    else
+      echo 'ERROR: can only perform a single operation!'
+      exit 1
+    fi
+  }
+
   while [ $# -gt 0 ] ; do
     case $1 in
-      start)
+      start) select_op "start"
       ;;
-      stop)
+      stop) select_op "stop"
       ;;
-      toggle)
+      toggle) select_op "toggle"
       ;;
       *)
         echo "ERROR: invalid option $1!"
         exit 1
     esac
+    shift
   done
 
+  cd bin || exit 1
+  ./inhibitor_ctl "$op"
   exit 0
 }
 

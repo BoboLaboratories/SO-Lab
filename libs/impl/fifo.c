@@ -59,7 +59,8 @@ int fifo_add(int fifo_fd, void *data, size_t size) {
 }
 
 int fifo_remove(int fifo_fd, void *data, size_t size) {
-    return (int) read(fifo_fd, data, size);
+    size_t nbtyes = read(fifo_fd, data, size);
+    return nbtyes == size ? 0 : -1;
 }
 
 int fifo_close(int fifo_fd) {

@@ -145,7 +145,7 @@ int main(int argc, char *argv[]) {
                     }
 
                     // wake up inhibitor, if activated, to inhibit the energy we just produced
-                    sem_buf(&sops[0], SEM_INIBITORE_ON, 0, IPC_NOWAIT);
+                    sem_buf(&sops[0], SEM_INIBITORE_OFF, 0, IPC_NOWAIT);
                     sem_buf(&sops[1], SEM_INIBITORE, +1, 0);
                     if (sem_op(model->ipc->semid, sops, 2) == -1) {
                         if (errno == EAGAIN) {
@@ -179,10 +179,10 @@ static void waste(int status) {
     model->stats->n_wastes++;
     model->stats->n_atoms--;
 
-    struct sembuf sops;
+    struct sembuf sops[2];
     if (status == EXIT_INHIBITED) {
-        sem_buf(&sops, SEM_ATOM, -1, 0);
-        if (sem_op(model->ipc->semid, &sops, 1) == -1) {
+        sem_buf(&sops[0], SEM_ATOM, -1, 0);
+        if (sem_op(model->ipc->semid, &sops[0], 1) == -1) {
             print(E, "Could not update stats.\n");
         }
     } else {
@@ -190,9 +190,12 @@ static void waste(int status) {
     }
 
     if (ppid == model->ipc->master_pid || ppid == model->ipc->alimentatore_pid) {
-        sem_buf(&sops, SEM_ALIMENTATORE, +1, 0);
-        if (sem_op(model->ipc->semid, &sops, 1) == -1) {
-            print(E, "Could not give work back to alimentatore_pid.\n");
+        sem_buf(&sops[0], SEM_INIBITORE_OFF, 0, IPC_NOWAIT);
+        sem_buf(&sops[1], SEM_ALIMENTATORE, +1, 0);
+        if (sem_op(model->ipc->semid, sops, 2) == -1) {
+            if (errno != EAGAIN) {
+                print(E, "Could not give work back to alimentatore.\n");
+            }
         }
     }
 

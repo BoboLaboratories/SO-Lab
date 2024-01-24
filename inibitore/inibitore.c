@@ -46,7 +46,7 @@ int main(int argc, char *argv[]) {
 
 
     // =========================================
-    //         Sync with master_pid process
+    //         Sync with master process
     // =========================================
     sem_sync(model->ipc->semid, SEM_SYNC);
 
@@ -72,10 +72,11 @@ int main(int argc, char *argv[]) {
         model->stats->curr_energy = curr_energy;
 
         // waste an atom
-        pid_t pid = -1;
-        lifo_pop(model->lifo, &pid);
-        if (kill(pid, SIGWAST) == -1) {
-            print(E, "Error wasting atom %d.\n", pid);
+        pid_t pid;
+        if (lifo_pop(model->lifo, &pid) != -1) {
+            if (kill(pid, SIGWAST) == -1) {
+                print(E, "Error wasting atom %d.\n", pid);
+            }
         }
 
         // allow an atom to update waste stats

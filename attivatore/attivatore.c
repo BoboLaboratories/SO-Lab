@@ -55,9 +55,6 @@ int main(int argc, char *argv[]) {
     //              Setup fifo
     // =========================================
     if ((model->res->fifo_fd = fifo_open(FIFO, O_RDONLY)) == -1) {
-        // activate non-blocking fifo read
-//        int fifo_flags = fcntl(model->res->fifo_fd, F_GETFL, 0);
-//        fcntl(model->res->fifo_fd, F_SETFL, fifo_flags | O_NONBLOCK);
         exit(EXIT_FAILURE);
     }
 

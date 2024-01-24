@@ -66,10 +66,10 @@ int lifo_pop(struct Lifo *lifo, void *data) {
                 lifo->length--;
                 size_t offset = lifo->length * lifo->elem_size;
                 memcpy(data, shmaddr + offset, lifo->elem_size);
+                ret = 0;
 
                 shmem_detach(shmaddr);
             }
-            ret = 0;
         }
         release(lifo);
     }

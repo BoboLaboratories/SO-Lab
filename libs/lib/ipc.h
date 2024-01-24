@@ -10,7 +10,7 @@
 #define SEM_ALIMENTATORE    4
 #define SEM_ATTIVATORE      5
 #define SEM_INIBITORE       6
-#define SEM_INIBITORE_ON    7
+#define SEM_INIBITORE_OFF    7
 
 #define SEM_COUNT           8
 

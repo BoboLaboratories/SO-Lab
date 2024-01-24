@@ -67,7 +67,7 @@ int main(int argc, char *argv[]) {
     // =========================================
     int terminated = 0;
     struct sembuf sops[2];
-    sem_buf(&sops[0], SEM_INIBITORE_ON, 0, IPC_NOWAIT);
+    sem_buf(&sops[0], SEM_INIBITORE_OFF, 0, IPC_NOWAIT);
     sem_buf(&sops[1], SEM_ALIMENTATORE, -1, 0);
 
     prargs("atomo", &argvc, &buf, 2, ITC_SIZE);
