@@ -58,7 +58,7 @@ struct PrintableStats {
 #define HEADER_INHIBITOR    (BLUE "Inhibitor" RESET)
 
 #define HEADER_MAX_LEN          9
-#define HEADER_MAX_COLORED_LEN  (9 + 13)
+#define HEADER_MAX_COLORED_LEN  (9 + 11)
 
 
 #define ROW_TIME            (BLUE "    Time  " RESET)
