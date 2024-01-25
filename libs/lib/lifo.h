@@ -12,9 +12,9 @@ struct Lifo {
     const size_t elem_size;
 };
 
-void mklifo(struct Lifo *lifo, int segment_length, size_t elem_size, int semid, int sem_num);
+void lifo_create(struct Lifo *lifo, int segment_length, size_t elem_size, int semid, int sem_num);
 int lifo_push(struct Lifo *lifo, void *data);
 int lifo_pop(struct Lifo *lifo, void *data);
-int rmlifo(struct Lifo *lifo);
+int lifo_delete(struct Lifo *lifo);
 
 #endif

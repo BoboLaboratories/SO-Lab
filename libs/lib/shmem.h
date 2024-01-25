@@ -1,11 +1,7 @@
 #ifndef LIBS_SHMEM_H
 #define LIBS_SHMEM_H
 
-#include <fcntl.h>
-#include <sys/shm.h>
-
-#include "util.h"
-#include "console.h"
+#include <sys/types.h>
 
 int shmem_create(key_t key, size_t size, int shmflg);
 void *shmem_attach(int shmid);

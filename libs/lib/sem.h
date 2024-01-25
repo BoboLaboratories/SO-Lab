@@ -3,9 +3,6 @@
 
 #include <sys/sem.h>
 
-#include "util.h"
-#include "console.h"
-
 union semun {
     int val;                // value for SETVAL
     struct semid_ds* buf;   // buffer for IPC_STAT, IPC_SET
@@ -15,9 +12,9 @@ union semun {
 #endif
 };
 
-int mksem(key_t key, int nsems, int semflg, const int *init);
+int sem_create(key_t key, int nsems, int semflg, const int *init);
 int sem_sync(int semid, int sem_num);
 void sem_buf(struct sembuf *sop, unsigned short sem_num, short sem_op, short sem_flg);
 int sem_op(int semid, struct sembuf *sops, int nsops);
-int rmsem(int semid);
+int sem_delete(int semid);
 #endif

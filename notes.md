@@ -1,8 +1,9 @@
 # TODO
 
 ## Master
-- [ ] stampa dello stato
-- [ ] memory leak frargs
+- [x] stampa dello stato
+- [x] (mai stati) memory leak frargs
+- [ ] se va in meltdown prima ancora di eseguire il primo secondo non stampa nulla, esce e basta
 
 ## soctl
 - [x] terminarla
@@ -11,15 +12,15 @@
 - [x] i file .h sono inclusi tra i file da passare a gcc nei makefile
 - [x] mettere o togliere i nomi dei parametri da tutte le firme dei metodi
 - [x] tutti devono gestire il SIGTERM
-- [ ] se un figlio muore per qualsiasi errore bisogna segnalarlo al master_pid e terminare tutti i processi
+- [x] (no) se un figlio muore per qualsiasi errore bisogna segnalarlo al master_pid e terminare tutti i processi
 - [x] wait per aspettare tutti i figli dei vari processi
 - [x] (no) dobbiamo controllare il fail di malloc/calloc?
-- [x] (no) eventualmente, fare in modo che mklifo(<lifo>, <segment_size>, <elem_size>, -1, <ignored>) si crei in autonomia il semaforo
-- [ ] lifo è molto debole nella gestione degli errori
-- [ ] libreria sem da rivedere
+- [x] (no) eventualmente, fare in modo che lifo_create(<lifo>, <segment_size>, <elem_size>, -1, <ignored>) si crei in autonomia il semaforo
+- [x] lifo è molto debole nella gestione degli errori
+- [x] libreria sem da rivedere
   - [x] (se la deve vedere il chiamante) signal interruptions
-  - [ ] error handling
-  - [ ] valori sopra SHRT_MAX danno ERANGE
+  - [x] error handling
+  - [x] (we are powerless) valori sopra SHRT_MAX danno ERANGE
 - [x] le system call che ritornano -1 spesso e volentieri hanno piu info in errno e potenzialmente è good practice checkarlo
 - [x] sostituzione nanosleep con alarm/timer
 - [x] signal masking
@@ -28,18 +29,34 @@
 - [x] (dismissed) logica running() meaningful signal
 
 ## Next big steps
-- [ ] gestione TIMEOUT
-- [ ] stampa statistiche
+- [x] gestione TIMEOUT
+- [x] stampa statistiche
 - [x] (no) pipe e ditchare fifo?
 - [ ] prepare opportuni config in env per i vari scenari
+- [ ] commento e controllo dei processi principali (incluso inhibitor_ctl)
 - [ ] relazione
+- [x] (con dolore) log delle operazioni svolte dall'inibitore
+
+## Relazione
+- [ ] ogni processo può essere terminato in qualsiasi momento perché facciamo uso di tecniche tipo atexit
+- [ ] lifo in shared memory con resize
+- [ ] sigsuspend
+- [ ] MIRA
 
 ## Controlli pre esame
 - [ ] rivedere commenti (e tutti i TODO)
 - [ ] error handling ovunque
-- [ ] eliminare sandobox
+- [x] eliminare sandobox
 - [ ] risorse IPC leak
 - [ ] memory leak
+- [ ] non consegnare .git repo
+- [ ] eliminare questo file
+
+## Da sapere all'esame
+- [ ] come funziona il nostro progetto (source: relazione + commenti nei sorgenti)
+- [ ] comandi di linux, permessi e altre cose insegnate a lezione (source: slide)
+- [ ] saper usare man (source: slide)
+- [ ] ripasso generale delle slide (source: slide)
 
 
 LFT     17/01   06/02
@@ -108,8 +125,8 @@ Waste   342      11
         Total    Remaining
 Time    87s      50s
 
-        Total    Used   LastSec   Free
-Energy  1234     1204   130       30
+        Total    LastSec    Used    Free
+Energy  1234     1204       130     30
 
 
 

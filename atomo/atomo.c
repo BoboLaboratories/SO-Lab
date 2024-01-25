@@ -1,12 +1,17 @@
+#include <fcntl.h>
 #include <errno.h>
 #include <stdlib.h>
 
 #include "model.h"
 #include "atomo.h"
 #include "lib/sem.h"
-#include "lib/shmem.h"
 #include "lib/sig.h"
+#include "lib/ipc.h"
+#include "lib/util.h"
 #include "lib/fifo.h"
+#include "lib/lifo.h"
+#include "lib/shmem.h"
+#include "lib/console.h"
 
 extern struct Model *model;
 extern sigset_t signals;

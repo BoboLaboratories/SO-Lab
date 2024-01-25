@@ -14,6 +14,7 @@
 #include "config.h"
 #include "lib/sig.h"
 #include "lib/sem.h"
+#include "lib/util.h"
 #include "lib/fifo.h"
 #include "lib/lifo.h"
 #include "lib/shmem.h"
@@ -26,13 +27,12 @@ static timer_t timer;
 
 // TODO if SIGTERM is received, frargs does not happen
 int main(int argc, char *argv[]) {
-#ifdef D_PID
-    print(D, "Master: %d\n", getpid());
-#endif
     // check for flags
     for (int i = 1; i < argc; i++) {
         if (strcmp("--inhibitor", argv[i]) == 0) {
             flags[INHIBITOR_FLAG] = 1;
+        } else if (strcmp("--no-inh-log", argv[i]) == 0) {
+            flags[INHIBITOR_LOG_ON_FLAG] = 0;
         }
     }
 
@@ -115,7 +115,7 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     };
 
-    model->ipc->semid = mksem(key, SEM_COUNT, IPC_CREAT | IPC_EXCL | S_IWUSR | S_IRUSR, init);
+    model->ipc->semid = sem_create(key, SEM_COUNT, IPC_CREAT | IPC_EXCL | S_IWUSR | S_IRUSR, init);
     if (model->ipc->semid == -1) {
         exit(EXIT_FAILURE);
     }
@@ -125,7 +125,7 @@ int main(int argc, char *argv[]) {
     //               Setup lifo
     // =========================================
     // TODO 10 come segment_length a 4 occhi chiusi, meglio avere qualche euristica
-    mklifo(model->lifo, 10, sizeof(pid_t), model->ipc->semid, SEM_LIFO);
+    lifo_create(model->lifo, 10, sizeof(pid_t), model->ipc->semid, SEM_LIFO);
 
 
     // =========================================
@@ -138,7 +138,7 @@ int main(int argc, char *argv[]) {
     model->ipc->alimentatore_pid = fork_execv(argvc);
     frargs(argvc, buf);
     if (model->ipc->alimentatore_pid == -1) {
-        // TODO meltdown
+        status = MELTDOWN;
         exit(EXIT_FAILURE);
     }
 
@@ -146,12 +146,13 @@ int main(int argc, char *argv[]) {
     // =========================================
     //           Forking inibitore
     // =========================================
-    prargs("inibitore", &argvc, &buf, 1, ITC_SIZE);
+    prargs("inibitore", &argvc, &buf, 2, ITC_SIZE);
     sprintf(argvc[1], "%d", model->res->shmid);
+    sprintf(argvc[2], "%d", flags[INHIBITOR_LOG_ON_FLAG]);
     model->ipc->inibitore_pid = fork_execv(argvc);
     frargs(argvc, buf);
     if (model->ipc->inibitore_pid == -1) {
-        // TODO meltdown
+        status = MELTDOWN;
         exit(EXIT_FAILURE);
     }
 
@@ -164,7 +165,7 @@ int main(int argc, char *argv[]) {
     pid_t child_pid = fork_execv(argvc);
     frargs(argvc, buf);
     if (child_pid == -1) {
-        // TODO meltdown
+        status = MELTDOWN;
         exit(EXIT_FAILURE);
     }
 
@@ -181,7 +182,7 @@ int main(int argc, char *argv[]) {
 
     frargs(argvc, buf);
     if (child_pid == -1) {
-        // TODO meltdown
+        status = MELTDOWN;
         exit(EXIT_FAILURE);
     }
 
@@ -202,14 +203,6 @@ int main(int argc, char *argv[]) {
     memset(&sim_curr, 0, sizeof(struct timespec));
 
     clock_gettime(CLOCK_MONOTONIC_RAW, &sim_start);
-
-//    struct timespec tstart={0,0}, tend={0,0};
-//    clock_gettime(CLOCK_MONOTONIC, &tstart);
-//    clock_gettime(CLOCK_MONOTONIC, &tend);
-//    printf("some_long_computation took about %.5f seconds\n",
-//           ((double)tend.tv_sec + 1.0e-9*tend.tv_nsec) -
-//           ((double)tstart.tv_sec + 1.0e-9*tstart.tv_nsec));
-
 
     // =========================================
     //               Main logic
@@ -243,9 +236,7 @@ int main(int argc, char *argv[]) {
                 status = TERMINATED;
                 break;
             case SIGALRM:
-                if (elapsed_millis >= SIM_DURATION * (unsigned long) 1e3) {
-                    status = TIMEOUT;
-                } else if (model->stats->curr_energy < ENERGY_DEMAND) {
+                if (model->stats->curr_energy < ENERGY_DEMAND) {
                     status = BLACKOUT;
                 } else {
                     model->stats->curr_energy -= ENERGY_DEMAND;
@@ -253,6 +244,10 @@ int main(int argc, char *argv[]) {
                     if (model->stats->curr_energy >= ENERGY_EXPLODE_THRESHOLD) {
                         status = EXPLODE;
                     }
+                }
+
+                if (elapsed_millis >= SIM_DURATION * (unsigned long) 1e3) {
+                    status = TIMEOUT;
                 }
                 break;
             default:
@@ -279,7 +274,6 @@ int main(int argc, char *argv[]) {
 
     sig_handler(SIGTERM, SIG_IGN);
     kill(0, SIGTERM);
-    print(I, "Status: %d\n", status);
 
     exit(EXIT_SUCCESS);
 }
@@ -291,10 +285,10 @@ void cleanup() {
     if (model != NULL) {
         timer_delete(timer);
         if (model->lifo != NULL) {
-            rmlifo(model->lifo);
+            lifo_delete(model->lifo);
         }
         if (model->ipc->semid != -1) {
-            rmsem(model->ipc->semid);
+            sem_delete(model->ipc->semid);
         }
         if (model->res->fifo_fd != -1) {
             fifo_close(model->res->fifo_fd);

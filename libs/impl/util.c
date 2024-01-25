@@ -1,15 +1,18 @@
 #include <time.h>
 #include <errno.h>
-#include <fcntl.h>
 #include <limits.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <printf.h>
 #include <sys/wait.h>
 
-#include "lib/sig.h"
 #include "lib/util.h"
 #include "lib/console.h"
+
+
+// =========================================
+//              Miscellaneous
+// =========================================
 
 timer_t timer_start(long nanos) {
     timer_t timerid;
@@ -28,6 +31,11 @@ timer_t timer_start(long nanos) {
 int rand_between(int min, int max) {
     return rand() % (max + 1 - min) + min;
 }
+
+
+// =========================================
+//             Parsing numbers
+// =========================================
 
 int parse_long(char *raw, long *dest) {
     char *endptr;
@@ -52,6 +60,11 @@ int parse_int(char *raw, int *dest) {
     }
     return -1;
 }
+
+
+// =========================================
+//    Argument passing and fork utilities
+// =========================================
 
 void prargs(char *executable, char ***argv, char **buf, int vargs, size_t elemsize) {
     *argv = calloc(vargs + 2, sizeof(char *));
@@ -79,7 +92,7 @@ pid_t fork_execv(char **argv) {
     if (pid == 0) {
         execv(argv[0], argv);
         print(E, "Could not execute %s.\n", argv[0]);
-        kill(getppid(), SIGTERM);     // TODO set_meaningful_signals if working as expected
+        exit(EXIT_FAILURE);
     }
     return pid;
 }
@@ -93,24 +106,14 @@ void wait_children() {
     }
 }
 
+
+// =========================================
+//             Temporary files
+// =========================================
+
 static const char **tmpfiles = NULL;
 int atexit_registered = 0;
 int size = 0;
-
-int mktmpfile(const char *pathname, int flags, mode_t mode) {
-    int fd = open(pathname, flags, mode);
-    if (fd == -1) {
-        print(E, "Could not create temporary file (%s).\n", pathname);
-        exit(EXIT_FAILURE);
-    } else {
-#ifdef DEBUG
-        print(D, "Created temporary file (%s).\n", pathname);
-#endif
-        addtmpfile(pathname);
-    }
-
-    return fd;
-}
 
 void addtmpfile(const char *pathname) {
     tmpfiles = reallocarray(tmpfiles, ++size, sizeof(char *));
@@ -121,24 +124,18 @@ void addtmpfile(const char *pathname) {
             print(W, "Could not register temporary file(s) removal at exit.\n");
         } else {
             atexit_registered = 1;
-#ifdef DEBUG
-            print(D, "Registered temporary file(s) cleanup at exit.\n", pathname);
-#endif
         }
     }
 }
 
 void rmtmpfiles() {
-    for (int i = 0; i < size; i++) {
-        if (unlink(tmpfiles[i]) == -1) {
-            print(E, "Could not delete temporary file (%s).\n", tmpfiles[i]);
+    if (tmpfiles != NULL) {
+        for (int i = 0; i < size; i++) {
+            if (unlink(tmpfiles[i]) == -1) {
+                print(E, "Could not delete temporary file (%s).\n", tmpfiles[i]);
+            }
         }
-#ifdef DEBUG
-        else {
-            print(D, "Deleted temporary file (%s).\n", tmpfiles[i]);
-        }
-#endif
-    }
 
-    free(tmpfiles);
+        free(tmpfiles);
+    }
 }

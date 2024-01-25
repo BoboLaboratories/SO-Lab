@@ -13,6 +13,7 @@ struct Stats {
     unsigned long curr_energy;
     unsigned long used_energy;
     unsigned long inhibited_energy;
+    unsigned long inhibited_atoms;
     unsigned long n_atoms;
     unsigned long n_wastes;
     unsigned long n_fissions;
@@ -20,12 +21,15 @@ struct Stats {
 };
 
 struct Model {
+    // start information in shared memory
     struct Config *config;
     struct Stats *stats;
     struct Ipc *ipc;
 #if defined(MASTER) || defined(ATTIVATORE) || defined(INIBITORE) || defined(ATOMO)
     struct Lifo *lifo;
 #endif
+    // end information in shared memory
+    // start local process IPC information
     struct Resources {
         void *shmaddr;
         int shmid;
@@ -33,6 +37,7 @@ struct Model {
         int fifo_fd;
 #endif
     } *res;
+    // end local process IPC information
 };
 
 void init();

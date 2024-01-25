@@ -1,22 +1,22 @@
 #include <stdlib.h>
-#include <errno.h>
 
 #include "model.h"
 #include "lib/sem.h"
 #include "lib/sig.h"
+#include "lib/ipc.h"
 #include "lib/util.h"
 #include "lib/lifo.h"
 #include "lib/shmem.h"
+#include "lib/console.h"
 
 extern struct Model *model;
 extern sig_atomic_t sig;
 
+static int log;
+
 int main(int argc, char *argv[]) {
-#ifdef D_PID
-    print(D, "Inibitore: %d\n", getpid());
-#endif
-    if (argc != 2) {
-        print(E, "Usage: %s <shmid>\n", argv[0]);
+    if (argc != 3) {
+        print(E, "Usage: %s <shmid> <0:log off, 1:log on>\n", argv[0]);
         exit(EXIT_FAILURE);
     }
 
@@ -35,6 +35,11 @@ int main(int argc, char *argv[]) {
     // =========================================
     if (parse_int(argv[1], &model->res->shmid) == -1) {
         print(E, "Could not parse shmid (%s).\n", argv[1]);
+        exit(EXIT_FAILURE);
+    }
+
+    if (parse_int(argv[2], &log) == -1) {
+        print(E, "Could not parse log (%s).\n", argv[1]);
         exit(EXIT_FAILURE);
     }
 
@@ -67,16 +72,31 @@ int main(int argc, char *argv[]) {
 
         // inhibit produced energy
         long curr_energy = min(model->stats->curr_energy, ENERGY_DEMAND + ENERGY_EXPLODE_THRESHOLD - 1);
-        long inhibited_energy = model->stats->curr_energy - curr_energy;
+        unsigned long inhibited_energy = model->stats->curr_energy - curr_energy;
         model->stats->inhibited_energy += inhibited_energy;
         model->stats->curr_energy = curr_energy;
+        if (log && inhibited_energy > 0) {
+            print(I, "Inhibitor reducing energy by " YELLOW "%lu" RESET, inhibited_energy);
+        }
 
         // waste an atom
         pid_t pid;
         if (lifo_pop(model->lifo, &pid) != -1) {
             if (kill(pid, SIGWAST) == -1) {
                 print(E, "Error wasting atom %d.\n", pid);
+            } else {
+                model->stats->inhibited_atoms++;
+                if (log) {
+                    if (inhibited_energy > 0) {
+                        printf(" and wasting atom " YELLOW "%d" RESET, pid);
+                    } else {
+                        print(I, "Inhibitor wasting atom " YELLOW "%d" RESET, pid);
+                    }
+                }
             }
+        }
+        if (log) {
+            printf("\n");
         }
 
         // allow an atom to update waste stats

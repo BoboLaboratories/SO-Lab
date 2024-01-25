@@ -1,21 +1,14 @@
 #!/bin/bash
 
-#soctl run --meltdown --inhib
-#    source env/meltdown.sh
-#    ./master_pid --inhib
-#
-#soctl stop
-#    kill -SIGTERM $(preg master_pid)
-#
-#soctl inhibitor <start/stop/toggle>
-#    start  = ./inhibitor_ctl 1
-#    stop   = ./inhibitor_ctl 0
-#    toggle = ./inhibitor_ctl
-
-
-
 # soctl start -e --inhibitor
 function start() {
+  pid=$(pgrep --newest master)
+  if [ -z ${pid+x} ]; then
+    echo "ERROR: another simulation is !already started"
+    exit 1
+  fi
+
+  inhibitor_no_log=
   inhibitor=
   config=
 
@@ -32,19 +25,22 @@ function start() {
     case $1 in
       -e | --explode)
         select_config "explode"
-        ;;
+      ;;
       -t | --timeout)
         select_config "timeout"
-        ;;
+      ;;
       -m | --meltdown)
         select_config "meltdown"
-        ;;
+      ;;
       -b | --blackout)
         select_config "blackout"
-        ;;
+      ;;
       -i | --inhibitor)
         inhibitor=--inhibitor
-        ;;
+      ;;
+      -n | --no-inh-log)
+        inhibitor_no_log=--no-inh-log
+      ;;
       *)
         echo "ERROR: invalid option $1!"
         exit 1
@@ -60,7 +56,7 @@ function start() {
   source "$config"
   make
   cd bin || exit 1
-  ./master $inhibitor
+  ./master $inhibitor $inhibitor_no_log
   exit 0
 }
 
@@ -110,6 +106,30 @@ function inhibitor() {
   exit 0
 }
 
+function print_help() {
+  echo ""
+  echo " [*] Starting a simulation:"
+  echo "      Usage: ./soctl.sh start <scenario> [flags..]"
+  echo "      where <scenario> must be exactly one of:"
+  echo "         -m, --meltdown      selects meltdown ending scenario"
+  echo "         -b, --blackout      selects blackout ending scenario"
+  echo "         -t, --timeout       selects timeout ending scenario"
+  echo "         -e, --explode       selects explode ending scenario"
+  echo "      and [flags..] can optionaly be none or many in:"
+  echo "         -i, --inhibitor     starts the simulations with inhibitor activated"
+  echo "         -n, --no-inh-log    disables inhibitor logs during the simulation"
+  echo ""
+  echo " [*] Managing the inhibitor during a simulation:"
+  echo "      Usage: ./soctl.sh inhibitor <operation>"
+  echo "      where <operation> can be any of the following:"
+  echo "         toggle               toggles the inhibitor"
+  echo "         start                starts the inhibitor"
+  echo "         stop                 stops the inhibitor"
+  echo ""
+  echo " [*] Stopping a simulation:"
+  echo "      Usage: ./soctl.sh stop"
+  echo ""
+}
 
 while [ $# -gt 0 ] ; do
   case $1 in
@@ -124,24 +144,13 @@ while [ $# -gt 0 ] ; do
       shift
       inhibitor "$@"
     ;;
+    --help)
+      print_help
+      exit 0
+    ;;
     *)
       echo "ERROR: invalid operation $1!"
       exit 1
     ;;
   esac
 done
-
-# TODO
-# new terminal per simulazione start
-# finire inhibitor ctl
-# errore/help se comandi errati
-
-#make
-#cd bin || exit
-## assicurarsi che un config sia stato selezionato e farne il source
-#
-#if $inhibitor ; then
-#  ./master --inhibitor
-#else
-#  ./master
-#fi

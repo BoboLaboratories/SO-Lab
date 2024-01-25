@@ -1,6 +1,7 @@
 #include <time.h>
-#include <signal.h>
+#include <fcntl.h>
 #include <stdlib.h>
+#include <signal.h>
 
 #include "model.h"
 #include "lib/sem.h"
@@ -15,10 +16,6 @@ extern sig_atomic_t sig;
 static timer_t timer;
 
 int main(int argc, char *argv[]) {
-#ifdef D_PID
-    print(D, "Attivatore: %d\n", getpid());
-#endif
-
     if (argc != 2) {
         print(E, "Usage: %s <shmid>\n", argv[0]);
         exit(EXIT_FAILURE);

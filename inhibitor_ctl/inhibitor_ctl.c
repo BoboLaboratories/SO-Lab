@@ -5,6 +5,7 @@
 
 #include "lib/sem.h"
 #include "lib/ipc.h"
+#include "lib/console.h"
 
 static int start();
 static int stop();
@@ -13,7 +14,7 @@ static int semid;
 
 int main(int argc, char *argv[]) {
     if (argc != 2) {
-        print(E, "Usage: %s <start/stop/toggle>\n", argv[0]);
+        print(E, "Usage: %s <start|stop|toggle>\n", argv[0]);
         exit(EXIT_FAILURE);
     }
 
@@ -28,6 +29,12 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
+    struct sembuf sops;
+    sem_buf(&sops, SEM_MASTER, -1, 0);
+    if (sem_op(semid, &sops, 1) == -1) {
+        print(E, "Could not acquire master semaphore.\n");
+        exit(EXIT_FAILURE);
+    }
     if (strcmp("toggle", argv[1]) == 0) {
         if (stop() == -1) {
             if (start() == -1) {
@@ -50,6 +57,13 @@ int main(int argc, char *argv[]) {
             print(I, "Inhibitor stopped.\n");
         }
     }
+
+    sem_buf(&sops, SEM_MASTER, +1, 0);
+    if (sem_op(semid, &sops, 1) == -1) {
+        print(E, "Could not release master semaphore.\n");
+        exit(EXIT_FAILURE);
+    }
+
 
     exit(EXIT_SUCCESS);
 }

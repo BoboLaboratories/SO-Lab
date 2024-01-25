@@ -10,7 +10,9 @@
 #include "lib/sem.h"
 #include "lib/sig.h"
 #include "lib/ipc.h"
+#include "lib/util.h"
 #include "lib/shmem.h"
+#include "lib/console.h"
 
 extern struct Model *model;
 extern sig_atomic_t sig;
@@ -20,10 +22,6 @@ static char *buf = NULL;
 static timer_t timer;
 
 int main(int argc, char *argv[]) {
-#ifdef D_PID
-    print(D, "Alimentatore: %d\n", getpid());
-#endif
-
     if (argc != 2) {
         print(E, "Usage: %s <shmid>\n", argv[0]);
         exit(EXIT_FAILURE);
@@ -57,7 +55,7 @@ int main(int argc, char *argv[]) {
 
 
     // =========================================
-    //         Sync with master_pid process
+    //         Sync with master process
     // =========================================
     sem_sync(model->ipc->semid, SEM_SYNC);
 

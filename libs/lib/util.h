@@ -4,32 +4,37 @@
 #include <signal.h>
 #include <sys/types.h>
 
-// TODO Perché?
-// (I)nteger (T)o (C)hars
+// the amount of characters needed to print the largest int for this architecture
 #define CHARS_PER_INT   (3 * sizeof(int) + 1)
+
+// (I)nteger (T)o (C)hars
 #define ITC_SIZE        (CHARS_PER_INT * sizeof(char))
 
-// avoid importing whole math library for these utilities
+
+// avoid importing whole math library for these simple utilities
 #define max(x, y) (((x) > (y)) ? (x) : (y))
 #define min(x, y) (((x) < (y)) ? (x) : (y))
 #define ceil(x) ((x - (int) x) == 0 ? (int) x : (int) x + 1)
 
-// misc
+
+// miscellaneous
 timer_t timer_start(long nanos);
 int rand_between(int min, int max);
 
-// numerical parsing
+
+// parsing numbers
 int parse_long(char *raw, long *dest);
 int parse_int(char *raw, int *dest);
 
-// arguments and fork
+
+// argument passing and fork utilities
 void prargs(char *executable, char ***argv, char **buf, int vargs, size_t elemsize);
 void frargs(char **argv, char *buf);
 pid_t fork_execv(char **argv);
 void wait_children();
 
-// tmp files
-int mktmpfile(const char *pathname, int flags, mode_t mode);
+
+// temporary files
 void addtmpfile(const char *pathname);
 void rmtmpfiles();
 

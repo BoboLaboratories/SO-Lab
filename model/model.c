@@ -1,7 +1,10 @@
 #include <stdlib.h>
 
 #include "model.h"
+
+#if defined(ATOMO) || defined(INIBITORE)
 #include "lib/sem.h"
+#endif
 
 #define OFFSET_CONFIG   0
 #define OFFSET_STATS    (OFFSET_CONFIG + sizeof(struct Config))
@@ -12,14 +15,8 @@ struct Model *model = NULL;
 
 extern void cleanup();
 static void cleanup_model();
-static void signal_handler(int signum);
 
 void init() {
-#ifdef DEBUG
-    print(D, "Init\n");
-    setbuf(stdout, NULL);
-#endif
-
     model = malloc(sizeof(struct Model));
     model->res = malloc(sizeof(struct Resources));
 

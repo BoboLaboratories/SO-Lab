@@ -59,7 +59,5 @@ int load_config() {
         err = 1;
     }
 
-    // TODO altre variabili
-
     return err == 1 ? -1 : 0;
 }

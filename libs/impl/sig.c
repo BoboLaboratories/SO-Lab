@@ -6,14 +6,6 @@
 #include "lib/console.h"
 
 sig_atomic_t sig = -1;
-sigset_t signals;
-
-int sig_handler(int signal, void (*handler)(int)) {
-    struct sigaction sa;
-    memset(&sa, 0, sizeof(sa));
-    sa.sa_handler = handler;
-    return sigaction(signal, &sa, NULL);
-}
 
 static void default_handler(int signum) {
     sig = signum;
@@ -23,49 +15,23 @@ static void sigterm_handler() {
     exit(EXIT_SUCCESS);
 }
 
-static sigset_t va_to_mask(int set_handler, void (*handler)(int), int signums, va_list args) {
-    sigset_t mask;
-    sigemptyset(&mask);
-
-    int signum = signums;
-    while (signum != -1) {
-        sigaddset(&mask, signum);
-        if (set_handler) {
-            sig_handler(signum, handler);
-        }
-        signum = va_arg(args, int);
-    }
-
-    return mask;
+// normally set a signal handler
+int sig_handler(int signal, void (*handler)(int)) {
+    struct sigaction sa;
+    memset(&sa, 0, sizeof(sa));
+    sa.sa_handler = handler;
+    return sigaction(signal, &sa, NULL);
 }
 
-void sig_set_handler_(void (*handler)(int), int signums, ...) {
-    va_list args;
-    if (handler == NULL) {
-        handler = &default_handler;
-    }
-    va_start(args, signums);
-    signals = va_to_mask(1, handler, signums, args);
-    va_end(args);
-}
-
-//void sig_handle(void (*handler)(int), int signums, ...) {
-//    va_list args;
-//    if (handler == NULL) {
-//        handler = &default_handler;
-//    }
-//    va_start(args, signums);
-//    signals = va_to_mask(1, handler, signums, args);
-//    va_end(args);
-//}
-
-void sig_setup_(/*void (*handler)(int), */sigset_t *mask, sigset_t *complementary, int signums, ...) {
-    /*if (handler == NULL) {
-        handler = &default_handler;
-    }*/
-
+// its only intended usage is through its corresponding macro `sig_setup`
+void sig_setup_(sigset_t *mask, sigset_t *complementary, int signums, ...) {
+    // prepare an empty mask
     sigemptyset(mask);
-    sigprocmask(SIG_SETMASK, mask, NULL);   // resets every process signal mask regardless of its parent
+
+    // resets every process signal mask regardless of its parent
+    sigprocmask(SIG_SETMASK, mask, NULL);
+
+    // prepare a complementary mask if needed
     if (complementary != NULL) {
         sigfillset(complementary);
     }
@@ -75,40 +41,52 @@ void sig_setup_(/*void (*handler)(int), */sigset_t *mask, sigset_t *complementar
 
     int signum = signums;
     while (signum != -1) {
+        // remove the current signal from the complementary mask
         if (complementary != NULL) {
             sigdelset(complementary, signum);
         }
+
+        // add the current signal to the mask
         sigaddset(mask, signum);
+
+        // set the handler for the current signal
         sig_handler(signum, &default_handler);
+
+        // get the next signal
         signum = va_arg(args, int);
     }
+    va_end(args);
 
     // automatically handle SIGTERM
     sigdelset(mask, SIGTERM);
-    sigdelset(complementary, SIGTERM);
+    if (complementary != NULL) {
+        sigdelset(complementary, SIGTERM);
+    }
     sig_handler(SIGTERM, &sigterm_handler);
-
-    va_end(args);
 }
 
-int sig_is_handled(int signum) {
-    return sigismember(&signals, signum) == 1;
-}
-
+// its only intended usage is through its corresponding macros `mask` and `unmask`
 void sig_set_mask_(int how, int signums, ...) {
     if (how != SIG_BLOCK && how != SIG_UNBLOCK) {
         print(E, "Invalid operation on sig_set_mask(%d, ...), please use corresponding macros.\n", how);
         return;
     }
 
+    // prepare an empty mask
+    sigset_t mask;
+    sigemptyset(&mask);
+
     va_list args;
     va_start(args, signums);
-    sigset_t mask = va_to_mask(0, NULL, signums, args);
-    sigprocmask(how, &mask, NULL);
-    va_end(args);
-}
 
-int sig_reset(int result) {
-    sig = -1;
-    return result;
+    // add each of the varargs signals to the mask
+    int signum = signums;
+    while (signum != -1) {
+        sigaddset(&mask, signum);
+        signum = va_arg(args, int);
+    }
+    va_end(args);
+
+    // set the mask
+    sigprocmask(how, &mask, NULL);
 }
