@@ -80,7 +80,7 @@ int main(int argc, char *argv[]) {
         while (waitpid(-1, NULL, WNOHANG) > 0)
             ;
 
-        int n_atoms = 0;
+        unsigned long n_atoms = 0;
         while (n_atoms < N_NUOVI_ATOMI) {
             if (sem_op(model->ipc->semid, sops, 2) == 0 || errno == EAGAIN) {
                 sprintf(argvc[2], "%d", rand_between(MIN_N_ATOMICO, N_ATOM_MAX));

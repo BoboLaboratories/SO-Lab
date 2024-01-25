@@ -109,7 +109,7 @@ int main(int argc, char *argv[]) {
             model->stats->n_activations++;
 
             // if fission was requested
-            if (atomic_number < MIN_N_ATOMICO) {
+            if ((unsigned long) atomic_number < MIN_N_ATOMICO) {
                 // if this atom should become waste
                 waste(EXIT_NATURAL);
             }

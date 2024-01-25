@@ -102,7 +102,6 @@ Att     230      20
 
         Inhibitor [on]
         Total    LastSec
-Fission 234      4
 Energy  4345     70
 Waste   342      11
 

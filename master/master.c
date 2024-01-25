@@ -8,6 +8,7 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 
+#include "stats.h"
 #include "model.h"
 #include "master.h"
 #include "config.h"
@@ -173,7 +174,7 @@ int main(int argc, char *argv[]) {
     // =========================================
     prargs("atomo", &argvc, &buf, 2, ITC_SIZE);
     sprintf(argvc[1], "%d", model->res->shmid);
-    for (int i = 0; child_pid != -1 && i < N_ATOMI_INIT; i++) {
+    for (unsigned long i = 0; child_pid != -1 && i < N_ATOMI_INIT; i++) {
         sprintf(argvc[2], "%d", rand_between(MIN_N_ATOMICO, N_ATOM_MAX));
         child_pid = fork_execv(argvc);
     }
@@ -187,9 +188,27 @@ int main(int argc, char *argv[]) {
 
     // =========================================
     //       Waiting for child processes
+    //          and setup main logic
     // =========================================
     print(I, "Waiting for all processes to be ready..\n");
     sem_sync(model->ipc->semid, SEM_SYNC);
+
+    status = RUNNING;
+    struct sembuf sops;
+
+    struct timespec sim_start;
+    struct timespec sim_curr;
+    memset(&sim_start, 0, sizeof(struct timespec));
+    memset(&sim_curr, 0, sizeof(struct timespec));
+
+    clock_gettime(CLOCK_MONOTONIC_RAW, &sim_start);
+
+//    struct timespec tstart={0,0}, tend={0,0};
+//    clock_gettime(CLOCK_MONOTONIC, &tstart);
+//    clock_gettime(CLOCK_MONOTONIC, &tend);
+//    printf("some_long_computation took about %.5f seconds\n",
+//           ((double)tend.tv_sec + 1.0e-9*tend.tv_nsec) -
+//           ((double)tstart.tv_sec + 1.0e-9*tstart.tv_nsec));
 
 
     // =========================================
@@ -197,8 +216,6 @@ int main(int argc, char *argv[]) {
     // =========================================
     print(I, "All processes ready, simulation start.\n");
 
-    status = RUNNING;
-    struct sembuf sops;
     timer = timer_start((long) 1e9);
     while (status == RUNNING) {
         sigsuspend(&critical);
@@ -209,6 +226,15 @@ int main(int argc, char *argv[]) {
         sem_buf(&sops, SEM_MASTER, -1, 0);
         sem_op(model->ipc->semid, &sops, 1);
 
+        clock_gettime(CLOCK_MONOTONIC_RAW, &sim_curr);
+        unsigned long elapsed_millis = 0;
+        elapsed_millis += (sim_curr.tv_sec - sim_start.tv_sec) * (long) 1e3;      // converts seconds to milliseconds
+        elapsed_millis += (sim_curr.tv_nsec - sim_start.tv_nsec) / (long) 1e6;    // converts nanoseconds to milliseconds
+
+        struct PrintableStats prnt = {
+                .remaining_seconds = SIM_DURATION - elapsed_millis / (long) 1e3,
+        };
+
         switch (sig) {
             case SIGMELT:
                 status = MELTDOWN;
@@ -217,11 +243,13 @@ int main(int argc, char *argv[]) {
                 status = TERMINATED;
                 break;
             case SIGALRM:
-                // TODO handle TIMEOUT
-                if (model->stats->curr_energy < ENERGY_DEMAND) {
+                if (elapsed_millis >= SIM_DURATION * (unsigned long) 1e3) {
+                    status = TIMEOUT;
+                } else if (model->stats->curr_energy < ENERGY_DEMAND) {
                     status = BLACKOUT;
                 } else {
                     model->stats->curr_energy -= ENERGY_DEMAND;
+                    model->stats->used_energy += ENERGY_DEMAND;
                     if (model->stats->curr_energy >= ENERGY_EXPLODE_THRESHOLD) {
                         status = EXPLODE;
                     }
@@ -231,13 +259,21 @@ int main(int argc, char *argv[]) {
                 break;
         }
 
-        print(I, "S: %d, E: %d, W: %d, A: %d \n", status, model->stats->curr_energy, model->stats->n_wastes,
-              model->stats->n_atoms);
+        // copy prnt for printing
+        prnt.status = status;
+        memcpy(&prnt.stats, model->stats, sizeof(struct Stats));
+        if ((prnt.inhibitor_off = semctl(model->ipc->semid, SEM_INIBITORE_OFF, GETVAL)) == -1) {
+            print(E, "Could not check inhibitor status.\n");
+        }
 
+        // let simulation continue
         if (status == RUNNING) {
             sem_buf(&sops, SEM_MASTER, +1, 0);
             sem_op(model->ipc->semid, &sops, 1);
         }
+
+        // print prnt while simulation goes ahead
+        print_stats(prnt);
     }
     timer_delete(timer);
 

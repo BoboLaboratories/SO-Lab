@@ -18,6 +18,7 @@ HEADER_DIRECTORIES = libs model
 # Directive for building the whole project
 all: $(MAIN_FULL_PATHS)
 
+
 # Directive for building all the libraries
 libs: $(LIBS_FULL_PATHS)
 
