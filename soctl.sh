@@ -107,17 +107,13 @@ function inhibitor() {
 }
 
 function print_help() {
-  echo -e "\033[0;35m"
-  echo "  ____        _           _           _          "
-  echo " |  _ \      | |         | |         | |         "
-  echo " | |_) | ___ | |__   ___ | |     __ _| |__  ___  "
-  echo " |  _ < / _ \| '_ \ / _ \| |    / _\` | '_ \/ __| "
-  echo " | |_) | (_) | |_) | (_) | |___| (_| | |_) \__ \ "
-  echo " |____/ \___/|_.__/ \___/|______\__,_|_.__/|___/ "
 
-
-
-  echo -e "\e[0m"
+  echo ""
+  echo "  Progetto di Sistemi Operativi"
+  echo "  Anno accademico 2023/2024"
+  echo "  Componenti del gruppo:"
+  echo "    - Mattia Mignogna"
+  echo "    - Fabio Nebbia"
   echo ""
   echo " [*] Starting a simulation:"
   echo "  |    Usage: ./soctl.sh start <scenario> [flags..]"
