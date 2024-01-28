@@ -56,7 +56,7 @@ function start() {
   source "$config"
   make
   cd bin || exit 1
-  ./master $inhibitor $inhibitor_no_log
+  gdb --args ./master $inhibitor $inhibitor_no_log
   exit 0
 }
 

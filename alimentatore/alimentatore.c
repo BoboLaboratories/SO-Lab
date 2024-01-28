@@ -67,7 +67,7 @@ int main(int argc, char *argv[]) {
         while (waitpid(-1, NULL, WNOHANG) > 0)
             ;
 
-        unsigned long n_atoms = 0;
+        long n_atoms = 0;
         while (n_atoms < N_NUOVI_ATOMI) {
             if (sem_op(model->ipc->semid, sops, 2) == 0 || errno == EAGAIN) {
                 mask(SIGTERM);
@@ -110,5 +110,4 @@ void cleanup() {
     }
 
     wait_children();
-    DEBUG_BREAKPOINT;
 }

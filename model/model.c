@@ -69,13 +69,7 @@ void attach_model() {
 
 static void cleanup_model() {
     free(model->res);
-#ifdef MASTER
-    DEBUG_BREAKPOINT;
-#endif
     free(model);
-#ifdef MASTER
-    DEBUG_BREAKPOINT;
-#endif
 }
 
 #if defined(ATOMO) || defined(INIBITORE)

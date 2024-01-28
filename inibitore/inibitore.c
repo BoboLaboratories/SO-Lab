@@ -62,7 +62,7 @@ int main(int argc, char *argv[]) {
 
         // inhibit produced energy
         long curr_energy = min(model->stats->curr_energy, ENERGY_DEMAND + ENERGY_EXPLODE_THRESHOLD - 1);
-        unsigned long inhibited_energy = model->stats->curr_energy - curr_energy;
+        long inhibited_energy = model->stats->curr_energy - curr_energy;
         model->stats->inhibited_energy += inhibited_energy;
         model->stats->curr_energy = curr_energy;
         if (log && inhibited_energy > 0) {
@@ -89,7 +89,7 @@ int main(int argc, char *argv[]) {
             printf("\n");
         }
 
-        // allow an atom to update waste sim
+        // allow an atom to update waste simulation status
         sem_buf(&sops, SEM_ATOM, +1, 0);
         if (sem_op(model->ipc->semid, &sops, 1) == -1) {
             print (E, "Could not allow atom to update sim.\n");

@@ -33,7 +33,7 @@
 #define HEADER_INHIBITOR       (HEADER_BOLD_COLOR "Inhibitor" RESET)
 
 // sim rows
-#define ROW_MAX_LEN     10
+#define ROW_MAX_LEN     11
 #define ROW_COLOR       BLUE
 #define ROW_ATOMS       (ROW_COLOR "    Atoms  " RESET)
 #define ROW_WASTE       (ROW_COLOR "   Wastes  " RESET)
@@ -61,7 +61,7 @@ static char *printable_inhibitor[] = {
 #define INCREMENT 100
 
 // max length, in character, occupied by a single cell
-static unsigned long max_cell_len;
+static long max_cell_len;
 
 // buffer for the string that's being built
 static char *buf;
@@ -78,11 +78,11 @@ static char *numbuf;
 // length, in character, of the buffer
 static int buf_len;
 
-// how many time sim have been printed
+// how many times simulation stats have been printed
 static int prnt_count = 0;
 
 // sim from the previous iteration
-static unsigned long *prev = NULL;
+static long *prev = NULL;
 
 void print_stats(struct SimulationStats prnt) {
     extern struct Model *model;
@@ -94,13 +94,13 @@ void print_stats(struct SimulationStats prnt) {
 
     if (prev == NULL) {
         // if this is the first run, initialize prev
-        prev = calloc(STAT_COUNT, sizeof(unsigned long));
-        memset(prev, 0, STAT_COUNT * sizeof(unsigned long));
+        prev = calloc(STAT_COUNT, sizeof(long));
+        memset(prev, 0, STAT_COUNT * sizeof(long));
     }
 
 
     // produce computed sim
-    unsigned long data[] = {
+    long data[] = {
             [STAT_ATOMS] = prnt.stats.n_atoms,
             [STAT_WASTES] = prnt.stats.n_wastes,
             [STAT_FISSIONS] = prnt.stats.n_fissions,
@@ -116,7 +116,7 @@ void print_stats(struct SimulationStats prnt) {
     };
 
     // find the biggest long value that must be printed
-    unsigned long max = 0;
+    long max = 0;
     for (int i = 0; i < STAT_COUNT; i++) {
         if (data[i] > max) {
             max = data[i];
@@ -126,7 +126,7 @@ void print_stats(struct SimulationStats prnt) {
     // get the number of characters needed to print
     // such value and update max_cell_len if needed
     int len = snprintf(NULL, 0, "%lu", max) + 1;
-    if ((unsigned long) len > max_cell_len) {
+    if (len > max_cell_len) {
         max_cell_len = len;
     }
 
@@ -156,7 +156,7 @@ void print_stats(struct SimulationStats prnt) {
     astr(ROW_ATOMS);
 
     along(data[STAT_ATOMS]);
-    along(max(0, (signed) (data[STAT_ATOMS] - prev[STAT_ATOMS])));
+    along(data[STAT_ATOMS] - prev[STAT_ATOMS]);
     achar('\n');
 
     // line 4
@@ -227,10 +227,10 @@ void print_stats(struct SimulationStats prnt) {
 
     // terminate string
     achar('\0');
-    printf("\n%s", buf);
+    // printf("\n%s", buf);
 
     if (prnt.status == RUNNING) {
-        memcpy(prev, &data, STAT_COUNT * sizeof(unsigned long));
+        memcpy(prev, &data, STAT_COUNT * sizeof(long));
         printf("\n--------------------------------------------\n");
     } else {
         printf("\n");
@@ -248,12 +248,13 @@ static void achar(char c) {
     if (ptr == endptr) {
         more_space();
     }
+    printf("%c", c);
     *ptr = c;
     ptr++;
 }
 
 // insert n amount of spaces
-static void aspaces(unsigned long n) {
+static void aspaces(long n) {
     while (n > 0) {
         achar(' ');
         n--;
@@ -261,14 +262,14 @@ static void aspaces(unsigned long n) {
 }
 
 // append a padded long
-static void along(unsigned long number) {
+static void along(long number) {
     sprintf(numbuf, "%lu", number);
     apad(numbuf, 1);
 }
 
 // append a string without padding
-static unsigned long astr(const char *str) {
-    unsigned long i = 0;
+static long astr(const char *str) {
+    long i = 0;
     while (*str != '\0') {
         achar(*str);
         str++;

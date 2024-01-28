@@ -30,7 +30,7 @@ clean:
 
 # Directive for building inhibitor ctl
 bin/inhibitor_ctl: inhibitor_ctl/inhibitor_ctl.c bin/libs/sem bin/libs/console
-	$(CC) $(CFLAGS) $(filter %.c,$^) -o $@ -Ilibs -Lbin/libs -l:sem -l:console
+	$(CC) $(CFLAGS) $(filter %.c,$^) -g -o $@ -Ilibs -Lbin/libs -l:sem -l:console
 
 # Directive for building any main component
 bin/%: %/*.c model/model.c $(LIBS_FULL_PATHS)

@@ -17,19 +17,19 @@
 
 
 struct Config {
-    const unsigned long sim_duration;
+    const long sim_duration;
 
-    const unsigned long n_atomi_init;
-    const unsigned long n_nuovi_atomi;
+    const long n_atomi_init;
+    const long n_nuovi_atomi;
 
-    const unsigned long n_atom_max;
-    const unsigned long min_n_atomico;
+    const long n_atom_max;
+    const long min_n_atomico;
 
-    const unsigned long step_attivatore;
-    const unsigned long step_alimentazione;
+    const long step_attivatore;
+    const long step_alimentazione;
 
-    const unsigned long energy_demand;
-    const unsigned long energy_explode_threshold;
+    const long energy_demand;
+    const long energy_explode_threshold;
 };
 
 #endif

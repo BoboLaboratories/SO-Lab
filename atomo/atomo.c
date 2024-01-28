@@ -65,9 +65,9 @@ int main(int argc, char *argv[]) {
     // =========================================
     //         Update simulation stats
     // =========================================
+    mask(SIGTERM);
     struct sembuf sops[2];
     sem_buf(&sops[0], SEM_MASTER, -1, 0);
-    mask(SIGTERM);
     if (sem_op(model->ipc->semid, &sops[0], 1) == -1) {
         print(E, "Could not acquire master_pid semaphore.\n");
         exit(EXIT_FAILURE);
@@ -108,7 +108,7 @@ int main(int argc, char *argv[]) {
             model->stats->n_activations++;
 
             // if fission was requested
-            if ((unsigned long) atomic_number < MIN_N_ATOMICO) {
+            if ((long) atomic_number < MIN_N_ATOMICO) {
                 // if this atom should become waste
                 waste(EXIT_NATURAL);
             }
@@ -130,7 +130,7 @@ int main(int argc, char *argv[]) {
                 default: { // Parent atom
                     long energy = (atomic_number * child_atomic_number) - max(atomic_number, child_atomic_number);
 
-                    // update sim
+                    // update simulation stats
                     model->stats->curr_energy += energy;
                     model->stats->n_fissions++;
                     model->stats->n_atoms++;
@@ -179,11 +179,16 @@ static void waste(int status) {
     model->stats->n_wastes++;
     model->stats->n_atoms--;
 
+    if (model->stats->n_atoms < 0) {
+        errno = 0;
+        print(E, "MOLTO MALE"); // TODO
+    }
+
     struct sembuf sops[2];
     if (status == EXIT_INHIBITED) {
         sem_buf(&sops[0], SEM_ATOM, -1, 0);
         if (sem_op(model->ipc->semid, &sops[0], 1) == -1) {
-            print(E, "Could not update sim.\n");
+            print(E, "Could not update simulation stats.\n");
         }
     } else {
         end_activation_cycle();

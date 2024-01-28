@@ -70,7 +70,7 @@ int main(int argc, char *argv[]) {
         // first try to retrieve an atom from the lifo (recently activated atoms)
         pid_t atom = -1;
         if (lifo_pop(model->lifo, &atom) == -1) {
-            // otherwise try to retrieve an atom from the fifo (create by alimentatore_pid)
+            // otherwise try to retrieve an atom from the fifo (created by alimentatore)
             if (fifo_remove(model->res->fifo_fd, &atom, sizeof(pid_t)) == -1) {
                 sem_buf(&sops[0], SEM_MASTER, +1, 0);
                 sem_buf(&sops[1], SEM_ATTIVATORE, +1, 0);

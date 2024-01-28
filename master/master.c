@@ -188,7 +188,7 @@ int main(int argc, char *argv[]) {
     // =========================================
     prargs("atomo", &argvc, &buf, 2, ITC_SIZE);
     sprintf(argvc[1], "%d", model->res->shmid);
-    for (unsigned long i = 0; child_pid != -1 && i < N_ATOMI_INIT; i++) {
+    for (long i = 0; child_pid != -1 && i < N_ATOMI_INIT; i++) {
         sprintf(argvc[2], "%d", rand_between(MIN_N_ATOMICO, N_ATOM_MAX));
         child_pid = fork_execv(argvc);
     }
@@ -298,8 +298,11 @@ void cleanup() {
 
     // terminate all child processes
     sig_handler(SIGTERM, SIG_IGN);
+    DEBUG_BREAKPOINT;
     kill(0, SIGTERM);
+    DEBUG_BREAKPOINT;
     wait_children();
+    DEBUG_BREAKPOINT;
 
     // print simulation status at the end of the simulation
     memcpy(&sim.stats, model->stats, sizeof(struct Stats));
@@ -307,7 +310,6 @@ void cleanup() {
         print(E, "Could not check inhibitor status.\n");
     }
     print_stats(sim);
-
     DEBUG_BREAKPOINT;
 
     // detach and remove IPC resources
@@ -315,15 +317,12 @@ void cleanup() {
         if (model->lifo->shmid != -1) {
             lifo_delete(model->lifo);
         }
-        DEBUG_BREAKPOINT;
         if (model->ipc->semid != -1) {
             sem_delete(model->ipc->semid);
         }
-        DEBUG_BREAKPOINT;
         if (model->res->shmaddr != (void *) -1) {
             shmem_detach(model->res->shmaddr);
         }
-        DEBUG_BREAKPOINT;
     }
 
     print(W, "Program ended.\n");

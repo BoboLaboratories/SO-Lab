@@ -10,14 +10,14 @@
 #endif
 
 struct Stats {
-    unsigned long curr_energy;
-    unsigned long used_energy;
-    unsigned long inhibited_energy;
-    unsigned long inhibited_atoms;
-    unsigned long n_atoms;
-    unsigned long n_wastes;
-    unsigned long n_fissions;
-    unsigned long n_activations;
+    long curr_energy;
+    long used_energy;
+    long inhibited_energy;
+    long inhibited_atoms;
+    long n_atoms;
+    long n_wastes;
+    long n_fissions;
+    long n_activations;
 };
 
 struct Model {
