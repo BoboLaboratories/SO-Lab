@@ -1,12 +1,12 @@
-export SIM_DURATION=60 # seconds
+export SIM_DURATION=5 # seconds
 
-export N_ATOMI_INIT=5
+export N_ATOMI_INIT=2
 export N_NUOVI_ATOMI=5
 
-export N_ATOM_MAX=40
-export MIN_N_ATOMICO=30
+export N_ATOM_MAX=102
+export MIN_N_ATOMICO=2
 
-export STEP_ATTIVATORE=$((25 * 1000 * 1000))     # nanoseconds
+export STEP_ATTIVATORE=$((25 * 1000 * 1000))      # nanoseconds
 export STEP_ALIMENTAZIONE=$((250 * 1000 * 1000))  # nanoseconds
 
 export ENERGY_DEMAND=10

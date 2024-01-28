@@ -21,8 +21,6 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    init();
-
 
     // =========================================
     //               Mask setup
@@ -34,18 +32,9 @@ int main(int argc, char *argv[]) {
 
 
     // =========================================
-    //           Setup shared memory
+    //   Initialize process data and behaviour
     // =========================================
-    if (parse_int(argv[1], &model->res->shmid) == -1) {
-        print(E, "Could not parse shmid (%s).\n", argv[1]);
-        exit(EXIT_FAILURE);
-    }
-
-    if ((model->res->shmaddr = shmem_attach(model->res->shmid)) == (void *) -1) {
-        exit(EXIT_FAILURE);
-    }
-
-    attach_model(model->res->shmaddr);
+    init(argv[1]);
 
 
     // =========================================

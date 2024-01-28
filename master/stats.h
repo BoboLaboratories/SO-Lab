@@ -4,14 +4,7 @@
 #include "model.h"
 #include "master.h"
 
-struct PrintableStats {
-    int inhibitor_off;
-    enum Status status;
-    struct Stats stats;
-    unsigned long remaining_seconds;
-};
-
-void print_stats(struct PrintableStats prnt);
+void print_stats(struct SimulationStats prnt);
 
 static void more_space();
 static void achar(char c);

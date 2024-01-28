@@ -22,10 +22,9 @@
 extern struct Model *model;
 extern sig_atomic_t sig;
 
-static enum Status status = STARTING;
+static struct SimulationStats sim;
 static timer_t timer;
 
-// TODO if SIGTERM is received, frargs does not happen
 int main(int argc, char *argv[]) {
     // check for flags
     for (int i = 1; i < argc; i++) {
@@ -36,8 +35,6 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    init();
-
 
     // =========================================
     //               Mask setup
@@ -45,19 +42,24 @@ int main(int argc, char *argv[]) {
     sigset_t mask;
     sigset_t critical;
     sig_setup(&mask, &critical, SIGALRM, SIGMELT);
-    sigprocmask(SIG_BLOCK, &mask, NULL);
     sig_handler(SIGTERM, &sigterm_handler);
+
+
+    // =========================================
+    //   Initialize process data and behaviour
+    // =========================================
+    init(NULL);
 
 
     // =========================================
     //           Setup shared memory
     // =========================================
-    size_t shmize = sizeof(struct Config)
+    size_t shmsize = sizeof(struct Config)
                     + sizeof(struct Stats)
                     + sizeof(struct Ipc)
                     + sizeof(struct Lifo);
 
-    if ((model->res->shmid = shmem_create(IPC_PRIVATE, shmize, S_IWUSR | S_IRUSR | IPC_CREAT)) != -1) {
+    if ((model->res->shmid = shmem_create(IPC_PRIVATE, shmsize, S_IWUSR | S_IRUSR | IPC_CREAT)) != -1) {
         model->res->shmaddr = shmem_attach(model->res->shmid);
 
         // mark shared memory for removal so that
@@ -70,10 +72,10 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    attach_model(model->res->shmaddr);
-
     // initialize shared data
+    attach_model();
     memset(model->stats, 0, sizeof(struct Stats));
+    memset(model->lifo, -1, sizeof(struct Lifo));
     memset(model->ipc, -1, sizeof(struct Ipc));
     model->ipc->master_pid = getpid();
     if (load_config() == -1) {
@@ -124,8 +126,19 @@ int main(int argc, char *argv[]) {
     // =========================================
     //               Setup lifo
     // =========================================
-    // TODO 10 come segment_length a 4 occhi chiusi, meglio avere qualche euristica
-    lifo_create(model->lifo, 10, sizeof(pid_t), model->ipc->semid, SEM_LIFO);
+    // a simple heuristic is to assume the worst case where an atomic number is
+    // always divided like so: atom(N) -> parent atom(N - 1) and child atom(1)
+    int segment_length = (int) (N_ATOM_MAX - MIN_N_ATOMICO);
+    lifo_create(model->lifo, segment_length, sizeof(pid_t), model->ipc->semid, SEM_LIFO);
+
+
+    // =========================================
+    //          Setup initial status
+    // =========================================
+    memset(&sim.stats, 0, sizeof(struct Stats));
+    sim.inhibitor_off = flags[INHIBITOR_FLAG];
+    sim.remaining_seconds = SIM_DURATION;
+    sim.status = STARTING;
 
 
     // =========================================
@@ -138,8 +151,8 @@ int main(int argc, char *argv[]) {
     model->ipc->alimentatore_pid = fork_execv(argvc);
     frargs(argvc, buf);
     if (model->ipc->alimentatore_pid == -1) {
-        status = MELTDOWN;
-        exit(EXIT_FAILURE);
+        sim.status = MELTDOWN;
+        exit(EXIT_SUCCESS);
     }
 
 
@@ -152,8 +165,8 @@ int main(int argc, char *argv[]) {
     model->ipc->inibitore_pid = fork_execv(argvc);
     frargs(argvc, buf);
     if (model->ipc->inibitore_pid == -1) {
-        status = MELTDOWN;
-        exit(EXIT_FAILURE);
+        sim.status = MELTDOWN;
+        exit(EXIT_SUCCESS);
     }
 
 
@@ -165,8 +178,8 @@ int main(int argc, char *argv[]) {
     pid_t child_pid = fork_execv(argvc);
     frargs(argvc, buf);
     if (child_pid == -1) {
-        status = MELTDOWN;
-        exit(EXIT_FAILURE);
+        sim.status = MELTDOWN;
+        exit(EXIT_SUCCESS);
     }
 
 
@@ -182,21 +195,25 @@ int main(int argc, char *argv[]) {
 
     frargs(argvc, buf);
     if (child_pid == -1) {
-        status = MELTDOWN;
-        exit(EXIT_FAILURE);
+        sim.status = MELTDOWN;
+        exit(EXIT_SUCCESS);
     }
 
 
     // =========================================
     //       Waiting for child processes
-    //          and setup main logic
     // =========================================
     print(I, "Waiting for all processes to be ready..\n");
+    sigprocmask(SIG_BLOCK, &mask, NULL);
     sem_sync(model->ipc->semid, SEM_SYNC);
 
-    status = RUNNING;
-    struct sembuf sops;
 
+    // =========================================
+    //            Setup main logic
+    // =========================================
+    sim.status = RUNNING;
+
+    struct sembuf sops;
     struct timespec sim_start;
     struct timespec sim_curr;
     memset(&sim_start, 0, sizeof(struct timespec));
@@ -204,76 +221,73 @@ int main(int argc, char *argv[]) {
 
     clock_gettime(CLOCK_MONOTONIC_RAW, &sim_start);
 
+
     // =========================================
     //               Main logic
     // =========================================
     print(I, "All processes ready, simulation start.\n");
 
     timer = timer_start((long) 1e9);
-    while (status == RUNNING) {
+    while (sim.status == RUNNING) {
         sigsuspend(&critical);
 
         while (waitpid(-1, NULL, WNOHANG) > 0)
             ;
 
         sem_buf(&sops, SEM_MASTER, -1, 0);
-        sem_op(model->ipc->semid, &sops, 1);
+        if (sem_op(model->ipc->semid, &sops, 1) == -1) {
+            print(E, "Could not acquire master semaphore.\n");
+        }
 
         clock_gettime(CLOCK_MONOTONIC_RAW, &sim_curr);
         unsigned long elapsed_millis = 0;
         elapsed_millis += (sim_curr.tv_sec - sim_start.tv_sec) * (long) 1e3;      // converts seconds to milliseconds
         elapsed_millis += (sim_curr.tv_nsec - sim_start.tv_nsec) / (long) 1e6;    // converts nanoseconds to milliseconds
-
-        struct PrintableStats prnt = {
-                .remaining_seconds = SIM_DURATION - elapsed_millis / (long) 1e3,
-        };
+        sim.remaining_seconds = SIM_DURATION - elapsed_millis / (long) 1e3;
 
         switch (sig) {
             case SIGMELT:
-                status = MELTDOWN;
+                sim.status = MELTDOWN;
                 break;
             case SIGTERM:
-                status = TERMINATED;
+                sim.status = TERMINATED;
                 break;
             case SIGALRM:
                 if (model->stats->curr_energy < ENERGY_DEMAND) {
-                    status = BLACKOUT;
+                    sim.status = BLACKOUT;
                 } else {
                     model->stats->curr_energy -= ENERGY_DEMAND;
                     model->stats->used_energy += ENERGY_DEMAND;
                     if (model->stats->curr_energy >= ENERGY_EXPLODE_THRESHOLD) {
-                        status = EXPLODE;
+                        sim.status = EXPLODE;
                     }
                 }
 
                 if (elapsed_millis >= SIM_DURATION * (unsigned long) 1e3) {
-                    status = TIMEOUT;
+                    sim.status = TIMEOUT;
                 }
                 break;
             default:
                 break;
         }
 
-        // copy prnt for printing
-        prnt.status = status;
-        memcpy(&prnt.stats, model->stats, sizeof(struct Stats));
-        if ((prnt.inhibitor_off = semctl(model->ipc->semid, SEM_INIBITORE_OFF, GETVAL)) == -1) {
+        // copy simulation status for printing
+        memcpy(&sim.stats, model->stats, sizeof(struct Stats));
+        if ((sim.inhibitor_off = semctl(model->ipc->semid, SEM_INIBITORE_OFF, GETVAL)) == -1) {
             print(E, "Could not check inhibitor status.\n");
         }
 
         // let simulation continue
-        if (status == RUNNING) {
+        if (sim.status == RUNNING) {
             sem_buf(&sops, SEM_MASTER, +1, 0);
-            sem_op(model->ipc->semid, &sops, 1);
+            if (sem_op(model->ipc->semid, &sops, 1) == -1) {
+                print(E, "Could not release master semaphore.\n");
+            }
+
+            // print simulation status while simulation continues independently
+            print_stats(sim);
         }
-
-        // print prnt while simulation goes ahead
-        print_stats(prnt);
     }
-    timer_delete(timer);
-
-    sig_handler(SIGTERM, SIG_IGN);
-    kill(0, SIGTERM);
 
     exit(EXIT_SUCCESS);
 }
@@ -281,24 +295,38 @@ int main(int argc, char *argv[]) {
 void cleanup() {
     // clear misc data
     timer_delete(timer);
+
+    // terminate all child processes
+    sig_handler(SIGTERM, SIG_IGN);
+    kill(0, SIGTERM);
+    wait_children();
+
+    // print simulation status at the end of the simulation
+    memcpy(&sim.stats, model->stats, sizeof(struct Stats));
+    if ((sim.inhibitor_off = semctl(model->ipc->semid, SEM_INIBITORE_OFF, GETVAL)) == -1) {
+        print(E, "Could not check inhibitor status.\n");
+    }
+    print_stats(sim);
+
+    DEBUG_BREAKPOINT;
+
     // detach and remove IPC resources
     if (model != NULL) {
-        timer_delete(timer);
-        if (model->lifo != NULL) {
+        if (model->lifo->shmid != -1) {
             lifo_delete(model->lifo);
         }
+        DEBUG_BREAKPOINT;
         if (model->ipc->semid != -1) {
             sem_delete(model->ipc->semid);
         }
-        if (model->res->fifo_fd != -1) {
-            fifo_close(model->res->fifo_fd);
-        }
+        DEBUG_BREAKPOINT;
         if (model->res->shmaddr != (void *) -1) {
             shmem_detach(model->res->shmaddr);
         }
+        DEBUG_BREAKPOINT;
     }
 
-    wait_children();
+    print(W, "Program ended.\n");
 }
 
 static void sigterm_handler() {

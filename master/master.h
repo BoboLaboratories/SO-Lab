@@ -21,4 +21,13 @@ enum Status {
     TERMINATED
 };
 
+struct SimulationStats {
+    int inhibitor_off;
+    enum Status status;
+    struct Stats stats;
+    unsigned long remaining_seconds;
+};
+
+
+
 #endif

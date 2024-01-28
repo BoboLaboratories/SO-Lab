@@ -24,7 +24,6 @@
 - [x] le system call che ritornano -1 spesso e volentieri hanno piu info in errno e potenzialmente è good practice checkarlo
 - [x] sostituzione nanosleep con alarm/timer
 - [x] signal masking
-
 - [x] atomo che si forka senza execve
 - [x] (dismissed) logica running() meaningful signal
 
@@ -38,16 +37,18 @@
 - [x] (con dolore) log delle operazioni svolte dall'inibitore
 
 ## Relazione
+- [ ] versione di make e versione di gcc
 - [ ] ogni processo può essere terminato in qualsiasi momento perché facciamo uso di tecniche tipo atexit
 - [ ] lifo in shared memory con resize
 - [ ] sigsuspend
 - [ ] MIRA
+- [ ] screen di una schermata di statistiche con guida su come leggerla
 
 ## Controlli pre esame
 - [ ] rivedere commenti (e tutti i TODO)
 - [ ] error handling ovunque
 - [x] eliminare sandobox
-- [ ] risorse IPC leak
+- [x] risorse IPC leak
 - [ ] memory leak
 - [ ] non consegnare .git repo
 - [ ] eliminare questo file
@@ -55,8 +56,8 @@
 ## Da sapere all'esame
 - [ ] come funziona il nostro progetto (source: relazione + commenti nei sorgenti)
 - [ ] comandi di linux, permessi e altre cose insegnate a lezione (source: slide)
-- [ ] saper usare man (source: slide)
 - [ ] ripasso generale delle slide (source: slide)
+- [ ] saper usare man (source: slide)
 
 
 LFT     17/01   06/02

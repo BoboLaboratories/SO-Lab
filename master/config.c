@@ -39,17 +39,21 @@ int load_config() {
             print(E, "Bad number format (%s) while parsing environment variable %s.\n", raw, variables[i]);
             err = 1;
         }
-        if (i != 0 && *(addr + i) <= 0) {
-            // only SIM_DURATION (i == 0) may be equal to 0
-            // any other config parameter must be greater than 0
+        if (*(addr + i) <= 0) {
             print(E, "Configuration error: %s must be grater or equals than 0.\n", variables[i]);
             err = 1;
         }
     }
 
     // SIM_DURATION
-    if (*(addr + 0) < 0) {
+    if (*(addr + 0) <= 0) {
         print(E, "Configuration error: SIM_DURATION must be grater than or equals to 0.\n");
+        err = 1;
+    }
+
+    // MIN_N_ATOMICO > 1
+    if (*(addr + 4) <= 1) {
+        print(E, "Configuration error: MIN_N_ATOMICO must be grater than 1.\n");
         err = 1;
     }
 

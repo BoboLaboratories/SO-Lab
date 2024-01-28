@@ -70,7 +70,9 @@ int lifo_delete(struct Lifo *lifo) {
     int ret = -1;
 
     if (acquire(lifo) != -1) {
-        ret = shmem_rmark(lifo->shmid);
+        if ((ret = shmem_rmark(lifo->shmid)) == -1) {
+            print(E, "Could not delete lifo.\n");
+        }
         release(lifo);
     }
 

@@ -5,7 +5,7 @@
 #include "lib/util.h"
 #include "lib/console.h"
 
-// stats indexes in data array
+// sim indexes in data array
 #define STAT_ATOMS                      0
 #define STAT_WASTES                     1
 #define STAT_FISSIONS                   2
@@ -20,7 +20,7 @@
 #define COMPUTED_STAT_REMAING_SECONDS   11
 #define STAT_COUNT                      12
 
-// stats headers
+// sim headers
 #define HEADER_MAX_LEN         9
 #define HEADER_COLOR           GREEN
 #define HEADER_BOLD_COLOR      BOLD_GREEN
@@ -30,18 +30,16 @@
 #define HEADER_TOTAL           (HEADER_COLOR      "Total"     RESET)
 #define HEADER_GLOBAL          (HEADER_BOLD_COLOR "Global"    RESET)
 #define HEADER_LAST_SEC        (HEADER_COLOR      "LastSec"   RESET)
-#define HEADER_REMAINING       (HEADER_COLOR      "Remaining" RESET)
 #define HEADER_INHIBITOR       (HEADER_BOLD_COLOR "Inhibitor" RESET)
 
-// stats rows
+// sim rows
 #define ROW_MAX_LEN     10
 #define ROW_COLOR       BLUE
-#define ROW_TIME        (ROW_COLOR "    Time  " RESET)
-#define ROW_ATOMS       (ROW_COLOR "   Atoms  " RESET)
-#define ROW_WASTE       (ROW_COLOR "   Waste  " RESET)
-#define ROW_ENERGY      (ROW_COLOR "  Energy  " RESET)
-#define ROW_FISSION     (ROW_COLOR " Fission  " RESET)
-#define ROW_ACTIVATIONS (ROW_COLOR "     Att  " RESET)
+#define ROW_ATOMS       (ROW_COLOR "    Atoms  " RESET)
+#define ROW_WASTE       (ROW_COLOR "   Wastes  " RESET)
+#define ROW_ENERGY      (ROW_COLOR "   Energy  " RESET)
+#define ROW_FISSION     (ROW_COLOR " Fissions  " RESET)
+#define ROW_ACTIVATIONS (ROW_COLOR "     Acts  " RESET)
 
 static char *printable_status[] = {
         [STARTING]   = GREEN   "STARTING"   RESET,
@@ -80,13 +78,13 @@ static char *numbuf;
 // length, in character, of the buffer
 static int buf_len;
 
-// how many time stats have been printed
+// how many time sim have been printed
 static int prnt_count = 0;
 
-// stats from the previous iteration
+// sim from the previous iteration
 static unsigned long *prev = NULL;
 
-void print_stats(struct PrintableStats prnt) {
+void print_stats(struct SimulationStats prnt) {
     extern struct Model *model;
 
     max_cell_len = HEADER_MAX_LEN;  // a cell must be wide enough to print headers in a table
@@ -100,7 +98,8 @@ void print_stats(struct PrintableStats prnt) {
         memset(prev, 0, STAT_COUNT * sizeof(unsigned long));
     }
 
-    // produce computed stats
+
+    // produce computed sim
     unsigned long data[] = {
             [STAT_ATOMS] = prnt.stats.n_atoms,
             [STAT_WASTES] = prnt.stats.n_wastes,
@@ -139,6 +138,11 @@ void print_stats(struct PrintableStats prnt) {
     astr(HEADER_GLOBAL);
     astr(" [");
     astr(printable_status[prnt.status]);
+    astr(" | ");
+    sprintf(numbuf, "%lds/", prnt.remaining_seconds);
+    astr(numbuf);
+    sprintf(numbuf, "%lds", SIM_DURATION);
+    astr(numbuf);
     achar(']');
     achar('\n');
 
@@ -191,15 +195,15 @@ void print_stats(struct PrintableStats prnt) {
     achar('\n');
 
     // line 10
-    astr(ROW_ENERGY);
-    along(data[STAT_INHIBITED_ENERGY]);
-    along(data[STAT_INHIBITED_ENERGY] - prev[STAT_INHIBITED_ENERGY]);
-    achar('\n');
-
-    // line 11
     astr(ROW_WASTE);
     along(data[STAT_INHIBITED_ATOMS]);
     along(data[STAT_INHIBITED_ATOMS] - prev[STAT_INHIBITED_ATOMS]);
+    achar('\n');
+
+    // line 11
+    astr(ROW_ENERGY);
+    along(data[STAT_INHIBITED_ENERGY]);
+    along(data[STAT_INHIBITED_ENERGY] - prev[STAT_INHIBITED_ENERGY]);
     achar('\n');
 
     // line 12
@@ -208,29 +212,12 @@ void print_stats(struct PrintableStats prnt) {
     // line 13
     aspaces(ROW_MAX_LEN);
     astrpad(HEADER_TOTAL);
-    astrpad(HEADER_REMAINING);
-    achar('\n');
-
-    // line 14
-    astr(ROW_TIME);
-    sprintf(numbuf, "%lds", SIM_DURATION);
-    apad(numbuf, 1);
-    sprintf(numbuf, "%lds", prnt.remaining_seconds);
-    apad(numbuf, 1);
-    achar('\n');
-
-    // line 15
-    achar('\n');
-
-    // line 16
-    aspaces(ROW_MAX_LEN);
-    astrpad(HEADER_TOTAL);
     astrpad(HEADER_LAST_SEC);
     astrpad(HEADER_USED);
     astrpad(HEADER_FREE);
     achar('\n');
 
-    // line 17
+    // line 14
     astr(ROW_ENERGY);
     along(data[COMPUTED_STAT_TOTAL_ENERGY]);
     along(data[COMPUTED_STAT_TOTAL_ENERGY] - prev[COMPUTED_STAT_TOTAL_ENERGY]);

@@ -20,8 +20,6 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    init();
-
 
     // =========================================
     //               Mask setup
@@ -31,23 +29,15 @@ int main(int argc, char *argv[]) {
 
 
     // =========================================
-    //           Setup shared memory
+    //   Initialize process data and behaviour
     // =========================================
-    if (parse_int(argv[1], &model->res->shmid) == -1) {
-        print(E, "Could not parse shmid (%s).\n", argv[1]);
-        exit(EXIT_FAILURE);
-    }
+    init(argv[1]);
+
 
     if (parse_int(argv[2], &log) == -1) {
         print(E, "Could not parse log (%s).\n", argv[1]);
         exit(EXIT_FAILURE);
     }
-
-    if ((model->res->shmaddr = shmem_attach(model->res->shmid)) == (void *) -1) {
-        exit(EXIT_FAILURE);
-    }
-
-    attach_model(model->res->shmaddr);
 
 
     // =========================================
@@ -99,16 +89,16 @@ int main(int argc, char *argv[]) {
             printf("\n");
         }
 
-        // allow an atom to update waste stats
+        // allow an atom to update waste sim
         sem_buf(&sops, SEM_ATOM, +1, 0);
         if (sem_op(model->ipc->semid, &sops, 1) == -1) {
-            print (E, "Could not allow atom to update stats.\n");
+            print (E, "Could not allow atom to update sim.\n");
         }
 
         // wait for the above-mentioned atom to perform said update
         sem_buf(&sops, SEM_ATOM, 0, 0);
         if (sem_op(model->ipc->semid, &sops, 1) == -1) {
-            print(E, "Could not wait for atom to update stats.\n");
+            print(E, "Could not wait for atom to update sim.\n");
         }
 
         end_activation_cycle();

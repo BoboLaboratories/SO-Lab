@@ -27,8 +27,6 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    init();
-
 
     // =========================================
     //               Mask setup
@@ -40,18 +38,9 @@ int main(int argc, char *argv[]) {
 
 
     // =========================================
-    //            Setup shared memory
+    //   Initialize process data and behaviour
     // =========================================
-    if (parse_int(argv[1], &model->res->shmid) == -1) {
-        print(E, "Could not parse shmid (%s).\n", argv[1]);
-        exit(EXIT_FAILURE);
-    }
-
-    if ((model->res->shmaddr = shmem_attach(model->res->shmid)) == (void *) -1) {
-        exit(EXIT_FAILURE);
-    }
-
-    attach_model(model->res->shmaddr);
+    init(argv[1]);
 
 
     // =========================================
@@ -81,6 +70,7 @@ int main(int argc, char *argv[]) {
         unsigned long n_atoms = 0;
         while (n_atoms < N_NUOVI_ATOMI) {
             if (sem_op(model->ipc->semid, sops, 2) == 0 || errno == EAGAIN) {
+                mask(SIGTERM);
                 sprintf(argvc[2], "%d", rand_between(MIN_N_ATOMICO, N_ATOM_MAX));
                 if (fork_execv(argvc) == -1) {
                     kill(model->ipc->master_pid, SIGMELT);
@@ -88,6 +78,7 @@ int main(int argc, char *argv[]) {
                     break;
                 }
                 n_atoms++;
+                unmask(SIGTERM);
 
                 // is a new step begun, reset the main logic
                 // so that we can begin the next step
@@ -119,4 +110,5 @@ void cleanup() {
     }
 
     wait_children();
+    DEBUG_BREAKPOINT;
 }

@@ -14,7 +14,6 @@
 #include "lib/console.h"
 
 extern struct Model *model;
-extern sigset_t signals;
 extern sig_atomic_t sig;
 
 static pid_t ppid;
@@ -25,8 +24,6 @@ int main(int argc, char *argv[]) {
         print(E, "Usage: %s <shmid> <atomic-number>\n", argv[0]);
         exit(EXIT_FAILURE);
     }
-
-    init();
 
 
     // =========================================
@@ -39,31 +36,22 @@ int main(int argc, char *argv[]) {
 
 
     // =========================================
+    //   Initialize process data and behaviour
+    // =========================================
+    init(argv[1]);
+
+
+    // =========================================
     //            Argument parsing
     // =========================================
     int atomic_number;
     ppid = getppid();
     pid = getpid();
 
-    if (parse_int(argv[1], &model->res->shmid) == -1) {
-        print(E, "Could not parse shmid (%s).\n", argv[1]);
-        exit(EXIT_FAILURE);
-    }
-
     if (parse_int(argv[2], &atomic_number) == -1) {
         print(E, "Could not parse atomic number (%s).\n", argv[2]);
         exit(EXIT_FAILURE);
     }
-
-
-    // =========================================
-    //          Setup shared memory
-    // =========================================
-    if ((model->res->shmaddr = shmem_attach(model->res->shmid)) == (void *) -1) {
-        exit(EXIT_FAILURE);
-    }
-
-    attach_model(model->res->shmaddr);
 
 
     // =========================================
@@ -75,10 +63,11 @@ int main(int argc, char *argv[]) {
 
 
     // =========================================
-    //              Update stats
+    //         Update simulation stats
     // =========================================
     struct sembuf sops[2];
     sem_buf(&sops[0], SEM_MASTER, -1, 0);
+    mask(SIGTERM);
     if (sem_op(model->ipc->semid, &sops[0], 1) == -1) {
         print(E, "Could not acquire master_pid semaphore.\n");
         exit(EXIT_FAILURE);
@@ -92,8 +81,12 @@ int main(int argc, char *argv[]) {
         print(E, "Could not release master_pid semaphore.\n");
         exit(EXIT_FAILURE);
     }
+    unmask(SIGTERM);
 
-    // TODO close fifo
+    // no longer needed
+    fifo_close(model->res->fifo_fd);
+    model->res->fifo_fd = -1;
+
 
     // =========================================
     //        Sync with other processes
@@ -108,6 +101,7 @@ int main(int argc, char *argv[]) {
     while (!terminated) {
         sigsuspend(&critical);
 
+        mask(SIGTERM);
         if (sig == SIGWAST) {
             waste(EXIT_INHIBITED);
         } else if (sig == SIGACTV) {
@@ -136,7 +130,7 @@ int main(int argc, char *argv[]) {
                 default: { // Parent atom
                     long energy = (atomic_number * child_atomic_number) - max(atomic_number, child_atomic_number);
 
-                    // update stats
+                    // update sim
                     model->stats->curr_energy += energy;
                     model->stats->n_fissions++;
                     model->stats->n_atoms++;
@@ -161,6 +155,7 @@ int main(int argc, char *argv[]) {
                 }
             }
         }
+        unmask(SIGTERM);
     }
 
     exit(EXIT_SUCCESS);
@@ -188,7 +183,7 @@ static void waste(int status) {
     if (status == EXIT_INHIBITED) {
         sem_buf(&sops[0], SEM_ATOM, -1, 0);
         if (sem_op(model->ipc->semid, &sops[0], 1) == -1) {
-            print(E, "Could not update stats.\n");
+            print(E, "Could not update sim.\n");
         }
     } else {
         end_activation_cycle();

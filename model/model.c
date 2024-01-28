@@ -1,6 +1,8 @@
 #include <stdlib.h>
 
 #include "model.h"
+#include "lib/util.h"
+#include "lib/shmem.h"
 
 #if defined(ATOMO) || defined(INIBITORE)
 #include "lib/sem.h"
@@ -13,10 +15,12 @@
 
 struct Model *model = NULL;
 
+void attach_model();
+
 extern void cleanup();
 static void cleanup_model();
 
-void init() {
+void init(char *shmid) {
     model = malloc(sizeof(struct Model));
     model->res = malloc(sizeof(struct Resources));
 
@@ -37,21 +41,41 @@ void init() {
         cleanup();
         exit(EXIT_FAILURE);
     }
+
+    if (shmid != NULL) {
+        if (parse_int(shmid, &model->res->shmid) == -1) {
+            print(E, "Could not parse shmid (%s).\n", shmid);
+            exit(EXIT_FAILURE);
+        }
+
+        if ((model->res->shmaddr = shmem_attach(model->res->shmid)) == (void *) -1) {
+            exit(EXIT_FAILURE);
+        }
+
+        attach_model();
+    }
 }
 
-void attach_model(void *shmaddr) {
-    model->config = shmaddr + OFFSET_CONFIG;
-    model->stats = shmaddr + OFFSET_STATS;
-    model->ipc = shmaddr + OFFSET_IPC;
+
+void attach_model() {
+    model->config = model->res->shmaddr + OFFSET_CONFIG;
+    model->stats = model->res->shmaddr + OFFSET_STATS;
+    model->ipc = model->res->shmaddr + OFFSET_IPC;
 
 #if defined(MASTER) || defined(ATOMO) || defined(ATTIVATORE) || defined(INIBITORE)
-    model->lifo = shmaddr + OFFSET_LIFO;
+    model->lifo = model->res->shmaddr + OFFSET_LIFO;
 #endif
 }
 
 static void cleanup_model() {
     free(model->res);
+#ifdef MASTER
+    DEBUG_BREAKPOINT;
+#endif
     free(model);
+#ifdef MASTER
+    DEBUG_BREAKPOINT;
+#endif
 }
 
 #if defined(ATOMO) || defined(INIBITORE)

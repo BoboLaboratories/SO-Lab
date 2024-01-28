@@ -40,8 +40,12 @@ struct Model {
     // end local process IPC information
 };
 
-void init();
-void attach_model(void *shmaddr);
+void init(char *shmid);
+
+#if defined(MASTER)
+void attach_model();
+#endif
+
 
 #if defined(ATOMO) || defined(INIBITORE)
 int end_activation_cycle();
