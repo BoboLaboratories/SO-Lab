@@ -74,7 +74,7 @@ int fifo_add(int fd, void *data, ssize_t size) {
 int fifo_remove(int fd, void *data, ssize_t size) {
     // since read is non-blocking for this fifo
     // implementation, just return -1 if read fails
-    ssize_t bytes = read(fd, data, size) == -1;
+    ssize_t bytes = read(fd, data, size);
     return bytes == size ? 0 : -1;
 }
 

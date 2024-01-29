@@ -32,7 +32,7 @@ int main(int argc, char *argv[]) {
     sigset_t mask;
     sigset_t critical;
     sig_setup(&mask, &critical, SIGACTV, SIGWAST);
-    sigprocmask(SIG_BLOCK, &mask, NULL);
+    sigprocmask(SIG_SETMASK, &mask, NULL);
 
 
     // =========================================
@@ -65,7 +65,6 @@ int main(int argc, char *argv[]) {
     // =========================================
     //         Update simulation stats
     // =========================================
-    mask(SIGTERM);
     struct sembuf sops[2];
     sem_buf(&sops[0], SEM_MASTER, -1, 0);
     if (sem_op(model->ipc->semid, &sops[0], 1) == -1) {
@@ -81,7 +80,6 @@ int main(int argc, char *argv[]) {
         print(E, "Could not release master_pid semaphore.\n");
         exit(EXIT_FAILURE);
     }
-    unmask(SIGTERM);
 
     // no longer needed
     fifo_close(model->res->fifo_fd);
@@ -101,10 +99,14 @@ int main(int argc, char *argv[]) {
     while (!terminated) {
         sigsuspend(&critical);
 
-        mask(SIGTERM);
         if (sig == SIGWAST) {
             waste(EXIT_INHIBITED);
         } else if (sig == SIGACTV) {
+            sem_buf(&sops[0], SEM_MASTER, -1, 0);
+            if (sem_op(model->ipc->semid, &sops[0], 1) == -1) {
+                print(E, "Could not acquire master semaphore.\n");
+            }
+
             model->stats->n_activations++;
 
             // if fission was requested
@@ -155,7 +157,6 @@ int main(int argc, char *argv[]) {
                 }
             }
         }
-        unmask(SIGTERM);
     }
 
     exit(EXIT_SUCCESS);

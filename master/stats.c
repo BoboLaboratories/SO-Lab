@@ -101,7 +101,7 @@ void print_stats(struct SimulationStats prnt) {
 
     // produce computed sim
     long data[] = {
-            [STAT_ATOMS] = prnt.stats.n_atoms,
+            [STAT_ATOMS] = prnt.stats.n_atoms + prnt.stats.n_wastes,
             [STAT_WASTES] = prnt.stats.n_wastes,
             [STAT_FISSIONS] = prnt.stats.n_fissions,
             [STAT_CURR_ENERGY] = prnt.stats.curr_energy,
@@ -125,7 +125,7 @@ void print_stats(struct SimulationStats prnt) {
 
     // get the number of characters needed to print
     // such value and update max_cell_len if needed
-    int len = snprintf(NULL, 0, "%lu", max) + 1;
+    int len = snprintf(NULL, 0, "%ld", max) + 1;
     if (len > max_cell_len) {
         max_cell_len = len;
     }
@@ -227,7 +227,7 @@ void print_stats(struct SimulationStats prnt) {
 
     // terminate string
     achar('\0');
-    // printf("\n%s", buf);
+    printf("\n%s", buf);
 
     if (prnt.status == RUNNING) {
         memcpy(prev, &data, STAT_COUNT * sizeof(long));
@@ -248,7 +248,6 @@ static void achar(char c) {
     if (ptr == endptr) {
         more_space();
     }
-    printf("%c", c);
     *ptr = c;
     ptr++;
 }
@@ -263,7 +262,7 @@ static void aspaces(long n) {
 
 // append a padded long
 static void along(long number) {
-    sprintf(numbuf, "%lu", number);
+    sprintf(numbuf, "%ld", number);
     apad(numbuf, 1);
 }
 

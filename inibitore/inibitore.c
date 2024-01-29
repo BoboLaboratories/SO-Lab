@@ -26,6 +26,7 @@ int main(int argc, char *argv[]) {
     // =========================================
     sigset_t mask;
     sig_setup(&mask, NULL, -1);
+    sigprocmask(SIG_SETMASK, &mask, NULL);
 
 
     // =========================================

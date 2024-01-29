@@ -28,9 +28,6 @@ void sig_setup_(sigset_t *mask, sigset_t *complementary, int signums, ...) {
     // prepare an empty mask
     sigemptyset(mask);
 
-    // resets every process signal mask regardless of its parent
-    sigprocmask(SIG_SETMASK, mask, NULL);
-
     // prepare a complementary mask if needed
     if (complementary != NULL) {
         sigfillset(complementary);

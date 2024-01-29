@@ -1,0 +1,17 @@
+file ./master
+
+
+
+set pagination off
+set $i=0
+
+handle SIGTERM nostop
+
+break dummy
+commands
+set $i=($i + 1)
+print $i
+run
+end
+
+run

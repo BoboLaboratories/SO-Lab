@@ -28,6 +28,6 @@ struct SimulationStats {
     long remaining_seconds;
 };
 
-
+static void copy_stats();
 
 #endif

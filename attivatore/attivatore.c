@@ -28,7 +28,7 @@ int main(int argc, char *argv[]) {
     sigset_t mask;
     sigset_t critical;
     sig_setup(&mask, &critical, SIGALRM);
-    sigprocmask(SIG_BLOCK, &mask, NULL);
+    sigprocmask(SIG_SETMASK, &mask, NULL);
 
 
     // =========================================
@@ -51,33 +51,33 @@ int main(int argc, char *argv[]) {
     sem_sync(model->ipc->semid, SEM_SYNC);
 
 
-    struct sembuf sops[2];
+    struct sembuf sops;
     timer = timer_start(STEP_ATTIVATORE);
     while (1) {
         sigsuspend(&critical);
 
-        sem_buf(&sops[0], SEM_ATTIVATORE, -1, 0);
-        if (sem_op(model->ipc->semid, &sops[0], 1) == -1) {
+        sem_buf(&sops, SEM_ATTIVATORE, -1, 0);
+        if (sem_op(model->ipc->semid, &sops, 1) == -1) {
             print(E, "Could not acquire attivatore semaphore.\n");
             break;
         }
 
-        sem_buf(&sops[0], SEM_MASTER, -1, 0);
-        if (sem_op(model->ipc->semid, &sops[0], 1) == -1) {
-            print(E, "Could not acquire master semaphore.\n");
-        }
+//        sem_buf(&sops[0], SEM_MASTER, -1, 0);
+//        if (sem_op(model->ipc->semid, &sops[0], 1) == -1) {
+//            print(E, "Could not acquire master semaphore.\n");
+//        }
 
         // first try to retrieve an atom from the lifo (recently activated atoms)
         pid_t atom = -1;
         if (lifo_pop(model->lifo, &atom) == -1) {
             // otherwise try to retrieve an atom from the fifo (created by alimentatore)
             if (fifo_remove(model->res->fifo_fd, &atom, sizeof(pid_t)) == -1) {
-                sem_buf(&sops[0], SEM_MASTER, +1, 0);
-                sem_buf(&sops[1], SEM_ATTIVATORE, +1, 0);
-                if (sem_op(model->ipc->semid, sops, 2) == -1) {
+//                sem_buf(&sops[0], SEM_MASTER, +1, 0);
+                sem_buf(&sops, SEM_ATTIVATORE, +1, 0);
+                if (sem_op(model->ipc->semid, &sops, 1) == -1) {
                     print(E, "Could not retrieve an atom and release semaphores.\n");
-                    break;
                 }
+                continue;
             }
         }
 

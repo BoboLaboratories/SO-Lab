@@ -1,0 +1,17 @@
+file ./master
+handle SIGTERM nostop
+set pagination off
+
+break semop
+commands
+!ipcs -si $(ipcs -s | tail -2 | head -1 | awk '{print $2}')
+continue
+end
+
+break exit
+commands
+!sleep 2
+run
+end
+
+run

@@ -15,7 +15,9 @@
 
 struct Model *model = NULL;
 
+#if !defined(MASTER)
 void attach_model();
+#endif
 
 extern void cleanup();
 static void cleanup_model();
