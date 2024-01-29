@@ -6,5 +6,7 @@
 
 static void waste(int status);
 static void split(int *atomic_number, int *child_atomic_number);
+static void end_activation_cycle();
+static void terminate();
 
 #endif

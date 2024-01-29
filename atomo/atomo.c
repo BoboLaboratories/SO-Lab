@@ -16,6 +16,7 @@
 extern struct Model *model;
 extern sig_atomic_t sig;
 
+static int terminated = 0;
 static pid_t ppid;
 static pid_t pid;
 
@@ -95,13 +96,10 @@ int main(int argc, char *argv[]) {
     // =========================================
     //                Main logic
     // =========================================
-    int terminated = 0;
     while (!terminated) {
         sigsuspend(&critical);
 
-        if (sig == SIGWAST) {
-            waste(EXIT_INHIBITED);
-        } else if (sig == SIGACTV) {
+        if (sig == SIGACTV) {
             sem_buf(&sops[0], SEM_MASTER, -1, 0);
             if (sem_op(model->ipc->semid, &sops[0], 1) == -1) {
                 print(E, "Could not acquire master semaphore.\n");
@@ -113,6 +111,7 @@ int main(int argc, char *argv[]) {
             if ((long) atomic_number < MIN_N_ATOMICO) {
                 // if this atom should become waste
                 waste(EXIT_NATURAL);
+                continue;
             }
 
             int child_atomic_number;
@@ -122,7 +121,7 @@ int main(int argc, char *argv[]) {
             switch (child_pid) {
                 case -1: // Meltdown
                     kill(model->ipc->master_pid, SIGMELT);
-                    terminated = 1;
+                    terminate();
                     break;
                 case 0: // Child atom
                     atomic_number = child_atomic_number;
@@ -156,6 +155,8 @@ int main(int argc, char *argv[]) {
                     break;
                 }
             }
+        } else if (sig == SIGWAST) {
+            waste(EXIT_INHIBITED);
         }
     }
 
@@ -185,17 +186,10 @@ static void waste(int status) {
         print(E, "MOLTO MALE"); // TODO
     }
 
-    struct sembuf sops[2];
-    if (status == EXIT_INHIBITED) {
-        sem_buf(&sops[0], SEM_ATOM, -1, 0);
-        if (sem_op(model->ipc->semid, &sops[0], 1) == -1) {
-            print(E, "Could not update simulation stats.\n");
-        }
-    } else {
-        end_activation_cycle();
-    }
+    end_activation_cycle();
 
-    if (ppid == model->ipc->master_pid || ppid == model->ipc->alimentatore_pid) {
+    if (status == EXIT_NATURAL && (ppid == model->ipc->master_pid || ppid == model->ipc->alimentatore_pid)) {
+        struct sembuf sops[2];
         sem_buf(&sops[0], SEM_INIBITORE_OFF, 0, IPC_NOWAIT);
         sem_buf(&sops[1], SEM_ALIMENTATORE, +1, 0);
         if (sem_op(model->ipc->semid, sops, 2) == -1) {
@@ -205,11 +199,29 @@ static void waste(int status) {
         }
     }
 
-    exit(EXIT_SUCCESS);
+    terminate();
 }
 
 static void split(int *atomic_number, int *child_atomic_number) {
     srand(pid);
     *child_atomic_number = rand_between(1, *atomic_number - 1);
     *atomic_number = *atomic_number - *child_atomic_number;
+}
+
+static void end_activation_cycle() {
+    struct sembuf sops;
+    sem_buf(&sops, SEM_MASTER, +1, 0);
+    if (sem_op(model->ipc->semid, &sops, 1) == -1) {
+        print(E, "Could not release master semaphore.\n");
+    }
+
+    sem_buf(&sops, SEM_ATTIVATORE, +1, 0);
+    if (sem_op(model->ipc->semid, &sops, 1) == -1) {
+        print(E, "Could not increase attivatore semaphore.\n");
+    }
+}
+
+static void terminate() {
+    terminated = 1;
+    mask(SIGTERM);
 }

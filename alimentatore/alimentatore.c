@@ -52,14 +52,10 @@ int main(int argc, char *argv[]) {
     // =========================================
     //                Main logic
     // =========================================
-    int terminated = 0;
-    struct sembuf sops[2];
-    sem_buf(&sops[0], SEM_INIBITORE_OFF, 0, IPC_NOWAIT);
-    sem_buf(&sops[1], SEM_ALIMENTATORE, -1, 0);
-
     prargs("atomo", &argvc, &buf, 2, ITC_SIZE);
     sprintf(argvc[1], "%d", model->res->shmid);
 
+    int terminated = 0;
     timer = timer_start(STEP_ALIMENTAZIONE);
     while (!terminated) {
         sigsuspend(&critical);
@@ -69,16 +65,36 @@ int main(int argc, char *argv[]) {
 
         long n_atoms = 0;
         while (n_atoms < N_NUOVI_ATOMI) {
+            struct sembuf sops[2];
+            sem_buf(&sops[0], SEM_INIBITORE_OFF, 0, IPC_NOWAIT);
+            sem_buf(&sops[1], SEM_ALIMENTATORE, -1, 0);
             if (sem_op(model->ipc->semid, sops, 2) == 0 || errno == EAGAIN) {
-                mask(SIGTERM);
+                sem_buf(&sops[0], SEM_MASTER, -1, 0);
+                if (sem_op(model->ipc->semid, &sops[0], 1) == -1) {
+                    print(E, "Could not acquire master semaphore.\n");
+                    // TODO release alimentatore
+                }
+
+                // mask(SIGTERM);
                 sprintf(argvc[2], "%d", rand_between(MIN_N_ATOMICO, N_ATOM_MAX));
-                if (fork_execv(argvc) == -1) {
+                pid_t atom;
+                if ((atom = fork_execv(argvc)) == -1) {
                     kill(model->ipc->master_pid, SIGMELT);
+                } else {
+                    n_atoms++;
+                }
+                // unmask(SIGTERM);
+
+                sem_buf(&sops[0], SEM_MASTER, +1, 0);
+                if (sem_op(model->ipc->semid, &sops[0], 1) == -1) {
+                    print(E, "Could not release master semaphore.\n");
+                }
+
+                if (atom == -1) {
                     terminated = 1;
                     break;
                 }
-                n_atoms++;
-                unmask(SIGTERM);
+
 
                 // is a new step begun, reset the main logic
                 // so that we can begin the next step

@@ -46,9 +46,4 @@ void init(char *shmid);
 void attach_model();
 #endif
 
-
-#if defined(ATOMO) || defined(INIBITORE)
-int end_activation_cycle();
-#endif
-
 #endif

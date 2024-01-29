@@ -35,6 +35,9 @@ int main(int argc, char *argv[]) {
     init(argv[1]);
 
 
+    // =========================================
+    //            Argument parsing
+    // =========================================
     if (parse_int(argv[2], &log) == -1) {
         print(E, "Could not parse log (%s).\n", argv[1]);
         exit(EXIT_FAILURE);
@@ -91,18 +94,18 @@ int main(int argc, char *argv[]) {
         }
 
         // allow an atom to update waste simulation status
-        sem_buf(&sops, SEM_ATOM, +1, 0);
-        if (sem_op(model->ipc->semid, &sops, 1) == -1) {
-            print (E, "Could not allow atom to update sim.\n");
-        }
+//        sem_buf(&sops, SEM_ATOM, +1, 0);
+//        if (sem_op(model->ipc->semid, &sops, 1) == -1) {
+//            print (E, "Could not allow atom to update sim.\n");
+//        }
 
         // wait for the above-mentioned atom to perform said update
-        sem_buf(&sops, SEM_ATOM, 0, 0);
-        if (sem_op(model->ipc->semid, &sops, 1) == -1) {
-            print(E, "Could not wait for atom to update sim.\n");
-        }
+//        sem_buf(&sops, SEM_ATOM, 0, 0);
+//        if (sem_op(model->ipc->semid, &sops, 1) == -1) {
+//            print(E, "Could not wait for atom to update sim.\n");
+//        }
 
-        end_activation_cycle();
+//        end_activation_cycle();
 
         unmask(SIGTERM);
     }
