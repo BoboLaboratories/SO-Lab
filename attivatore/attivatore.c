@@ -82,8 +82,8 @@ int main(int argc, char *argv[]) {
             }
         }
 
-        // if an atom was retrieved, try to activate it
-        // and release master if activation fails
+        // if an atom was retrieved, try to activate
+        // it and release master if activation fails
         if (atom != -1 && kill(atom, SIGACTV) == -1) {
             print(E, "Could not activate atom %d.\n", atom);
             sem_buf(&sops[0], SEM_MASTER, +1, 0);

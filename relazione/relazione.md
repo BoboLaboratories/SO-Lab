@@ -170,16 +170,16 @@ project/
 
 - `model`, compilato insieme ad ogni modulo principale, che fa uso delle direttive del preprocessore
   per assumere la struttura adeguata per il particolare processo che si sta compilando
-  ([[sezione 2.1.2 TODO]{.underline}][Utilizzo di make e makefile]);
+  ([[sezione 2.1.2]{.underline}][Utilizzo di make e makefile]);
 - `inhibitor_ctl`, utilizzato tramite `./soctl.sh inhibitor` per controllare lo stato dell'inibitore a run-time.
 
 |
 | Sono state realizzate librerie condivise, compilate una sola volta, per implementare le seguenti funzionalità:
 
-- Interazione con la FIFO ([[sezione 2.3.1 TODO]{.underline}][FIFO]);
-- Interazione con la LIFO ([[sezione 2.3.2 TODO]{.underline}][LIFO in shared memory]);
-- Interazione con i semafori ([[sezione 2.4 TODO]{.underline}][Processi e lifecycle]);
-- Signal handling e signal (un)masking ([[sezione 2.4 TODO]{.underline}][Processi e lifecycle]);
+- Interazione con la FIFO ([[sezione 2.3.1]{.underline}][FIFO]);
+- Interazione con la LIFO ([[sezione 2.3.2]{.underline}][LIFO in shared memory]);
+- Interazione con i semafori;
+- Signal handling e signal (un)masking;
 - Interazione con le memorie condivise;
 - Stampa formattata su console;
 - Util generiche (math utils, timer, passaggio di argomenti tramite `execv`, file temporanei, ecc).
@@ -253,7 +253,7 @@ nella simulazione.
 
 Gli atomi più recentemente scissi dall'attivatore, ammesso che non si traformino in scorie, memorizzano il proprio pid
 nella LIFO. Quest'ultima risiede in shared memory, in modo tale che sia accessibile a tutti i processi che devono manipolarne
-lo stato (le manipolazioni effettuate saranno dettagliate in [[sezione 2.3 TODO]{.underline}][Processi e lifecycle]).
+lo stato (le manipolazioni effettuate saranno dettagliate in [[sezione 2.4]{.underline}][Processi e lifecycle]).
 
 L'implementazione data, a seconda del fabbisogno determinato dalla configurazione della simulazione, è automaticamente
 in grado di aumentare (o diminuire) lo spazio riservato per la LIFO (richiedendo al SO un nuovo segmento di shared memory delle
@@ -269,7 +269,7 @@ A simulazione avviata, viene mantenuto uno stato consistente grazie all'uso di s
 in maniera opportuna l'alternarsi delle operazioni dei vari processi.
 
 Un esempio di parte di queste dinamiche è visionabile
-in [[sezione 2.4.6 TODO]{.underline}][Esempio di un ciclo di attivazione e scissione];
+in [[sezione 2.4.6]{.underline}][Esempio di un ciclo di attivazione e scissione];
 
 Per visionare per esteso la logica di ogni processo e l'esatto utilizzo dei semafori, visionare i sorgenti, opportunamente
 documentati tramite appositi commenti.

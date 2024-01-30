@@ -31,25 +31,25 @@
 - [x] gestione TIMEOUT
 - [x] stampa statistiche
 - [x] (no) pipe e ditchare fifo?
-- [ ] prepare opportuni config in env per i vari scenari
-- [ ] commento e controllo dei processi principali (incluso inhibitor_ctl)
-- [ ] relazione
+- [x] prepare opportuni config in env per i vari scenari
+- [x] commento e controllo dei processi principali (incluso inhibitor_ctl)
+- [x] relazione
 - [x] (con dolore) log delle operazioni svolte dall'inibitore
 
 ## Relazione
 - [x] versione di make e versione di gcc
-- [ ] ogni processo può essere terminato in qualsiasi momento perché facciamo uso di tecniche tipo atexit
+- [x] (no) ogni processo può essere terminato in qualsiasi momento perché facciamo uso di tecniche tipo atexit
 - [x] lifo in shared memory con resize
-- [ ] sigsuspend
-- [ ] MIRA
+- [x] sigsuspend
+- [x] MIRA
 - [x] screen di una schermata di statistiche con guida su come leggerla
 
 ## Controlli pre esame
 - [ ] rivedere commenti (e tutti i TODO)
-- [ ] error handling ovunque
-- [x] eliminare sandobox
+- [x] error handling ovunque
+- [x] eliminare sandbox
 - [x] risorse IPC leak
-- [ ] memory leak
+- [x] memory leak
 - [ ] non consegnare .git repo
 - [ ] eliminare questo file
 

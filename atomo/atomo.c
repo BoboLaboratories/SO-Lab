@@ -101,12 +101,8 @@ int main(int argc, char *argv[]) {
 
         // fission requested
         if (sig == SIGACTV) {
-            // acquire master semaphore to proceed with fission
-//            sem_buf(&sops[0], SEM_MASTER, -1, 0);
-//            if (sem_op(model->ipc->semid, &sops[0], 1) == -1) {
-//                print(E, "Could not acquire master semaphore.\n");
-//            }
-
+            // master semaphore is already acquired for us by attivatore
+            // so we are good to go with our stats updates
             model->stats->n_activations++;
 
             // if this atom should become waste
