@@ -13,12 +13,14 @@
 #include "lib/util.h"
 #include "lib/shmem.h"
 #include "lib/console.h"
+#include "alimentatore.h"
 
 extern struct Model *model;
 extern sig_atomic_t sig;
 
 static char **argvc = NULL;
 static char *buf = NULL;
+static long n_atoms = 0;
 static timer_t timer;
 
 int main(int argc, char *argv[]) {
@@ -60,25 +62,30 @@ int main(int argc, char *argv[]) {
     while (!terminated) {
         sigsuspend(&critical);
 
-        while (waitpid(-1, NULL, WNOHANG) > 0)
-            ;
+        reset();
 
-        long n_atoms = 0;
         while (n_atoms < N_NUOVI_ATOMI) {
+            // if inhibitor is present, only fork at most
+            // many new atoms as there are in SEM_ALIMENTATORE
             struct sembuf sops[2];
             sem_buf(&sops[0], SEM_INIBITORE_OFF, 0, IPC_NOWAIT);
             sem_buf(&sops[1], SEM_ALIMENTATORE, -1, 0);
+
             if (sem_op(model->ipc->semid, sops, 2) == 0 || errno == EAGAIN) {
                 sprintf(argvc[2], "%d", rand_between(MIN_N_ATOMICO, N_ATOM_MAX));
 
+                // do not fork unless master is available so that
+                // we're sure simulation is in a consistent state
                 sem_buf(&sops[0], SEM_MASTER, -1, 0);
                 if (sem_op(model->ipc->semid, &sops[0], 1) == -1) {
                     print(E, "Could not acquire master semaphore.\n");
-                    // TODO release alimentatore
                 }
 
                 pid_t atom = fork_execv(argvc);
 
+                // immediately release, regardless of fork result,
+                // so that simulation can continue and if fork failed
+                // we do not retain control of master semaphore
                 sem_buf(&sops[0], SEM_MASTER, +1, 0);
                 if (sem_op(model->ipc->semid, &sops[0], 1) == -1) {
                     print(E, "Could not release master semaphore.\n");
@@ -92,21 +99,29 @@ int main(int argc, char *argv[]) {
                     n_atoms++;
                 }
 
-                // is a new step begun, reset the main logic
-                // so that we can begin the next step
+                // if a new step begun, reset the main logic
                 sig = -1;
                 unmask(SIGALRM);
                 if (sig == SIGALRM) {
-                    n_atoms = 0;
-                    while (waitpid(-1, NULL, WNOHANG) > 0)
-                        ;
+                    reset();
                 }
                 mask(SIGALRM);
+            } else {
+                print(E, "Could not create a new atom.\n");
             }
         }
     }
 
     exit(EXIT_SUCCESS);
+}
+
+static void reset() {
+    // resets the number of atoms created in this step
+    n_atoms = 0;
+
+    // consume any child process termination status already available
+    while (waitpid(-1, NULL, WNOHANG) > 0)
+        ;
 }
 
 void cleanup() {

@@ -1,6 +1,4 @@
-#include <errno.h>
 #include <stdlib.h>
-#include <sys/wait.h>
 
 #include "model.h"
 #include "lib/sem.h"
@@ -64,6 +62,7 @@ int main(int argc, char *argv[]) {
             break;
         }
 
+        // do not terminate until work is done
         mask(SIGTERM);
 
         // inhibit produced energy
@@ -71,17 +70,19 @@ int main(int argc, char *argv[]) {
         long inhibited_energy = model->stats->curr_energy - curr_energy;
         model->stats->inhibited_energy += inhibited_energy;
         model->stats->curr_energy = curr_energy;
+
         if (log && inhibited_energy > 0) {
             print(I, "Inhibitor reducing energy by " YELLOW "%lu" RESET, inhibited_energy);
         }
 
-        // waste an atom
+        // waste an atom and update stats
         pid_t pid;
         if (lifo_pop(model->lifo, &pid) != -1) {
             if (kill(pid, SIGWAST) == -1) {
                 print(E, "Error wasting atom %d.\n", pid);
             } else {
                 model->stats->inhibited_atoms++;
+
                 if (log) {
                     if (inhibited_energy > 0) {
                         printf(" and wasting atom " YELLOW "%d" RESET, pid);

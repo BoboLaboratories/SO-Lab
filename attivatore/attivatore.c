@@ -56,10 +56,12 @@ int main(int argc, char *argv[]) {
     while (1) {
         sigsuspend(&critical);
 
+        // do not activate unless master is available so that
+        // we're sure simulation is in a consistent state
         sem_buf(&sops[0], SEM_MASTER, -1, 0);
         sem_buf(&sops[1], SEM_ATTIVATORE, -1, 0);
         if (sem_op(model->ipc->semid, sops, 2) == -1) {
-            print(E, "Could not acquire attivatore and master semaphore.\n");
+            print(E, "Could not activate atom.\n");
             break;
         }
 
@@ -68,18 +70,22 @@ int main(int argc, char *argv[]) {
         if (lifo_pop(model->lifo, &atom) == -1) {
             // otherwise try to retrieve an atom from the fifo (created by alimentatore)
             if (fifo_remove(model->res->fifo_fd, &atom, sizeof(pid_t)) == -1) {
+                // if no atom is available release semaphores as this step never happened
                 sem_buf(&sops[0], SEM_MASTER, +1, 0);
                 sem_buf(&sops[1], SEM_ATTIVATORE, +1, 0);
                 if (sem_op(model->ipc->semid, sops, 2) == -1) {
                     print(E, "Could not retrieve an atom and release semaphores.\n");
+                    break;
                 }
+                // continue to next step
                 continue;
             }
         }
 
+        // if an atom was retrieved, try to activate it
+        // and release master if activation fails
         if (atom != -1 && kill(atom, SIGACTV) == -1) {
             print(E, "Could not activate atom %d.\n", atom);
-        } else {
             sem_buf(&sops[0], SEM_MASTER, +1, 0);
             if (sem_op(model->ipc->semid, &sops[0], 1) == -1) {
                 print(E, "Could not release master semaphore.\n");

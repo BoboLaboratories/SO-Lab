@@ -99,31 +99,36 @@ int main(int argc, char *argv[]) {
     while (!terminated) {
         sigsuspend(&critical);
 
+        // fission requested
         if (sig == SIGACTV) {
-            sem_buf(&sops[0], SEM_MASTER, -1, 0);
-            if (sem_op(model->ipc->semid, &sops[0], 1) == -1) {
-                print(E, "Could not acquire master semaphore.\n");
-            }
+            // acquire master semaphore to proceed with fission
+//            sem_buf(&sops[0], SEM_MASTER, -1, 0);
+//            if (sem_op(model->ipc->semid, &sops[0], 1) == -1) {
+//                print(E, "Could not acquire master semaphore.\n");
+//            }
 
             model->stats->n_activations++;
 
-            // if fission was requested
+            // if this atom should become waste
             if ((long) atomic_number < MIN_N_ATOMICO) {
-                // if this atom should become waste
                 waste(EXIT_NATURAL);
                 continue;
             }
 
+            // split atomic numbers
             int child_atomic_number;
             split(&atomic_number, &child_atomic_number);
 
+            // fork child atom
             pid_t child_pid = fork();
             switch (child_pid) {
                 case -1: // Meltdown
+                    // master semaphore must be release in case of failure
                     sem_buf(&sops[0], SEM_MASTER, +1, 0);
                     if (sem_op(model->ipc->semid, &sops[0], 1) == -1) {
                         print(E, "Could not release master semaphore.\n");
                     }
+                    // signal master that MELTDOWN happened
                     kill(model->ipc->master_pid, SIGMELT);
                     terminate();
                     break;
@@ -152,7 +157,9 @@ int main(int argc, char *argv[]) {
                     sem_buf(&sops[0], SEM_INIBITORE_OFF, 0, IPC_NOWAIT);
                     sem_buf(&sops[1], SEM_INIBITORE, +1, 0);
                     if (sem_op(model->ipc->semid, sops, 2) == -1) {
-                        if (errno == EAGAIN) {
+                        if (errno != EAGAIN) {
+                            print(E, "Could not wake up inhibitor.\n");
+                        } else {
                             end_activation_cycle();
                         }
                     }
@@ -160,6 +167,7 @@ int main(int argc, char *argv[]) {
                 }
             }
         } else if (sig == SIGWAST) {
+            // if inhibitor wasted this atom
             waste(EXIT_INHIBITED);
         }
     }
@@ -182,11 +190,19 @@ void cleanup() {
 }
 
 static void waste(int status) {
+    // we can reach this point either because we became waste
+    // because of our atomic number is below MIN_N_ATOMICO
+    // or because the inhibitor sent us SIGWAST
+    // either case we hold control of SEM_MASTER
+    // therefore we're free to update stats
     model->stats->n_wastes++;
     model->stats->n_atoms--;
 
     end_activation_cycle();
 
+    // only if this atom was wasted because its atomic number was below MIN_N_ATOMICO
+    // and this atom is a direct child of master or alimentatore, increment alimentatore
+    // semaphore so that inhibitor can keep the number of atoms as stable as possible
     if (status == EXIT_NATURAL && (ppid == model->ipc->master_pid || ppid == model->ipc->alimentatore_pid)) {
         struct sembuf sops[2];
         sem_buf(&sops[0], SEM_INIBITORE_OFF, 0, IPC_NOWAIT);
@@ -201,26 +217,34 @@ static void waste(int status) {
     terminate();
 }
 
-static void split(int *atomic_number, int *child_atomic_number) {
-    srand(pid);
-    *child_atomic_number = rand_between(1, *atomic_number - 1);
-    *atomic_number = *atomic_number - *child_atomic_number;
-}
-
 static void end_activation_cycle() {
     struct sembuf sops;
+
+    // first, give back control to master process so that it
+    // takes precedence to perform any pending control operation
     sem_buf(&sops, SEM_MASTER, +1, 0);
     if (sem_op(model->ipc->semid, &sops, 1) == -1) {
         print(E, "Could not release master semaphore.\n");
     }
 
+    // only then, give work back to attivatore
     sem_buf(&sops, SEM_ATTIVATORE, +1, 0);
     if (sem_op(model->ipc->semid, &sops, 1) == -1) {
         print(E, "Could not increase attivatore semaphore.\n");
     }
 }
 
+static void split(int *atomic_number, int *child_atomic_number) {
+    srand(pid);
+    *child_atomic_number = rand_between(1, *atomic_number - 1);
+    *atomic_number = *atomic_number - *child_atomic_number;
+}
+
 static void terminate() {
     terminated = 1;
+
+    // we could receive SIGTERM from master while already performing exit
+    // operations (e.g. in case we were the atom that caused MELTDOWN)
+    // or if we received SIGWAST and the next atom causes MELTDOWN
     mask(SIGTERM);
 }

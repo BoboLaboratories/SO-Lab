@@ -26,6 +26,7 @@ static struct SimulationStats sim;
 static timer_t timer;
 
 int main(int argc, char *argv[]) {
+
     // check for flags
     for (int i = 1; i < argc; i++) {
         if (strcmp("--inhibitor", argv[i]) == 0) {
@@ -95,10 +96,10 @@ int main(int argc, char *argv[]) {
     //             Setup semaphores
     // =========================================
     int nproc = N_ATOMI_INIT    // atomi
+                + 1             // master
                 + 1             // inibitore
-                + 1             // alimentatore
                 + 1             // attivatore
-                + 1;            // master
+                + 1;            // alimentatore
 
     int init[SEM_COUNT] = {
             [SEM_INIBITORE_OFF] = flags[INHIBITOR_FLAG] ? 0 : 1,
@@ -115,7 +116,7 @@ int main(int argc, char *argv[]) {
     if ((key = ftok(FIFO, FTOK_PROJ)) == -1) {
         print(E, "Could not generate ftok key.\n");
         exit(EXIT_FAILURE);
-    };
+    }
 
     model->ipc->semid = sem_create(key, SEM_COUNT, IPC_CREAT | IPC_EXCL | S_IWUSR | S_IRUSR, init);
     if (model->ipc->semid == -1) {
@@ -162,11 +163,10 @@ int main(int argc, char *argv[]) {
         prargs("inibitore", &argvc, &buf, 2, ITC_SIZE);
         sprintf(argvc[1], "%d", model->res->shmid);
         sprintf(argvc[2], "%d", flags[INHIBITOR_LOG_ON_FLAG]);
-        model->ipc->inibitore_pid = fork_execv(argvc);
+        pid_t child_pid = fork_execv(argvc);
         frargs(argvc, buf);
-        if (model->ipc->inibitore_pid == -1) {
+        if (child_pid == -1) {
             sim.status = MELTDOWN;
-            exit(EXIT_SUCCESS);
         }
     }
 
@@ -181,7 +181,6 @@ int main(int argc, char *argv[]) {
         frargs(argvc, buf);
         if (child_pid == -1) {
             sim.status = MELTDOWN;
-            exit(EXIT_SUCCESS);
         }
     }
 
@@ -229,18 +228,21 @@ int main(int argc, char *argv[]) {
     // =========================================
     //               Main logic
     // =========================================
-
     while (sim.status == RUNNING) {
         sigsuspend(&critical);
 
+        // consume termination information for N_ATOMI_INIT
         while (waitpid(-1, NULL, WNOHANG) > 0)
             ;
 
+        // acquire master semaphore so that nobody can
+        // update stats while we perform our checks
         sem_buf(&sops, SEM_MASTER, -1, 0);
         if (sem_op(model->ipc->semid, &sops, 1) == -1) {
             print(E, "Could not acquire master semaphore.\n");
         }
 
+        // update elapsed time
         clock_gettime(CLOCK_MONOTONIC_RAW, &sim_curr);
         unsigned long elapsed_millis = 0;
         elapsed_millis += (sim_curr.tv_sec - sim_start.tv_sec) * (long) 1e3;      // converts seconds to milliseconds
@@ -265,7 +267,7 @@ int main(int argc, char *argv[]) {
                     }
                 }
 
-                if (elapsed_millis >= SIM_DURATION * (unsigned long) 1e3) {
+                if (sim.status == RUNNING && elapsed_millis >= SIM_DURATION * (unsigned long) 1e3) {
                     sim.status = TIMEOUT;
                 }
                 break;

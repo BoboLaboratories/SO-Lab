@@ -24,7 +24,6 @@
 struct Ipc {
     int semid;
     pid_t master_pid;
-    pid_t inibitore_pid;
     pid_t alimentatore_pid;
 };
 
