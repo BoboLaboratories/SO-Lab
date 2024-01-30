@@ -39,7 +39,7 @@ __Mattia Mignogna__ (matr. 1043330) \hfill __Fabio Nebbia__ (matr. 898514)
 +--------+-----------------------+-------------------------------+-------------------------+
 | `gdb`  | 14.1                  | 12.1                          | 14.0                    |
 +--------+-----------------------+-------------------------------+-------------------------+
-| `make` | 4.4.1                 | 4.3  TODO                     | 4.3                     |
+| `make` | 4.4.1                 | 4.3                           | 4.3                     |
 +--------+-----------------------+-------------------------------+-------------------------+
 
 | * usato per lo sviluppo e il testing.
@@ -52,7 +52,7 @@ __Mattia Mignogna__ (matr. 1043330) \hfill __Fabio Nebbia__ (matr. 898514)
 
 Tutte le operazioni di controllo della simulazione si effettuano tramite lo script BASH `soctl.sh`, presente
 nella cartella del progetto. Lo script compila automaticamente tutti i moduli del progetto invocando `make`
-e predispone l'environtment per l'esecuzione delle simulazioni.  
+e predispone l'environment per l'esecuzione delle simulazioni.  
 
 | Seguono alcuni esempi di utilizzo.
 |
@@ -98,8 +98,8 @@ Dove il significato di ogni sezione delineata corrisponde a:
 
 1. Log opzionalmente prodotti dall'inibitore in caso sia attivo e il suo log sia abilitato
    (ossia non sia stato passato a `./soctl.sh start` il flag `--no-inh-log`).
-   Queste indicano, ad ogni scissione, l'energia che è stata assorbita dall'inibitore
-   (se necessario ad evitare `EXPLODE`) e l'atomo che è stato convertito in scoria (per evitare `MELTDOWN`).
+   Queste indicano, a ogni scissione, l'energia che è stata assorbita dall'inibitore
+   (se necessario a evitare `EXPLODE`) e l'atomo che è stato convertito in scoria (per evitare `MELTDOWN`).
 
 <!-- -->
 
@@ -168,7 +168,7 @@ project/
 |
 | Alcuni moduli particolari sono:
 
-- `model`, compilato insieme ad ogni modulo principale, che fa uso delle direttive del preprocessore
+- `model`, compilato insieme a ogni modulo principale, che fa uso delle direttive del preprocessore
   per assumere la struttura adeguata per il particolare processo che si sta compilando
   ([[sezione 2.1.2]{.underline}][Utilizzo di make e makefile]);
 - `inhibitor_ctl`, utilizzato tramite `./soctl.sh inhibitor` per controllare lo stato dell'inibitore a run-time.
@@ -251,7 +251,7 @@ nella simulazione.
 
 ### LIFO in shared memory
 
-Gli atomi più recentemente scissi dall'attivatore, ammesso che non si traformino in scorie, memorizzano il proprio pid
+Gli atomi più recentemente scissi dall'attivatore, ammesso che non si trasformino in scorie, memorizzano il proprio pid
 nella LIFO. Quest'ultima risiede in shared memory, in modo tale che sia accessibile a tutti i processi che devono manipolarne
 lo stato (le manipolazioni effettuate saranno dettagliate in [[sezione 2.4]{.underline}][Processi e lifecycle]).
 
@@ -323,7 +323,7 @@ L'inibitore resta in attesa:
 
 ### Alimentatore
 
-L'alimentore esegue le sue funzionalità in due modalità distinte, che dipendono dallo stato dell'inibitore e che, quindi,
+L'alimentatore esegue le sue funzionalità in due modalità distinte, che dipendono dallo stato dell'inibitore e che, quindi,
 possono alternarsi un numero arbitrario di volte nel corso di una singola simulazione:
 
 - se l'inibitore è `OFF`, ogni `STEP_ALIMENTAZIONE` esegue la `fork` di `N_NUOVI_ATOMI`, senza limitazioni;

@@ -5,7 +5,7 @@
 #include "lib/util.h"
 #include "lib/console.h"
 
-// sim indexes in data array
+// simulation stats indexes in data array
 #define STAT_ATOMS                      0
 #define STAT_WASTES                     1
 #define STAT_FISSIONS                   2
@@ -20,7 +20,7 @@
 #define COMPUTED_STAT_REMAING_SECONDS   11
 #define STAT_COUNT                      12
 
-// sim headers
+// simulation stats headers
 #define HEADER_MAX_LEN         9
 #define HEADER_COLOR           GREEN
 #define HEADER_BOLD_COLOR      BOLD_GREEN
@@ -32,7 +32,7 @@
 #define HEADER_LAST_SEC        (HEADER_COLOR      "LastSec"   RESET)
 #define HEADER_INHIBITOR       (HEADER_BOLD_COLOR "Inhibitor" RESET)
 
-// sim rows
+// simulation stats rows
 #define ROW_MAX_LEN     11
 #define ROW_COLOR       BLUE
 #define ROW_ATOMS       (ROW_COLOR "    Atoms  " RESET)
@@ -81,7 +81,7 @@ static int buf_len;
 // how many times simulation stats have been printed
 static int prnt_count = 0;
 
-// sim from the previous iteration
+// simulation stats from the previous iteration
 static long *prev = NULL;
 
 void print_stats(struct SimulationStats prnt) {

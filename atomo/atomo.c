@@ -69,7 +69,7 @@ int main(int argc, char *argv[]) {
     struct sembuf sops[2];
     sem_buf(&sops[0], SEM_MASTER, -1, 0);
     if (sem_op(model->ipc->semid, &sops[0], 1) == -1) {
-        print(E, "Could not acquire master_pid semaphore.\n");
+        print(E, "Could not acquire master semaphore.\n");
         exit(EXIT_FAILURE);
     }
 
@@ -78,7 +78,7 @@ int main(int argc, char *argv[]) {
 
     sem_buf(&sops[0], SEM_MASTER, +1, 0);
     if (sem_op(model->ipc->semid, &sops[0], 1) == -1) {
-        print(E, "Could not release master_pid semaphore.\n");
+        print(E, "Could not release master semaphore.\n");
         exit(EXIT_FAILURE);
     }
 
