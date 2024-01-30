@@ -5,32 +5,31 @@ export CC=gcc
 # $^ prerequisites
 # $< first prerequisite
 
-# Collection of common libraries used by any type of process
-LIBS = console shmem util fifo lifo sem sig
+# All modules and libraries
 MAIN = master alimentatore attivatore atomo inibitore
+LIBS = console shmem util fifo lifo sem sig
 
-# Paths to all executables and libraries
+# Paths to all compiled libraries
 LIBS_FULL_PATHS = $(addprefix bin/libs/,$(LIBS))
+
+# Paths to all compiled main modules
 MAIN_FULL_PATHS = $(addprefix bin/,$(MAIN))
+
+# This one has its own specific build directive as it doesn't need model
 MAIN_FULL_PATHS += bin/inhibitor_ctl
+
+# Directories in which to look for headers
 HEADER_DIRECTORIES = libs model
 
 # Directive for building the whole project
 all: $(MAIN_FULL_PATHS)
 
-
 # Directive for building all the libraries
 libs: $(LIBS_FULL_PATHS)
 
-# Simple clean directive
-clean:
-	echo -n "Cleaning up.."
-	rm -rf bin
-	echo " done."
-
 # Directive for building inhibitor ctl
 bin/inhibitor_ctl: inhibitor_ctl/inhibitor_ctl.c bin/libs/sem bin/libs/console
-	$(CC) $(CFLAGS) $(filter %.c,$^) -g -o $@ -Ilibs -Lbin/libs -l:sem -l:console
+	$(CC) $(CFLAGS) $(filter %.c,$^) -o $@ -Ilibs -Lbin/libs -l:sem -l:console
 
 # Directive for building any main component
 bin/%: %/*.c model/model.c $(LIBS_FULL_PATHS)
@@ -40,6 +39,12 @@ bin/%: %/*.c model/model.c $(LIBS_FULL_PATHS)
 # Directive for making any library
 bin/libs/%: libs/impl/%.c | makedir
 	$(CC) $(CFLAGS) -c -o $@ $< -Ilibs
+
+# Simple clean directive
+clean:
+	echo -n "Cleaning up.."
+	rm -rf bin
+	echo " done."
 
 # Creates the output directory
 makedir:

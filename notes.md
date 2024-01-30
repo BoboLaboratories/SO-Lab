@@ -37,12 +37,12 @@
 - [x] (con dolore) log delle operazioni svolte dall'inibitore
 
 ## Relazione
-- [ ] versione di make e versione di gcc
+- [x] versione di make e versione di gcc
 - [ ] ogni processo può essere terminato in qualsiasi momento perché facciamo uso di tecniche tipo atexit
-- [ ] lifo in shared memory con resize
+- [x] lifo in shared memory con resize
 - [ ] sigsuspend
 - [ ] MIRA
-- [ ] screen di una schermata di statistiche con guida su come leggerla
+- [x] screen di una schermata di statistiche con guida su come leggerla
 
 ## Controlli pre esame
 - [ ] rivedere commenti (e tutti i TODO)
