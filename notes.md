@@ -1,9 +1,36 @@
 # TODO
 
+## Very last
+- [ ] test timeout, blacout, explode senza inhibitor
+- [ ] test timeout, blacout, explode con inhibitor
+- [ ] test di meltdown senza inhibitor
+- [ ] test di meltdown con inhibitor
+- [ ] test di meltdown prima ancora del main loop
+- [ ] !! rimuovere da master il print su exits.txt e dummy()
+
+## Da sapere all'esame
+- [ ] come funziona il nostro progetto (source: relazione + commenti nei sorgenti)
+- [ ] comandi di linux, permessi e altre cose insegnate a lezione (source: slide)
+- [ ] ripasso generale delle slide (source: slide)
+- [ ] saper usare man (source: slide)
+
+## Consegna
+- [ ] non consegnare cartella bin
+- [ ] non consegnare cartella relazione, ma solo relazione.pdf
+- [ ] non consegnare killall.sh
+- [ ] non consegnare test.sh
+- [ ] non consegnare notes.md
+- [ ] non consegnare file di .git repo
+- [ ] non consegnare .gitignore
+- [ ] consegnare, ma ordinatamente, debug.txt e debug-sem.txt
+- [ ] provere se, rimosso tutto ciò, funziona ancora tutto
+
+---
+
 ## Master
 - [x] stampa dello stato
 - [x] (mai stati) memory leak frargs
-- [ ] se va in meltdown prima ancora di eseguire il primo secondo non stampa nulla, esce e basta
+- [x] se va in meltdown prima ancora di eseguire il primo secondo non stampa nulla, esce e basta
 
 ## soctl
 - [x] terminarla
@@ -45,7 +72,7 @@
 - [x] screen di una schermata di statistiche con guida su come leggerla
 
 ## Controlli pre esame
-- [ ] rivedere commenti (e tutti i TODO)
+- [x] rivedere commenti (e tutti i TODO)
 - [x] error handling ovunque
 - [x] eliminare sandbox
 - [x] risorse IPC leak
@@ -53,11 +80,7 @@
 - [ ] non consegnare .git repo
 - [ ] eliminare questo file
 
-## Da sapere all'esame
-- [ ] come funziona il nostro progetto (source: relazione + commenti nei sorgenti)
-- [ ] comandi di linux, permessi e altre cose insegnate a lezione (source: slide)
-- [ ] ripasso generale delle slide (source: slide)
-- [ ] saper usare man (source: slide)
+
 
 
 LFT     17/01   06/02
