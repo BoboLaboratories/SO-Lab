@@ -120,6 +120,10 @@ int main(int argc, char *argv[]) {
             pid_t child_pid = fork();
             switch (child_pid) {
                 case -1: // Meltdown
+                    sem_buf(&sops[0], SEM_MASTER, +1, 0);
+                    if (sem_op(model->ipc->semid, &sops[0], 1) == -1) {
+                        print(E, "Could not release master semaphore.\n");
+                    }
                     kill(model->ipc->master_pid, SIGMELT);
                     terminate();
                     break;
