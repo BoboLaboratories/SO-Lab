@@ -75,15 +75,9 @@ int main(int argc, char *argv[]) {
                     // TODO release alimentatore
                 }
 
-                // mask(SIGTERM);
+
                 sprintf(argvc[2], "%d", rand_between(MIN_N_ATOMICO, N_ATOM_MAX));
-                pid_t atom;
-                if ((atom = fork_execv(argvc)) == -1) {
-                    kill(model->ipc->master_pid, SIGMELT);
-                } else {
-                    n_atoms++;
-                }
-                // unmask(SIGTERM);
+                pid_t atom = fork_execv(argvc);
 
                 sem_buf(&sops[0], SEM_MASTER, +1, 0);
                 if (sem_op(model->ipc->semid, &sops[0], 1) == -1) {
@@ -91,10 +85,12 @@ int main(int argc, char *argv[]) {
                 }
 
                 if (atom == -1) {
+                    kill(model->ipc->master_pid, SIGMELT);
                     terminated = 1;
                     break;
+                } else {
+                    n_atoms++;
                 }
-
 
                 // is a new step begun, reset the main logic
                 // so that we can begin the next step
