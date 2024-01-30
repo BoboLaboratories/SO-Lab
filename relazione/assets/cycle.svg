@@ -1,0 +1,765 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="145.49501mm"
+   height="144.91647mm"
+   viewBox="0 0 145.49501 144.91647"
+   version="1.1"
+   id="svg1"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs1">
+    <marker
+       style="overflow:visible"
+       id="marker6"
+       refX="4"
+       refY="0"
+       orient="auto-start-reverse"
+       markerWidth="1"
+       markerHeight="1"
+       viewBox="0 0 1 1"
+       preserveAspectRatio="xMidYMid">
+      <path
+         transform="scale(0.5)"
+         style="fill:context-stroke;fill-rule:evenodd;stroke:context-stroke;stroke-width:1pt"
+         d="m 6,0 c -3,1 -7,3 -9,5 0,0 0,-4 2,-5 -2,-1 -2,-5 -2,-5 2,2 6,4 9,5 z"
+         id="path6" />
+    </marker>
+    <rect
+       x="174.75273"
+       y="450.33966"
+       width="39.238941"
+       height="43.57711"
+       id="rect5" />
+    <marker
+       style="overflow:visible"
+       id="marker3"
+       refX="4"
+       refY="0"
+       orient="auto-start-reverse"
+       markerWidth="1"
+       markerHeight="1"
+       viewBox="0 0 1 1"
+       preserveAspectRatio="xMidYMid">
+      <path
+         transform="scale(0.5)"
+         style="fill:context-stroke;fill-rule:evenodd;stroke:context-stroke;stroke-width:1pt"
+         d="m 6,0 c -3,1 -7,3 -9,5 0,0 0,-4 2,-5 -2,-1 -2,-5 -2,-5 2,2 6,4 9,5 z"
+         id="path3" />
+    </marker>
+    <marker
+       style="overflow:visible"
+       id="marker1"
+       refX="4"
+       refY="0"
+       orient="auto-start-reverse"
+       markerWidth="1"
+       markerHeight="1"
+       viewBox="0 0 1 1"
+       preserveAspectRatio="xMidYMid">
+      <path
+         transform="scale(0.5)"
+         style="fill:context-stroke;fill-rule:evenodd;stroke:context-stroke;stroke-width:1pt"
+         d="m 6,0 c -3,1 -7,3 -9,5 0,0 0,-4 2,-5 -2,-1 -2,-5 -2,-5 2,2 6,4 9,5 z"
+         id="path1" />
+    </marker>
+    <marker
+       style="overflow:visible"
+       id="marker34"
+       refX="4"
+       refY="0"
+       orient="auto-start-reverse"
+       markerWidth="1"
+       markerHeight="1"
+       viewBox="0 0 1 1"
+       preserveAspectRatio="xMidYMid">
+      <path
+         transform="scale(0.5)"
+         style="fill:context-stroke;fill-rule:evenodd;stroke:context-stroke;stroke-width:1pt"
+         d="m 6,0 c -3,1 -7,3 -9,5 0,0 0,-4 2,-5 -2,-1 -2,-5 -2,-5 2,2 6,4 9,5 z"
+         id="path34" />
+    </marker>
+    <rect
+       x="299.42599"
+       y="65.255669"
+       width="89.572227"
+       height="34.409313"
+       id="rect33" />
+    <rect
+       x="292.37503"
+       y="321.44266"
+       width="95.259941"
+       height="94.065926"
+       id="rect32" />
+    <marker
+       style="overflow:visible"
+       id="ArrowTriangleStylized"
+       refX="4"
+       refY="0"
+       orient="auto-start-reverse"
+       markerWidth="1"
+       markerHeight="1"
+       viewBox="0 0 1 1"
+       preserveAspectRatio="xMidYMid">
+      <path
+         transform="scale(0.5)"
+         style="fill:context-stroke;fill-rule:evenodd;stroke:context-stroke;stroke-width:1pt"
+         d="m 6,0 c -3,1 -7,3 -9,5 0,0 0,-4 2,-5 -2,-1 -2,-5 -2,-5 2,2 6,4 9,5 z"
+         id="path4" />
+    </marker>
+    <marker
+       style="overflow:visible"
+       id="marker22"
+       refX="3"
+       refY="0"
+       orient="auto-start-reverse"
+       markerWidth="1"
+       markerHeight="1"
+       viewBox="0 0 1 1"
+       preserveAspectRatio="xMidYMid">
+      <path
+         transform="scale(0.5)"
+         style="fill:context-stroke;fill-rule:evenodd;stroke:context-stroke;stroke-width:1pt"
+         d="m 6,0 c -3,1 -7,3 -9,5 0,0 0,-4 2,-5 -2,-1 -2,-5 -2,-5 2,2 6,4 9,5 z"
+         id="path22" />
+    </marker>
+    <marker
+       style="overflow:visible"
+       id="marker19"
+       refX="4"
+       refY="0"
+       orient="auto-start-reverse"
+       markerWidth="1"
+       markerHeight="1"
+       viewBox="0 0 1 1"
+       preserveAspectRatio="xMidYMid">
+      <path
+         transform="scale(0.5)"
+         style="fill:context-stroke;fill-rule:evenodd;stroke:context-stroke;stroke-width:1pt"
+         d="m 6,0 c -3,1 -7,3 -9,5 0,0 0,-4 2,-5 -2,-1 -2,-5 -2,-5 2,2 6,4 9,5 z"
+         id="path19" />
+    </marker>
+    <rect
+       x="292.37503"
+       y="321.44266"
+       width="95.259941"
+       height="94.065926"
+       id="rect32-9" />
+    <rect
+       x="299.42599"
+       y="65.255669"
+       width="89.572227"
+       height="34.409313"
+       id="rect33-9" />
+    <rect
+       x="299.42599"
+       y="65.255669"
+       width="89.572227"
+       height="34.409313"
+       id="rect33-6" />
+    <rect
+       x="299.42599"
+       y="65.255669"
+       width="89.572227"
+       height="34.409313"
+       id="rect33-9-9" />
+    <rect
+       x="299.42599"
+       y="65.255669"
+       width="89.572227"
+       height="34.409313"
+       id="rect33-9-9-8" />
+    <rect
+       x="299.42599"
+       y="65.255669"
+       width="89.572227"
+       height="34.409313"
+       id="rect33-9-9-0" />
+    <rect
+       x="174.75273"
+       y="450.33966"
+       width="39.238941"
+       height="43.57711"
+       id="rect5-7" />
+    <rect
+       x="174.75273"
+       y="450.33966"
+       width="39.238941"
+       height="43.57711"
+       id="rect5-7-9" />
+    <rect
+       x="174.75273"
+       y="450.33966"
+       width="39.238941"
+       height="43.57711"
+       id="rect5-7-6" />
+    <rect
+       x="174.75273"
+       y="450.33966"
+       width="39.238941"
+       height="43.57711"
+       id="rect5-7-6-7" />
+    <rect
+       x="174.75273"
+       y="450.33966"
+       width="39.238941"
+       height="43.57711"
+       id="rect5-7-6-5" />
+    <rect
+       x="174.75273"
+       y="450.33966"
+       width="39.238941"
+       height="43.57711"
+       id="rect5-7-6-3" />
+    <rect
+       x="174.75273"
+       y="450.33966"
+       width="39.238941"
+       height="43.57711"
+       id="rect5-7-6-9" />
+  </defs>
+  <g
+     id="layer1"
+     transform="translate(-77.189077,-19.22201)">
+    <rect
+       style="display:none;fill:none;stroke:#000000;stroke-width:0.223537;stroke-dasharray:none;stroke-opacity:1"
+       id="rect28"
+       width="30.408489"
+       height="33.29287"
+       x="179.42723"
+       y="119.95567" />
+    <rect
+       style="fill:none;stroke:#000000;stroke-width:0.264583;stroke-dasharray:none;stroke-opacity:1"
+       id="rect1"
+       width="25.204195"
+       height="24.888275"
+       x="77.357559"
+       y="85.04837" />
+    <path
+       style="fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:0.264583"
+       d="m 197.34764,123.89321 v 24.88841 h 25.20415 v -24.88841 z"
+       id="path28" />
+    <g
+       id="g3"
+       transform="translate(0.62239811,-5.1884514)">
+      <rect
+         style="fill:none;stroke:#000000;stroke-width:0.264583;stroke-dasharray:none;stroke-opacity:1"
+         id="rect2"
+         width="25.468779"
+         height="6.9311213"
+         x="76.698975"
+         y="35.883976" />
+      <text
+         xml:space="preserve"
+         style="font-size:2.91047px;font-family:'JetBrainsMono Nerd Font Mono';-inkscape-font-specification:'JetBrainsMono Nerd Font Mono';text-align:center;text-anchor:middle;fill:#1a1a1a;fill-opacity:1;stroke:none;stroke-width:0.264587;stroke-dasharray:none;stroke-opacity:1"
+         x="89.437729"
+         y="40.397305"
+         id="text4"><tspan
+           id="tspan4"
+           style="fill:#1a1a1a;fill-opacity:1;stroke:none;stroke-width:0.264587"
+           x="89.437729"
+           y="40.397305">atomo 4</tspan></text>
+    </g>
+    <g
+       id="g3-1"
+       transform="translate(0.6223979,109.26844)">
+      <rect
+         style="fill:none;stroke:#000000;stroke-width:0.264583;stroke-dasharray:none;stroke-opacity:1"
+         id="rect2-0"
+         width="25.468779"
+         height="6.9311213"
+         x="76.698975"
+         y="35.883976" />
+      <text
+         xml:space="preserve"
+         style="font-size:2.91047px;font-family:'JetBrainsMono Nerd Font Mono';-inkscape-font-specification:'JetBrainsMono Nerd Font Mono';text-align:center;text-anchor:middle;fill:#1a1a1a;fill-opacity:1;stroke:none;stroke-width:0.264587;stroke-dasharray:none;stroke-opacity:1"
+         x="89.437729"
+         y="40.397305"
+         id="text4-6"><tspan
+           id="tspan4-3"
+           style="fill:#1a1a1a;fill-opacity:1;stroke:none;stroke-width:0.264587"
+           x="89.437729"
+           y="40.397305">&lt;empty&gt;</tspan></text>
+    </g>
+    <g
+       id="g3-1-2"
+       transform="translate(40.751767,109.3331)">
+      <rect
+         style="fill:none;stroke:#000000;stroke-width:0.264583;stroke-dasharray:none;stroke-opacity:1"
+         id="rect2-0-3"
+         width="25.468779"
+         height="6.9311213"
+         x="76.698975"
+         y="35.883976" />
+      <text
+         xml:space="preserve"
+         style="font-size:2.91047px;font-family:'JetBrainsMono Nerd Font Mono';-inkscape-font-specification:'JetBrainsMono Nerd Font Mono';text-align:center;text-anchor:middle;fill:#1a1a1a;fill-opacity:1;stroke:none;stroke-width:0.264587;stroke-dasharray:none;stroke-opacity:1"
+         x="89.437729"
+         y="40.397305"
+         id="text4-6-7"><tspan
+           id="tspan4-3-5"
+           style="fill:#1a1a1a;fill-opacity:1;stroke:none;stroke-width:0.264587"
+           x="89.437729"
+           y="40.397305">&lt;empty&gt;</tspan></text>
+    </g>
+    <g
+       id="g3-0"
+       transform="translate(0.62239811,8.6737924)">
+      <rect
+         style="fill:none;stroke:#000000;stroke-width:0.264583;stroke-dasharray:none;stroke-opacity:1"
+         id="rect2-2"
+         width="25.468779"
+         height="6.9311213"
+         x="76.698975"
+         y="35.883976" />
+      <text
+         xml:space="preserve"
+         style="font-size:2.91047px;font-family:'JetBrainsMono Nerd Font Mono';-inkscape-font-specification:'JetBrainsMono Nerd Font Mono';text-align:center;text-anchor:middle;fill:#1a1a1a;fill-opacity:1;stroke:none;stroke-width:0.264587;stroke-dasharray:none;stroke-opacity:1"
+         x="89.437729"
+         y="40.397305"
+         id="text4-7"><tspan
+           id="tspan4-5"
+           style="fill:#1a1a1a;fill-opacity:1;stroke:none;stroke-width:0.264587"
+           x="89.437729"
+           y="40.397305">atomo 2</tspan></text>
+    </g>
+    <g
+       id="g3-0-4"
+       transform="translate(0.62239811,15.604914)">
+      <rect
+         style="fill:none;stroke:#000000;stroke-width:0.264583;stroke-dasharray:none;stroke-opacity:1"
+         id="rect2-2-7"
+         width="25.468779"
+         height="6.9311213"
+         x="76.698975"
+         y="35.883976" />
+      <text
+         xml:space="preserve"
+         style="font-size:2.91047px;font-family:'JetBrainsMono Nerd Font Mono';-inkscape-font-specification:'JetBrainsMono Nerd Font Mono';text-align:center;text-anchor:middle;fill:#1a1a1a;fill-opacity:1;stroke:none;stroke-width:0.264587;stroke-dasharray:none;stroke-opacity:1"
+         x="89.437729"
+         y="40.397305"
+         id="text4-7-4"><tspan
+           id="tspan4-5-5"
+           style="fill:#1a1a1a;fill-opacity:1;stroke:none;stroke-width:0.264587"
+           x="89.437729"
+           y="40.397305">atomo 1</tspan></text>
+    </g>
+    <g
+       id="g3-9"
+       transform="translate(0.62239811,1.7426706)">
+      <rect
+         style="fill:none;stroke:#000000;stroke-width:0.264583;stroke-dasharray:none;stroke-opacity:1"
+         id="rect2-7"
+         width="25.468779"
+         height="6.9311213"
+         x="76.698975"
+         y="35.883976" />
+      <text
+         xml:space="preserve"
+         style="font-size:2.91047px;font-family:'JetBrainsMono Nerd Font Mono';-inkscape-font-specification:'JetBrainsMono Nerd Font Mono';text-align:center;text-anchor:middle;fill:#1a1a1a;fill-opacity:1;stroke:none;stroke-width:0.264587;stroke-dasharray:none;stroke-opacity:1"
+         x="89.437729"
+         y="40.397305"
+         id="text4-1"><tspan
+           id="tspan4-2"
+           style="fill:#1a1a1a;fill-opacity:1;stroke:none;stroke-width:0.264587"
+           x="89.437729"
+           y="40.397305">atomo 3</tspan></text>
+    </g>
+    <g
+       id="g3-5"
+       transform="translate(40.625639,-4.9238691)">
+      <rect
+         style="fill:none;stroke:#000000;stroke-width:0.264583;stroke-dasharray:none;stroke-opacity:1"
+         id="rect2-25"
+         width="25.468779"
+         height="6.9311213"
+         x="76.698975"
+         y="35.883976" />
+      <text
+         xml:space="preserve"
+         style="font-size:2.91047px;font-family:'JetBrainsMono Nerd Font Mono';-inkscape-font-specification:'JetBrainsMono Nerd Font Mono';text-align:center;text-anchor:middle;fill:#1a1a1a;fill-opacity:1;stroke:none;stroke-width:0.264587;stroke-dasharray:none;stroke-opacity:1"
+         x="89.437729"
+         y="40.397305"
+         id="text4-4"><tspan
+           id="tspan4-7"
+           style="fill:#1a1a1a;fill-opacity:1;stroke:none;stroke-width:0.264587"
+           x="89.437729"
+           y="40.397305">atomo 4</tspan></text>
+    </g>
+    <g
+       id="g3-0-44"
+       transform="translate(40.625639,8.9383743)">
+      <rect
+         style="fill:none;stroke:#000000;stroke-width:0.264583;stroke-dasharray:none;stroke-opacity:1"
+         id="rect2-2-3"
+         width="25.468779"
+         height="6.9311213"
+         x="76.698975"
+         y="35.883976" />
+      <text
+         xml:space="preserve"
+         style="font-size:2.91047px;font-family:'JetBrainsMono Nerd Font Mono';-inkscape-font-specification:'JetBrainsMono Nerd Font Mono';text-align:center;text-anchor:middle;fill:#1a1a1a;fill-opacity:1;stroke:none;stroke-width:0.264587;stroke-dasharray:none;stroke-opacity:1"
+         x="89.437729"
+         y="40.397305"
+         id="text4-7-0"><tspan
+           id="tspan4-5-7"
+           style="fill:#1a1a1a;fill-opacity:1;stroke:none;stroke-width:0.264587"
+           x="89.437729"
+           y="40.397305">atomo 2</tspan></text>
+    </g>
+    <g
+       id="g3-0-4-8"
+       transform="translate(41.613431,48.94119)">
+      <rect
+         style="fill:none;stroke:#000000;stroke-width:0.264583;stroke-dasharray:none;stroke-opacity:1"
+         id="rect2-2-7-6"
+         width="25.468779"
+         height="6.9311213"
+         x="76.698975"
+         y="35.883976" />
+      <text
+         xml:space="preserve"
+         style="font-size:2.91047px;font-family:'JetBrainsMono Nerd Font Mono';-inkscape-font-specification:'JetBrainsMono Nerd Font Mono';text-align:center;text-anchor:middle;fill:#1a1a1a;fill-opacity:1;stroke:none;stroke-width:0.264587;stroke-dasharray:none;stroke-opacity:1"
+         x="89.437729"
+         y="40.397305"
+         id="text4-7-4-8"><tspan
+           id="tspan4-5-5-8"
+           style="fill:#1a1a1a;fill-opacity:1;stroke:none;stroke-width:0.264587"
+           x="89.437729"
+           y="40.397305">atomo 1</tspan></text>
+    </g>
+    <g
+       id="g3-0-4-8-6"
+       transform="translate(41.627983,67.844244)">
+      <rect
+         style="fill:none;stroke:#000000;stroke-width:0.264583;stroke-dasharray:none;stroke-opacity:1"
+         id="rect2-2-7-6-8"
+         width="25.468779"
+         height="6.9311213"
+         x="76.698975"
+         y="35.883976" />
+      <text
+         xml:space="preserve"
+         style="font-size:2.91047px;font-family:'JetBrainsMono Nerd Font Mono';-inkscape-font-specification:'JetBrainsMono Nerd Font Mono';text-align:center;text-anchor:middle;fill:#1a1a1a;fill-opacity:1;stroke:none;stroke-width:0.264587;stroke-dasharray:none;stroke-opacity:1"
+         x="89.437729"
+         y="40.397305"
+         id="text4-7-4-8-9"><tspan
+           id="tspan4-5-5-8-2"
+           style="fill:#1a1a1a;fill-opacity:1;stroke:none;stroke-width:0.264587"
+           x="89.437729"
+           y="40.397305">atomo 5</tspan></text>
+    </g>
+    <g
+       id="g3-9-4"
+       transform="translate(40.625639,2.0072529)">
+      <rect
+         style="fill:none;stroke:#000000;stroke-width:0.264583;stroke-dasharray:none;stroke-opacity:1"
+         id="rect2-7-3"
+         width="25.468779"
+         height="6.9311213"
+         x="76.698975"
+         y="35.883976" />
+      <text
+         xml:space="preserve"
+         style="font-size:2.91047px;font-family:'JetBrainsMono Nerd Font Mono';-inkscape-font-specification:'JetBrainsMono Nerd Font Mono';text-align:center;text-anchor:middle;fill:#1a1a1a;fill-opacity:1;stroke:none;stroke-width:0.264587;stroke-dasharray:none;stroke-opacity:1"
+         x="89.437729"
+         y="40.397305"
+         id="text4-1-1"><tspan
+           id="tspan4-2-4"
+           style="fill:#1a1a1a;fill-opacity:1;stroke:none;stroke-width:0.264587"
+           x="89.437729"
+           y="40.397305">atomo 3</tspan></text>
+    </g>
+    <g
+       id="g3-5-8"
+       transform="translate(80.574173,-4.9238689)">
+      <rect
+         style="fill:none;stroke:#000000;stroke-width:0.264583;stroke-dasharray:none;stroke-opacity:1"
+         id="rect2-25-7"
+         width="25.468779"
+         height="6.9311213"
+         x="76.698975"
+         y="35.883976" />
+      <text
+         xml:space="preserve"
+         style="font-size:2.91047px;font-family:'JetBrainsMono Nerd Font Mono';-inkscape-font-specification:'JetBrainsMono Nerd Font Mono';text-align:center;text-anchor:middle;fill:#1a1a1a;fill-opacity:1;stroke:none;stroke-width:0.264587;stroke-dasharray:none;stroke-opacity:1"
+         x="89.437729"
+         y="40.397305"
+         id="text4-4-1"><tspan
+           id="tspan4-7-7"
+           style="fill:#1a1a1a;fill-opacity:1;stroke:none;stroke-width:0.264587"
+           x="89.437729"
+           y="40.397305">atomo 4</tspan></text>
+    </g>
+    <g
+       id="g3-0-44-2"
+       transform="translate(80.574173,8.9383743)">
+      <rect
+         style="fill:none;stroke:#000000;stroke-width:0.264583;stroke-dasharray:none;stroke-opacity:1"
+         id="rect2-2-3-7"
+         width="25.468779"
+         height="6.9311213"
+         x="76.698975"
+         y="35.883976" />
+      <text
+         xml:space="preserve"
+         style="font-size:2.91047px;font-family:'JetBrainsMono Nerd Font Mono';-inkscape-font-specification:'JetBrainsMono Nerd Font Mono';text-align:center;text-anchor:middle;fill:#1a1a1a;fill-opacity:1;stroke:none;stroke-width:0.264587;stroke-dasharray:none;stroke-opacity:1"
+         x="89.437729"
+         y="40.397305"
+         id="text4-7-0-2"><tspan
+           id="tspan4-5-7-2"
+           style="fill:#1a1a1a;fill-opacity:1;stroke:none;stroke-width:0.264587"
+           x="89.437729"
+           y="40.397305">atomo 2</tspan></text>
+    </g>
+    <g
+       id="g3-0-4-8-61"
+       transform="translate(80.700301,100.58583)">
+      <rect
+         style="fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:0.264583;stroke-dasharray:none;stroke-opacity:1"
+         id="rect2-2-7-6-0"
+         width="25.468779"
+         height="6.9311213"
+         x="76.698975"
+         y="35.883976" />
+      <text
+         xml:space="preserve"
+         style="font-size:2.91047px;font-family:'JetBrainsMono Nerd Font Mono';-inkscape-font-specification:'JetBrainsMono Nerd Font Mono';text-align:center;text-anchor:middle;fill:#1a1a1a;fill-opacity:1;stroke:none;stroke-width:0.264587;stroke-dasharray:none;stroke-opacity:1"
+         x="89.437729"
+         y="40.397305"
+         id="text4-7-4-8-6"><tspan
+           id="tspan4-5-5-8-1"
+           style="fill:#1a1a1a;fill-opacity:1;stroke:none;stroke-width:0.264587"
+           x="89.437729"
+           y="40.397305">atomo 1</tspan></text>
+    </g>
+    <g
+       id="g3-0-4-8-6-5"
+       transform="translate(80.700301,93.654711)">
+      <rect
+         style="fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:0.264583;stroke-dasharray:none;stroke-opacity:1"
+         id="rect2-2-7-6-8-9"
+         width="25.468779"
+         height="6.9311213"
+         x="76.698975"
+         y="35.883976" />
+      <text
+         xml:space="preserve"
+         style="font-size:2.91047px;font-family:'JetBrainsMono Nerd Font Mono';-inkscape-font-specification:'JetBrainsMono Nerd Font Mono';text-align:center;text-anchor:middle;fill:#1a1a1a;fill-opacity:1;stroke:none;stroke-width:0.264587;stroke-dasharray:none;stroke-opacity:1"
+         x="89.437729"
+         y="40.397305"
+         id="text4-7-4-8-9-4"><tspan
+           id="tspan4-5-5-8-2-9"
+           style="fill:#1a1a1a;fill-opacity:1;stroke:none;stroke-width:0.264587"
+           x="89.437729"
+           y="40.397305">atomo 5</tspan></text>
+    </g>
+    <g
+       id="g3-9-4-0"
+       transform="translate(80.574173,2.0072529)">
+      <rect
+         style="fill:none;stroke:#000000;stroke-width:0.264583;stroke-dasharray:none;stroke-opacity:1"
+         id="rect2-7-3-9"
+         width="25.468779"
+         height="6.9311213"
+         x="76.698975"
+         y="35.883976" />
+      <text
+         xml:space="preserve"
+         style="font-size:2.91047px;font-family:'JetBrainsMono Nerd Font Mono';-inkscape-font-specification:'JetBrainsMono Nerd Font Mono';text-align:center;text-anchor:middle;fill:#1a1a1a;fill-opacity:1;stroke:none;stroke-width:0.264587;stroke-dasharray:none;stroke-opacity:1"
+         x="89.437729"
+         y="40.397305"
+         id="text4-1-1-1"><tspan
+           id="tspan4-2-4-7"
+           style="fill:#1a1a1a;fill-opacity:1;stroke:none;stroke-width:0.264587"
+           x="89.437729"
+           y="40.397305">atomo 3</tspan></text>
+    </g>
+    <path
+       style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0.253876;stroke-dasharray:1.52325, 1.52325;stroke-dashoffset:0;stroke-opacity:1"
+       d="M 110.15838,19.222009 V 164.13848"
+       id="path17" />
+    <path
+       style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0.253876;stroke-dasharray:1.52326, 1.52326;stroke-dashoffset:0;stroke-opacity:1"
+       d="M 150.1594,19.222009 V 164.13848"
+       id="path17-5" />
+    <path
+       style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0.253876;stroke-dasharray:1.52326, 1.52326;stroke-dashoffset:0;stroke-opacity:1"
+       d="M 190.10793,19.222009 V 164.13848"
+       id="path17-5-6" />
+    <path
+       style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#marker19)"
+       d="m 131.04679,91.756288 0.0146,11.971932"
+       id="path18" />
+    <path
+       style="fill:#333333;stroke-width:0.264583"
+       d="m 143.91347,81.76134 h 3.13734"
+       id="path11" />
+    <path
+       style="fill:#333333;stroke-width:0.264583"
+       d="m 143.91347,81.76134 h 3.13734"
+       id="path13" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:0.264583;stroke-dasharray:none;stroke-opacity:1"
+       d="m 142.11406,82.382291 h 4.93675 v 31.248519 l -4.93675,-0.0462"
+       id="path14" />
+    <path
+       style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.264583;stroke-linecap:butt;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1;marker-start:url(#marker22)"
+       d="M 170.1369,126.48745 V 97.996907 h -23.08937"
+       id="path16" />
+    <path
+       style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#marker1)"
+       d="m 89.959655,85.048369 h 0.09611 V 58.42001"
+       id="path23" />
+    <path
+       style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:0.265;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1;marker-start:url(#marker6)"
+       d="m 179.64464,129.40639 v -10.11027 l 30.30508,-0.0112 v 4.60833"
+       id="path31" />
+    <path
+       style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:0.265;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#ArrowTriangleStylized)"
+       d="m 179.64464,143.53322 v 10.11027 l 30.30508,0.0112 v -4.60833"
+       id="path31-5" />
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,0.04950999,10.953044)"
+       id="text32"
+       style="font-size:11px;font-family:'JetBrainsMono Nerd Font Mono';-inkscape-font-specification:'JetBrainsMono Nerd Font Mono';text-align:center;white-space:pre;shape-inside:url(#rect32);fill:#000000;fill-opacity:1;stroke:none;stroke-width:1.00157;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1"><tspan
+         x="307.00486"
+         y="331.31836"
+         id="tspan2">Attivatore</tspan></text>
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,120.03957,49.784968)"
+       id="text32-2"
+       style="font-size:11px;font-family:'JetBrainsMono Nerd Font Mono';-inkscape-font-specification:'JetBrainsMono Nerd Font Mono';text-align:center;white-space:pre;shape-inside:url(#rect32-9);display:inline;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1.00157;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1"><tspan
+         x="310.30486"
+         y="331.31836"
+         id="tspan3">Inibitore</tspan></text>
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,-1.0853687,1.4973443)"
+       id="text33"
+       style="font-size:11px;font-family:'JetBrainsMono Nerd Font Mono';-inkscape-font-specification:'JetBrainsMono Nerd Font Mono';text-align:center;white-space:pre;shape-inside:url(#rect33);fill:#000000;fill-opacity:1;stroke:none;stroke-width:1.00157;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1"><tspan
+         x="331.01191"
+         y="75.130859"
+         id="tspan6">FIFO</tspan></text>
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,39.399468,1.4973443)"
+       id="text33-6"
+       style="font-size:11px;font-family:'JetBrainsMono Nerd Font Mono';-inkscape-font-specification:'JetBrainsMono Nerd Font Mono';text-align:center;white-space:pre;shape-inside:url(#rect33-9);display:inline;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1.00157;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1"><tspan
+         x="331.01191"
+         y="75.130859"
+         id="tspan7">FIFO</tspan></text>
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,-1.0227936,144.231)"
+       id="text33-6-1"
+       style="font-size:11px;font-family:'JetBrainsMono Nerd Font Mono';-inkscape-font-specification:'JetBrainsMono Nerd Font Mono';text-align:center;white-space:pre;shape-inside:url(#rect33-9-9);display:inline;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1.00157;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1"><tspan
+         x="331.01191"
+         y="75.130859"
+         id="tspan8">LIFO</tspan></text>
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,39.927494,144.231)"
+       id="text33-6-1-5"
+       style="font-size:11px;font-family:'JetBrainsMono Nerd Font Mono';-inkscape-font-specification:'JetBrainsMono Nerd Font Mono';text-align:center;white-space:pre;shape-inside:url(#rect33-9-9-8);display:inline;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1.00157;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1"><tspan
+         x="331.01191"
+         y="75.130859"
+         id="tspan9">LIFO</tspan></text>
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,78.999812,144.231)"
+       id="text33-6-1-3"
+       style="font-size:11px;font-family:'JetBrainsMono Nerd Font Mono';-inkscape-font-specification:'JetBrainsMono Nerd Font Mono';text-align:center;white-space:pre;shape-inside:url(#rect33-9-9-0);display:inline;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1.00157;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1"><tspan
+         x="331.01191"
+         y="75.130859"
+         id="tspan10">LIFO</tspan></text>
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,79.884305,1.4973443)"
+       id="text33-8"
+       style="font-size:11px;font-family:'JetBrainsMono Nerd Font Mono';-inkscape-font-specification:'JetBrainsMono Nerd Font Mono';text-align:center;white-space:pre;shape-inside:url(#rect33-6);display:inline;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1.00157;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1"><tspan
+         x="331.01191"
+         y="75.130859"
+         id="tspan11">FIFO</tspan></text>
+    <path
+       style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.265;stroke-linecap:butt;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#marker34)"
+       d="m 89.959655,109.93664 0.09611,35.21578"
+       id="path33" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:0.264583;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#marker3)"
+       d="m 102.79015,54.95445 h 28.27119 l -0.0145,29.870716"
+       id="path2" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:0.264583;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#ArrowTriangleStylized)"
+       d="M 157.39928,133.00425 H 95.924727 v -23.06797"
+       id="path5" />
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,36.066915,5.7863406)"
+       id="text5"
+       style="font-size:11px;font-family:'JetBrainsMono Nerd Font Mono';-inkscape-font-specification:'JetBrainsMono Nerd Font Mono';text-align:center;white-space:pre;shape-inside:url(#rect5);fill:#000000;fill-opacity:1;stroke:none;stroke-width:1;stroke-dasharray:none;stroke-opacity:1"><tspan
+         x="191.07207"
+         y="460.21484"
+         id="tspan12">1</tspan></text>
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,35.954932,-49.971997)"
+       id="text5-3"
+       style="font-size:11px;font-family:'JetBrainsMono Nerd Font Mono';-inkscape-font-specification:'JetBrainsMono Nerd Font Mono';text-align:center;white-space:pre;shape-inside:url(#rect5-7);display:inline;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1;stroke-dasharray:none;stroke-opacity:1"><tspan
+         x="191.07207"
+         y="460.21484"
+         id="tspan13">2</tspan></text>
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,77.347472,-49.971997)"
+       id="text5-3-2"
+       style="font-size:11px;font-family:'JetBrainsMono Nerd Font Mono';-inkscape-font-specification:'JetBrainsMono Nerd Font Mono';text-align:center;white-space:pre;shape-inside:url(#rect5-7-9);display:inline;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1;stroke-dasharray:none;stroke-opacity:1"><tspan
+         x="191.07207"
+         y="460.21484"
+         id="tspan14">3</tspan></text>
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,116.14198,-9.4496956)"
+       id="text5-3-6"
+       style="font-size:11px;font-family:'JetBrainsMono Nerd Font Mono';-inkscape-font-specification:'JetBrainsMono Nerd Font Mono';text-align:center;white-space:pre;shape-inside:url(#rect5-7-6);display:inline;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1;stroke-dasharray:none;stroke-opacity:1"><tspan
+         x="191.07207"
+         y="460.21484"
+         id="tspan15">5</tspan></text>
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,148.20163,35.89342)"
+       id="text5-3-6-22"
+       style="font-size:11px;font-family:'JetBrainsMono Nerd Font Mono';-inkscape-font-specification:'JetBrainsMono Nerd Font Mono';text-align:center;white-space:pre;shape-inside:url(#rect5-7-6-5);display:inline;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1;stroke-dasharray:none;stroke-opacity:1"><tspan
+         x="191.07207"
+         y="460.21484"
+         id="tspan16">6</tspan></text>
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,147.47403,-4.1629219)"
+       id="text5-3-6-1"
+       style="font-size:11px;font-family:'JetBrainsMono Nerd Font Mono';-inkscape-font-specification:'JetBrainsMono Nerd Font Mono';text-align:center;white-space:pre;shape-inside:url(#rect5-7-6-3);display:inline;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1;stroke-dasharray:none;stroke-opacity:1"><tspan
+         x="191.07207"
+         y="460.21484"
+         id="tspan17">7</tspan></text>
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,77.069659,15.710211)"
+       id="text5-3-6-7"
+       style="font-size:11px;font-family:'JetBrainsMono Nerd Font Mono';-inkscape-font-specification:'JetBrainsMono Nerd Font Mono';text-align:center;white-space:pre;shape-inside:url(#rect5-7-6-9);display:inline;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1;stroke-dasharray:none;stroke-opacity:1"><tspan
+         x="191.07207"
+         y="460.21484"
+         id="tspan18">8</tspan></text>
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,77.347472,-23.121713)"
+       id="text5-3-6-2"
+       style="font-size:11px;font-family:'JetBrainsMono Nerd Font Mono';-inkscape-font-specification:'JetBrainsMono Nerd Font Mono';text-align:center;white-space:pre;shape-inside:url(#rect5-7-6-7);display:inline;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1;stroke-dasharray:none;stroke-opacity:1"><tspan
+         x="191.07207"
+         y="460.21484"
+         id="tspan19">4</tspan></text>
+  </g>
+</svg>
