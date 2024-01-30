@@ -178,8 +178,8 @@ project/
 
 - Interazione con la FIFO ([[sezione 2.3.1 TODO]{.underline}][FIFO]);
 - Interazione con la LIFO ([[sezione 2.3.2 TODO]{.underline}][LIFO in shared memory]);
-- Interazione con i semafori ([[sezione 2.4 TODO]{.underline}][Inibitore e ciclo di attivazione e scissione]);
-- Signal handling e signal (un)masking ([[sezione 2.4 TODO]{.underline}][Inibitore e ciclo di attivazione e scissione]);
+- Interazione con i semafori ([[sezione 2.4 TODO]{.underline}][Processi e lifecycle]);
+- Signal handling e signal (un)masking ([[sezione 2.4 TODO]{.underline}][Processi e lifecycle]);
 - Interazione con le memorie condivise;
 - Stampa formattata su console;
 - Util generiche (math utils, timer, passaggio di argomenti tramite `execv`, file temporanei, ecc).
@@ -253,27 +253,127 @@ nella simulazione.
 
 Gli atomi più recentemente scissi dall'attivatore, ammesso che non si traformino in scorie, memorizzano il proprio pid
 nella LIFO. Quest'ultima risiede in shared memory, in modo tale che sia accessibile a tutti i processi che devono manipolarne
-lo stato (le manipolazioni effettuate saranno dettagliate in [[sezione 2.3 TODO]{.underline}][Inibitore e ciclo di attivazione e scissione]).
+lo stato (le manipolazioni effettuate saranno dettagliate in [[sezione 2.3 TODO]{.underline}][Processi e lifecycle]).
 
 L'implementazione data, a seconda del fabbisogno determinato dalla configurazione della simulazione, è automaticamente
 in grado di aumentare (o diminuire) lo spazio riservato per la LIFO (richiedendo al SO un nuovo segmento di shared memory delle
 opportune dimensioni, copiando i dati pre-esistenti e rilasciando il segmento precedente).
 
+\pagebreak
+
+## Processi e lifecycle
+
+Nelle seguenti sezioni sono riportate le principali scelte progettuali relative alla "main logic" di tutti i processi.
+
+A simulazione avviata, viene mantenuto uno stato consistente grazie all'uso di semafori, che permettono di regolare
+in maniera opportuna l'alternarsi delle operazioni dei vari processi.
+
+Un esempio di parte di queste dinamiche è visionabile
+in [[sezione 2.4.6 TODO]{.underline}][Esempio di un ciclo di attivazione e scissione];
+
+Per visionare per esteso la logica di ogni processo e l'esatto utilizzo dei semafori, visionare i sorgenti, opportunamente
+documentati tramite appositi commenti.
+
+### Master
+
+Il master resta in attesa tramite `sigsuspend` di uno dei seguenti segnali:
+
+- `SIGMELT`, tramite cui l'alimentatore o un atomo che ha tentato la scissione comunicano l'avvenuto fallimento di
+  una `fork` e quindi la terminazione per `MELTDOWN`;
+- `SIGALRM`, inviato dal `timer` di 1 secondo, inizializzato dal processo stesso, per controllare lo stato della simulazione
+  (ossia terminazioni per `TIMEOUT`, `EXPLODE`, `BLACKOUT`) e stampare le statistiche.
+- `SIGTERM`, tramite cui è possibile terminare manualmente la simulazione:
+  - da terminale con comando `kill -SIGTERM <master_pid>`;
+  - con comando `./soctl.sh stop`, che esegue quanto sopra;
+
+In qualsiasi stato di terminazione (inclusa quella manuale), il master si premura di inviare `SIGTERM` a tutti gli
+altri processi della simulazione per consentire una graceful exit, per poi procedere al rilascio delle risorse IPC al SO.
+
+### Attivatore
+
+L'attivatore resta in attesa tramite `sigsuspend` di uno dei seguenti segnali:
+
+- `SIGALRM`, inviato dal `timer` di `STEP_ATTIVATORE` nanosecondi, inizializzato dal processo stesso, per causare
+  l'attivazione di un atomo, che viene così selezionato:
+  - se la LIFO non è vuota, preleva l'atomo scisso più recentemente;
+  - se la FIFO non è vuota, preleva il più vecchio atomo inserito;
+  - se così facendo è stato selezionato un atomo, gli viene inviato `SIGACTV` per causarne la scissione;
+  - se entrambe le strutture sono vuote, non viene selezionato alcun atomo e l'attivazione non avviene.
+
+### Atomo
+
+L'atomo resta in attesa tramite `sigsuspend` di uno dei seguenti segnali:
+
+- `SIGACTV`, inviato dall'attivatore, per richiedere la scissione.  
+   Questo segnale dà il via a una sequenza di operazioni che variano a seconda dello stato dell'atomo e che possono
+   coinvolgere l'inibitore, se presente, per inibire l'energia liberata e trasformare un atomo in scoria;
+- `SIGWAST`, inviato dall'inibitore per trasformare un atomo in scoria dopo la scissione;
+- `SIGTERM`, inviato dal master per indicare la terminazione della simulazione.
+
+### Inibitore
+
+L'inibitore resta in attesa:
+
+- Su un semaforo dedicato che viene incrementato dagli atomi a seguito della scissione,
+  per segnalare all'inibitore di eseguire le relative operazioni di controllo:
+  - assorbimento di tutta l'energia necessaria a evitare `EXPLODE`;
+  - trasformazione in scoria di uno degli atomi scissi per evitare `MELTDOWN`.
+- Di `SIGTERM`, da parte del master, per indicare la terminazione della simulazione.
+
+
+### Alimentatore
+
+L'alimentore esegue le sue funzionalità in due modalità distinte, che dipendono dallo stato dell'inibitore e che, quindi,
+possono alternarsi un numero arbitrario di volte nel corso di una singola simulazione:
+
+- se l'inibitore è `OFF`, ogni `STEP_ALIMENTAZIONE` esegue la `fork` di `N_NUOVI_ATOMI`, senza limitazioni;
+- se l'inibitore è `ON`, ogni `STEP_ALIMENTAZIONE` esegue un numero limitato ($\leq$ `N_NUOVI_ATOMI`) di `fork` indicato
+  dal valore di un apposito semaforo utilizzato per evitare `MELTDOWN`.
+
+### Esempio di un ciclo di attivazione e scissione
+
 |
-
-## Inibitore e ciclo di attivazione e scissione
-
-Durante ogni secondo della simulazione si ripeteranno diversi cicli di attivazione e scissione, sulla base della configurazione,
-in particolare del parametro `STEP_ATTIVATORE`.
-
-| Segue un esempio generico.
+| Di seguito viene riportato un esempio di ciclo di attivazione, in particolare uno in cui sia presente il processo inibitore:
+|
 |
 |
 
 ![Esempio di un ipotetico ciclo di attivazione](assets/cycle.svg){ width=65% }
 
-Quando un atomo riceve un `SIGACTV` dal processo attivatore, ammesso che non debba trasformarsi in scoria,
 
+|
+|
 
+Dove le frecce indicano le seguenti operazioni:
 
-## exit in qualsiasi punto senza leak
+1. L'attivatore tenta per prima cosa di rimuovere dalla LIFO un atomo scisso di recente, tuttavia la LIFO è vuota.
+
+<!-- -->
+
+2. L'attivatore ne rimuove, quindi, uno dalla FIFO.
+
+<!-- -->
+
+3. L'attivatore provvede all'invio di `SIGACTV` all'atomo selezionato.
+
+<!-- -->
+
+4. L'atomo (padre) si scinde, cioè crea un nuovo atomo (figlio), produce energia e aggiorna le statistiche.
+
+<!-- -->
+
+5. L'atomo padre inserisce in LIFO (atomi scissi recentemente) se stesso e l'atomo figlio appena generato.
+
+<!-- -->
+
+6. L'atomo padre incrementa il semaforo dell'inibitore per permettergli di svolgere le sue funzioni.
+
+<!-- -->
+
+7. L'inibitore trasforma in scoria l'atomo figlio tramite l'invio di `SIGWAST`.
+
+<!-- -->
+
+8. L'atomo figlio aggiorna le statistiche e, solo dopo che l'inibitore ha terminato, restituisce il controllo al master (in caso debba eseguire le relative
+   operazioni di controllo) e successivamente di nuovo all'attivatore (per procedere con un nuovo ciclo di attivazione).
+   Infine, l'atomo figlio termina la sua esecuzione.

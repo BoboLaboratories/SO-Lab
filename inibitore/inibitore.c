@@ -1,4 +1,6 @@
+#include <errno.h>
 #include <stdlib.h>
+#include <sys/wait.h>
 
 #include "model.h"
 #include "lib/sem.h"
@@ -89,23 +91,10 @@ int main(int argc, char *argv[]) {
                 }
             }
         }
+
         if (log) {
             printf("\n");
         }
-
-        // allow an atom to update waste simulation status
-//        sem_buf(&sops, SEM_ATOM, +1, 0);
-//        if (sem_op(model->ipc->semid, &sops, 1) == -1) {
-//            print (E, "Could not allow atom to update sim.\n");
-//        }
-
-        // wait for the above-mentioned atom to perform said update
-//        sem_buf(&sops, SEM_ATOM, 0, 0);
-//        if (sem_op(model->ipc->semid, &sops, 1) == -1) {
-//            print(E, "Could not wait for atom to update sim.\n");
-//        }
-
-//        end_activation_cycle();
 
         unmask(SIGTERM);
     }

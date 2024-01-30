@@ -185,11 +185,6 @@ static void waste(int status) {
     model->stats->n_wastes++;
     model->stats->n_atoms--;
 
-    if (model->stats->n_atoms < 0) {
-        errno = 0;
-        print(E, "MOLTO MALE"); // TODO
-    }
-
     end_activation_cycle();
 
     if (status == EXIT_NATURAL && (ppid == model->ipc->master_pid || ppid == model->ipc->alimentatore_pid)) {
