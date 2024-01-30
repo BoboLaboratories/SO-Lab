@@ -69,14 +69,14 @@ int main(int argc, char *argv[]) {
             sem_buf(&sops[0], SEM_INIBITORE_OFF, 0, IPC_NOWAIT);
             sem_buf(&sops[1], SEM_ALIMENTATORE, -1, 0);
             if (sem_op(model->ipc->semid, sops, 2) == 0 || errno == EAGAIN) {
+                sprintf(argvc[2], "%d", rand_between(MIN_N_ATOMICO, N_ATOM_MAX));
+
                 sem_buf(&sops[0], SEM_MASTER, -1, 0);
                 if (sem_op(model->ipc->semid, &sops[0], 1) == -1) {
                     print(E, "Could not acquire master semaphore.\n");
                     // TODO release alimentatore
                 }
 
-
-                sprintf(argvc[2], "%d", rand_between(MIN_N_ATOMICO, N_ATOM_MAX));
                 pid_t atom = fork_execv(argvc);
 
                 sem_buf(&sops[0], SEM_MASTER, +1, 0);

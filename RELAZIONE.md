@@ -263,6 +263,17 @@ opportune dimensioni, copiando i dati pre-esistenti e rilasciando il segmento pr
 
 ## Inibitore e ciclo di attivazione e scissione
 
+Durante ogni secondo della simulazione si ripeteranno diversi cicli di attivazione e scissione, sulla base della configurazione,
+in particolare del parametro `STEP_ATTIVATORE`.
+
+| Segue un esempio generico.
+|
+|
+
+![Esempio di un ipotetico ciclo di attivazione](assets/cycle.svg){ width=65% }
+
 Quando un atomo riceve un `SIGACTV` dal processo attivatore, ammesso che non debba trasformarsi in scoria,
+
+
 
 ## exit in qualsiasi punto senza leak
