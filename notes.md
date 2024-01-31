@@ -1,8 +1,8 @@
 # TODO
 
 ## Very last
-- [ ] test timeout, blacout, explode senza inhibitor
-- [ ] test timeout, blacout, explode con inhibitor
+- [x] test timeout, blackout, explode senza inhibitor
+- [ ] test timeout, blackout, explode con inhibitor
 - [ ] test di meltdown senza inhibitor
 - [ ] test di meltdown con inhibitor
 - [ ] test di meltdown prima ancora del main loop
