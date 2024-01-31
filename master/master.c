@@ -25,10 +25,18 @@ extern sig_atomic_t sig;
 static struct SimulationStats sim;
 static timer_t timer;
 
+int expected;
+
 int main(int argc, char *argv[]) {
 
+
+    if (parse_int(argv[1], &expected) == -1) {
+        print(E, "Could not parse expected result.\n");
+        exit(EXIT_FAILURE);
+    }
+
     // check for flags
-    for (int i = 1; i < argc; i++) {
+    for (int i = 2; i < argc; i++) {
         if (strcmp("--inhibitor", argv[i]) == 0) {
             flags[INHIBITOR_FLAG] = 1;
         } else if (strcmp("--no-inh-log", argv[i]) == 0) {
@@ -317,6 +325,7 @@ static void copy_stats() {
 }
 
 static void dummy() {}
+static void unwanted() {}
 
 void cleanup() {
     // detach and remove IPC resources
@@ -332,7 +341,11 @@ void cleanup() {
         }
     }
 
-    dummy();
+    if ((int) sim.status == expected) {
+        dummy();
+    } else {
+        unwanted();
+    }
 }
 
 static void sigterm_handler() {

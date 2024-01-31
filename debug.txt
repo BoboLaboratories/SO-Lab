@@ -1,6 +1,6 @@
 file ./master
 
-
+set args --inhibitor
 
 set pagination off
 set $i=0
@@ -20,5 +20,7 @@ set $i=($i + 1)
 print $i
 run
 end
+
+break unwanted
 
 run

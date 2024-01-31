@@ -156,6 +156,7 @@ int main(int argc, char *argv[]) {
                         if (errno != EAGAIN) {
                             print(E, "Could not wake up inhibitor.\n");
                         } else {
+                            DEBUG_BREAKPOINT;
                             end_activation_cycle();
                         }
                     }

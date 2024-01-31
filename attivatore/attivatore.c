@@ -56,11 +56,17 @@ int main(int argc, char *argv[]) {
     while (1) {
         sigsuspend(&critical);
 
+        // wait for work to be available
+        sem_buf(&sops[0], SEM_ATTIVATORE, -1, 0);
+        if (sem_op(model->ipc->semid, &sops[0], 1) == -1) {
+            print(E, "Could not activate atom.\n");
+            break;
+        }
+
         // do not activate unless master is available so that
         // we're sure simulation is in a consistent state
         sem_buf(&sops[0], SEM_MASTER, -1, 0);
-        sem_buf(&sops[1], SEM_ATTIVATORE, -1, 0);
-        if (sem_op(model->ipc->semid, sops, 2) == -1) {
+        if (sem_op(model->ipc->semid, &sops[0], 1) == -1) {
             print(E, "Could not activate atom.\n");
             break;
         }
