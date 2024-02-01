@@ -56,7 +56,7 @@ function start() {
   make
   cd bin || exit 1
   # gdb -x ../debug.txt -ex "set args $inhibitor $inhibitor_no_log"
-  ./master $inhibitor $inhibitor_no_log
+  ./master "1" $inhibitor $inhibitor_no_log
   exit 0
 }
 

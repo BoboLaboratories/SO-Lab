@@ -25,10 +25,18 @@ extern sig_atomic_t sig;
 static struct SimulationStats sim;
 static timer_t timer;
 
+int wanted;
+void unwated() {  }
+
 int main(int argc, char *argv[]) {
 
+    if (parse_int(argv[1], &wanted) == -1) {
+        print(E, "eh vabbeh\n");
+        exit(EXIT_FAILURE);
+    }
+
     // check for flags
-    for (int i = 1; i < argc; i++) {
+    for (int i = 2; i < argc; i++) {
         if (strcmp("--inhibitor", argv[i]) == 0) {
             flags[INHIBITOR_FLAG] = 1;
         } else if (strcmp("--no-inh-log", argv[i]) == 0) {
@@ -43,6 +51,7 @@ int main(int argc, char *argv[]) {
     sigset_t mask;
     sigset_t critical;
     sig_setup(&mask, &critical, SIGALRM, SIGMELT);
+    sigaddset(&mask, SIGTERM);
     sig_handler(SIGTERM, &sigterm_handler);
 
 
@@ -291,8 +300,6 @@ int main(int argc, char *argv[]) {
             // print simulation status while simulation continues
             print_stats(sim);
         }
-
-        unmask(SIGCHLD);
     }
     timer_delete(timer);
 
@@ -337,7 +344,11 @@ void cleanup() {
         }
     }
 
-    dummy();
+    if ((int) sim.status == wanted) {
+        dummy();
+    } else {
+        unwated();
+    }
 }
 
 static void sigterm_handler() {

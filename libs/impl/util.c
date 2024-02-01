@@ -28,7 +28,13 @@ timer_t timer_start(long nanos) {
     return timerid;
 }
 
+static int srand_done = 0;
+
 int rand_between(int min, int max) {
+    if (!srand_done) {
+        srand(getpid());
+        srand_done = 1;
+    }
     return rand() % (max + 1 - min) + min;
 }
 

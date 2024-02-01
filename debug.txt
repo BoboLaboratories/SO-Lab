@@ -7,6 +7,7 @@ set $i=0
 
 handle SIGUSR1 nostop
 handle SIGTERM nostop
+handle all print
 
 break dummy
 commands
@@ -15,6 +16,6 @@ print $i
 run
 end
 
-break intrsys
+break unwanted
 
 run

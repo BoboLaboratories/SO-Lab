@@ -232,7 +232,6 @@ static void end_activation_cycle() {
 }
 
 static void split(int *atomic_number, int *child_atomic_number) {
-    srand(pid);
     *child_atomic_number = rand_between(1, *atomic_number - 1);
     *atomic_number = *atomic_number - *child_atomic_number;
 }
