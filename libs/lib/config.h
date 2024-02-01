@@ -22,8 +22,8 @@ struct Config {
     const long n_atomi_init;
     const long n_nuovi_atomi;
 
-    const long n_atom_max;
     const long min_n_atomico;
+    const long n_atom_max;
 
     const long step_attivatore;
     const long step_alimentazione;

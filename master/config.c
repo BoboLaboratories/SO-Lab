@@ -11,8 +11,8 @@ static const char *variables[9] = {
     "N_ATOMI_INIT",
     "N_NUOVI_ATOMI",
 
-    "N_ATOM_MAX",
     "MIN_N_ATOMICO",
+    "N_ATOM_MAX",
 
     "STEP_ATTIVATORE",
     "STEP_ALIMENTAZIONE",
@@ -46,19 +46,19 @@ int load_config() {
     }
 
     // SIM_DURATION
-    if (*(addr + 0) <= 0) {
-        print(E, "Configuration error: SIM_DURATION must be grater than or equals to 0.\n");
+    if (*(addr + 0) < 1) {
+        print(E, "Configuration error: SIM_DURATION must be grater than 0.\n");
         err = 1;
     }
 
-    // MIN_N_ATOMICO > 1
-    if (*(addr + 4) <= 1) {
+    // MIN_N_ATOMICO >= 1
+    if (*(addr + 3) <= 1) {
         print(E, "Configuration error: MIN_N_ATOMICO must be grater than 1.\n");
         err = 1;
     }
 
-    // N_ATOM_MAX <= MIN_N_ATOMICO
-    if (*(addr + 3) <= *(addr + 4)) {
+    // MIN_N_ATOMICO < N_ATOM_MAX
+    if (*(addr + 3) > *(addr + 4)) {
         print(E, "Configuration error: N_ATOM_MAX must be greater than MIN_N_ATOMICO.\n");
         err = 1;
     }

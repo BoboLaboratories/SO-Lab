@@ -249,9 +249,10 @@ int main(int argc, char *argv[]) {
         sem_buf(&sops, SEM_MASTER, -1, 0);
         if (sem_op(model->ipc->semid, &sops, 1) == -1) {
             print(E, "Could not acquire master semaphore.\n");
-            intrsys();
+            while (1) ;
+            exit(EXIT_FAILURE);
         }
-        printf("-1 | master\n");
+        //printf("-1 | master\n");
 
         // update elapsed time
         clock_gettime(CLOCK_MONOTONIC_RAW, &sim_curr);
@@ -295,7 +296,7 @@ int main(int argc, char *argv[]) {
             if (sem_op(model->ipc->semid, &sops, 1) == -1) {
                 print(E, "Could not release master semaphore.\n");
             }
-            printf("-1 | master\n");
+            // printf("-1 | master\n");
 
             // print simulation status while simulation continues
             print_stats(sim);
