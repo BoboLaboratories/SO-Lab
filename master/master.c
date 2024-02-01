@@ -213,6 +213,8 @@ int main(int argc, char *argv[]) {
     if (sim.status == STARTING) {
         print(I, "Waiting for all processes to be ready..\n");
         sigprocmask(SIG_SETMASK, &mask, NULL);
+        mask(SIGCHLD);
+
         sem_sync(model->ipc->semid, SEM_SYNC);
 
         sim.status = RUNNING;
@@ -234,8 +236,6 @@ int main(int argc, char *argv[]) {
         // consume termination information for N_ATOMI_INIT
         while (waitpid(-1, NULL, WNOHANG) > 0)
             ;
-
-        mask(SIGCHLD);
 
         // acquire master semaphore so that nobody can
         // update stats while we perform our checks

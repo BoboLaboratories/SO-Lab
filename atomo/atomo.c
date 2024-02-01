@@ -34,6 +34,7 @@ int main(int argc, char *argv[]) {
     sigset_t critical;
     sig_setup(&mask, &critical, SIGACTV, SIGWAST);
     sigprocmask(SIG_SETMASK, &mask, NULL);
+    mask(SIGCHLD);
 
 
     // =========================================

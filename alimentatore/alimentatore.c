@@ -37,6 +37,7 @@ int main(int argc, char *argv[]) {
     sigset_t critical;
     sig_setup(&mask, &critical, SIGALRM);
     sigprocmask(SIG_SETMASK, &mask, NULL);
+    mask(SIGCHLD);
 
 
     // =========================================
@@ -92,6 +93,7 @@ int main(int argc, char *argv[]) {
                 }
 
                 if (atom == -1) {
+                    mask(SIGTERM);
                     kill(model->ipc->master_pid, SIGMELT);
                     terminated = 1;
                     break;
