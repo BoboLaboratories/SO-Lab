@@ -26,7 +26,7 @@ static struct SimulationStats sim;
 static timer_t timer;
 
 int expected;
-static void unwated_2() {}
+void intrsys() {}
 
 int main(int argc, char *argv[]) {
 
@@ -249,7 +249,7 @@ int main(int argc, char *argv[]) {
         sem_buf(&sops, SEM_MASTER, -1, 0);
         if (sem_op(model->ipc->semid, &sops, 1) == -1) {
             print(E, "Could not acquire master semaphore.\n");
-            unwated_2();
+            intrsys();
         }
         printf("-1 | master\n");
 
