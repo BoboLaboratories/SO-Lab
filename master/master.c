@@ -26,7 +26,7 @@ static struct SimulationStats sim;
 static timer_t timer;
 
 int wanted;
-void unwated() {  }
+void unwanted() {  }
 
 int main(int argc, char *argv[]) {
 
@@ -347,7 +347,7 @@ void cleanup() {
     if ((int) sim.status == wanted) {
         dummy();
     } else {
-        unwated();
+        unwanted();
     }
 }
 
