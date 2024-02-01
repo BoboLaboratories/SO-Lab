@@ -80,6 +80,7 @@ int main(int argc, char *argv[]) {
                 if (sem_op(model->ipc->semid, &sops[0], 1) == -1) {
                     print(E, "Could not acquire master semaphore.\n");
                 }
+                printf("-1 | al-fork-beg\n");
 
                 pid_t atom = fork_execv(argvc);
 
@@ -90,6 +91,7 @@ int main(int argc, char *argv[]) {
                 if (sem_op(model->ipc->semid, &sops[0], 1) == -1) {
                     print(E, "Could not release master semaphore.\n");
                 }
+                printf("+1 | al-fork-end\n");
 
                 if (atom == -1) {
                     kill(model->ipc->master_pid, SIGMELT);

@@ -70,19 +70,21 @@ int main(int argc, char *argv[]) {
             print(E, "Could not activate atom.\n");
             break;
         }
+        printf("-1 | att-beg\n");
 
         // first try to retrieve an atom from the lifo (recently activated atoms)
         pid_t atom = -1;
         if (lifo_pop(model->lifo, &atom) == -1) {
             // otherwise try to retrieve an atom from the fifo (created by alimentatore)
             if (fifo_remove(model->res->fifo_fd, &atom, sizeof(pid_t)) == -1) {
-                // if no atom is available release semaphores as this step never happened
+                // if no atom is available release semaphores like this step never happened
                 sem_buf(&sops[0], SEM_MASTER, +1, 0);
                 sem_buf(&sops[1], SEM_ATTIVATORE, +1, 0);
                 if (sem_op(model->ipc->semid, sops, 2) == -1) {
                     print(E, "Could not retrieve an atom and release semaphores.\n");
                     break;
                 }
+                printf("+1 | att-no-atoms\n");
                 // continue to next step
                 continue;
             }
@@ -97,6 +99,7 @@ int main(int argc, char *argv[]) {
                 print(E, "Could not release master semaphore.\n");
                 break;
             }
+            printf("+1 | att-fail\n");
         }
     }
 

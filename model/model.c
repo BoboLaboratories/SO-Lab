@@ -23,6 +23,10 @@ extern void cleanup();
 static void cleanup_model();
 
 void init(char *shmid) {
+#ifdef DEBUG
+    setbuf(stdout, NULL);
+#endif
+
     model = malloc(sizeof(struct Model));
     model->res = malloc(sizeof(struct Resources));
 

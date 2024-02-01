@@ -26,6 +26,7 @@ static struct SimulationStats sim;
 static timer_t timer;
 
 int expected;
+static void unwated_2() {}
 
 int main(int argc, char *argv[]) {
 
@@ -248,7 +249,9 @@ int main(int argc, char *argv[]) {
         sem_buf(&sops, SEM_MASTER, -1, 0);
         if (sem_op(model->ipc->semid, &sops, 1) == -1) {
             print(E, "Could not acquire master semaphore.\n");
+            unwated_2();
         }
+        printf("-1 | master\n");
 
         // update elapsed time
         clock_gettime(CLOCK_MONOTONIC_RAW, &sim_curr);
@@ -292,6 +295,7 @@ int main(int argc, char *argv[]) {
             if (sem_op(model->ipc->semid, &sops, 1) == -1) {
                 print(E, "Could not release master semaphore.\n");
             }
+            printf("-1 | master\n");
 
             // print simulation status while simulation continues
             print_stats(sim);

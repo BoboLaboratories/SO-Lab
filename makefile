@@ -1,4 +1,4 @@
-override CFLAGS += -Wvla -Wextra -Werror -D_GNU_SOURCE
+override CFLAGS += -Wvla -Wextra -Werror -D_GNU_SOURCE -DDEBUG
 export CC=gcc
 
 # $@ target

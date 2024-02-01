@@ -1,18 +1,12 @@
 file ./master
 
-set args --inhibitor
+set args 2 --inhibitor
 
 set pagination off
 set $i=0
 
 handle SIGUSR1 nostop
 handle SIGTERM nostop
-
-break semop
-commands
-!ipcs -si $(ipcs -s | tail -2 | head -1 | awk '{print $2}')
-continue
-end
 
 break dummy
 commands
@@ -22,5 +16,7 @@ run
 end
 
 break unwanted
+
+break unwanted_2
 
 run
