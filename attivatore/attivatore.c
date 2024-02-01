@@ -70,7 +70,6 @@ int main(int argc, char *argv[]) {
             print(E, "Could not activate atom.\n");
             break;
         }
-//        printf("-1 | att-beg\n");
 
         // first try to retrieve an atom from the lifo (recently activated atoms)
         pid_t atom = -1;
@@ -84,7 +83,6 @@ int main(int argc, char *argv[]) {
                     print(E, "Could not retrieve an atom and release semaphores.\n");
                     break;
                 }
-//                printf("+1 | att-no-atoms\n");
                 // continue to next step
                 continue;
             }
@@ -99,7 +97,6 @@ int main(int argc, char *argv[]) {
                 print(E, "Could not release master semaphore.\n");
                 break;
             }
-//            printf("+1 | att-fail\n");
         }
     }
 

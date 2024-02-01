@@ -72,7 +72,6 @@ int main(int argc, char *argv[]) {
         print(E, "Could not acquire master semaphore.\n");
         exit(EXIT_FAILURE);
     }
-//    printf("-1 | atom++\n");
 
     fifo_add(model->res->fifo_fd, &pid, sizeof(pid_t));
     model->stats->n_atoms++;
@@ -82,7 +81,6 @@ int main(int argc, char *argv[]) {
         print(E, "Could not release master semaphore.\n");
         exit(EXIT_FAILURE);
     }
-//    printf("+1 | atom++\n");
 
     // no longer needed
     fifo_close(model->res->fifo_fd);
@@ -109,7 +107,6 @@ int main(int argc, char *argv[]) {
 
             // if this atom should become waste
             if ((long) atomic_number < MIN_N_ATOMICO) {
-//                printf("-W- %d\n", atomic_number);
                 waste(EXIT_NATURAL);
                 continue;
             }
@@ -127,7 +124,6 @@ int main(int argc, char *argv[]) {
                     if (sem_op(model->ipc->semid, &sops[0], 1) == -1) {
                         print(E, "Could not release master semaphore.\n");
                     }
-//                    printf("+1 | atomo-melt\n");
                     // signal master that MELTDOWN happened
                     kill(model->ipc->master_pid, SIGMELT);
                     terminate();
@@ -153,8 +149,6 @@ int main(int argc, char *argv[]) {
                         print(E, "Could not push child atom to lifo.\n");
                     }
 
-//                    printf("-I- %d\n", atomic_number);
-
                     // wake up inhibitor, if activated, to inhibit the energy we just produced
                     sem_buf(&sops[0], SEM_INIBITORE_OFF, 0, IPC_NOWAIT);
                     sem_buf(&sops[1], SEM_INIBITORE, +1, 0);
@@ -163,7 +157,6 @@ int main(int argc, char *argv[]) {
                             print(E, "Could not wake up inhibitor.\n");
                         } else {
                             end_activation_cycle();
-                            DEBUG_BREAKPOINT;
                         }
                     }
                     break;
@@ -229,7 +222,6 @@ static void end_activation_cycle() {
     if (sem_op(model->ipc->semid, &sops, 1) == -1) {
         print(E, "Could not release master semaphore.\n");
     }
-//    printf("+1 | att-end\n");
 
     // only then, give work back to attivatore
     sem_buf(&sops, SEM_ATTIVATORE, +1, 0);

@@ -25,19 +25,10 @@ extern sig_atomic_t sig;
 static struct SimulationStats sim;
 static timer_t timer;
 
-int expected;
-void intrsys() {}
-
 int main(int argc, char *argv[]) {
 
-
-    if (parse_int(argv[1], &expected) == -1) {
-        print(E, "Could not parse expected result.\n");
-        exit(EXIT_FAILURE);
-    }
-
     // check for flags
-    for (int i = 2; i < argc; i++) {
+    for (int i = 1; i < argc; i++) {
         if (strcmp("--inhibitor", argv[i]) == 0) {
             flags[INHIBITOR_FLAG] = 1;
         } else if (strcmp("--no-inh-log", argv[i]) == 0) {
@@ -244,15 +235,15 @@ int main(int argc, char *argv[]) {
         while (waitpid(-1, NULL, WNOHANG) > 0)
             ;
 
+        mask(SIGCHLD);
+
         // acquire master semaphore so that nobody can
         // update stats while we perform our checks
         sem_buf(&sops, SEM_MASTER, -1, 0);
         if (sem_op(model->ipc->semid, &sops, 1) == -1) {
             print(E, "Could not acquire master semaphore.\n");
-            while (1) ;
-            exit(EXIT_FAILURE);
+            break;
         }
-        //printf("-1 | master\n");
 
         // update elapsed time
         clock_gettime(CLOCK_MONOTONIC_RAW, &sim_curr);
@@ -296,11 +287,12 @@ int main(int argc, char *argv[]) {
             if (sem_op(model->ipc->semid, &sops, 1) == -1) {
                 print(E, "Could not release master semaphore.\n");
             }
-            // printf("-1 | master\n");
 
             // print simulation status while simulation continues
             print_stats(sim);
         }
+
+        unmask(SIGCHLD);
     }
     timer_delete(timer);
 
@@ -330,7 +322,6 @@ static void copy_stats() {
 }
 
 static void dummy() {}
-static void unwanted() {}
 
 void cleanup() {
     // detach and remove IPC resources
@@ -346,11 +337,7 @@ void cleanup() {
         }
     }
 
-    if ((int) sim.status == expected) {
-        dummy();
-    } else {
-        unwanted();
-    }
+    dummy();
 }
 
 static void sigterm_handler() {

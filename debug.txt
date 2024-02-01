@@ -1,12 +1,19 @@
 file ./master
 
-set args 2 --inhibitor
+set args --inhibitor
 
 set pagination off
 set $i=0
 
 handle SIGUSR1 nostop
 handle SIGTERM nostop
+
+break dummy
+commands
+set $i=($i + 1)
+print $i
+run
+end
 
 break intrsys
 
