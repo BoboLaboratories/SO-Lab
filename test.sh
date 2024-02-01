@@ -8,6 +8,8 @@ make
 
 mkdir -p "$dir"
 cp bin/* "$dir"
+cp debug.txt "$dir"
+cp check.sh "$dir"
 
 cd "$dir" || exit 1
 
@@ -16,5 +18,5 @@ touch exits.txt
 echo "rm .so_fifo" >> start.sh
 echo "truncate -s 0 exits.txt" >> start.sh
 echo "source \"../../env/$1.sh\"" >> start.sh
-echo "gdb -x ../../debug.txt" >> start.sh
+echo "gdb -x debug.txt" >> start.sh
 chmod u+x start.sh
