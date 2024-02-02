@@ -161,8 +161,8 @@ project/
 |
 | Ogni processo è implementato in un modulo separato da tutti gli altri e viene così immesso nella simulazione:
 
-- Il master avvia alimentatore, attivatore, inibitore e `N_ATOMI_INIT` tramite `fork` e successiva `execv`;
-- L'alimentatore immette `N_NUOVI_ATOMI` atomi tramite `fork` e successiva `execv`;
+- Il master avvia alimentatore, attivatore, inibitore e `N_ATOMI_INIT` atomi tramite `fork` e successiva `execv`;
+- L'alimentatore immette a ogni step il numero opportuno di nuovi atomi tramite `fork` e successiva `execv`;
 - Diverge l'atomo, che si scinde tramite la sola `fork`.
 
 |
@@ -253,7 +253,7 @@ nella simulazione.
 
 Gli atomi più recentemente scissi dall'attivatore, ammesso che non si trasformino in scorie, memorizzano il proprio pid
 nella LIFO. Quest'ultima risiede in shared memory, in modo tale che sia accessibile a tutti i processi che devono manipolarne
-lo stato (le manipolazioni effettuate saranno dettagliate in [[sezione 2.4]{.underline}][Processi e lifecycle]).
+lo stato (le manipolazioni effettuate saranno meglio dettagliate in [[sezione 2.4]{.underline}][Processi e lifecycle]).
 
 L'implementazione data, a seconda del fabbisogno determinato dalla configurazione della simulazione, è automaticamente
 in grado di aumentare (o diminuire) lo spazio riservato per la LIFO (richiedendo al SO un nuovo segmento di shared memory delle
@@ -271,9 +271,6 @@ in maniera opportuna l'alternarsi delle operazioni dei vari processi.
 Un esempio di parte di queste dinamiche è visionabile
 in [[sezione 2.4.6]{.underline}][Esempio di un ciclo di attivazione e scissione];
 
-Per visionare per esteso la logica di ogni processo e l'esatto utilizzo dei semafori, visionare i sorgenti, opportunamente
-documentati tramite appositi commenti.
-
 ### Master
 
 Il master resta in attesa tramite `sigsuspend` di uno dei seguenti segnali:
@@ -282,12 +279,12 @@ Il master resta in attesa tramite `sigsuspend` di uno dei seguenti segnali:
   una `fork` e quindi la terminazione per `MELTDOWN`;
 - `SIGALRM`, inviato dal `timer` di 1 secondo, inizializzato dal processo stesso, per controllare lo stato della simulazione
   (ossia terminazioni per `TIMEOUT`, `EXPLODE`, `BLACKOUT`) e stampare le statistiche.
-- `SIGTERM`, tramite cui è possibile terminare manualmente la simulazione:
+- `SIGTERM`, tramite cui è possibile terminare manualmente la simulazione (`TERMINATED`):
   - da terminale con comando `kill -SIGTERM <master_pid>`;
   - con comando `./soctl.sh stop`, che esegue quanto sopra;
 
 In qualsiasi stato di terminazione (inclusa quella manuale), il master si premura di inviare `SIGTERM` a tutti gli
-altri processi della simulazione per consentire una graceful exit, per poi procedere al rilascio delle risorse IPC al SO.
+altri processi della simulazione, per consentire una graceful exit e procedere al rilascio delle risorse IPC.
 
 ### Attivatore
 
@@ -296,9 +293,10 @@ L'attivatore resta in attesa tramite `sigsuspend` di uno dei seguenti segnali:
 - `SIGALRM`, inviato dal `timer` di `STEP_ATTIVATORE` nanosecondi, inizializzato dal processo stesso, per causare
   l'attivazione di un atomo, che viene così selezionato:
   - se la LIFO non è vuota, preleva l'atomo scisso più recentemente;
-  - se la FIFO non è vuota, preleva il più vecchio atomo inserito;
+  - se la FIFO non è vuota, preleva il più vecchio atomo immesso nella simulazione;
   - se così facendo è stato selezionato un atomo, gli viene inviato `SIGACTV` per causarne la scissione;
-  - se entrambe le strutture sono vuote, non viene selezionato alcun atomo e l'attivazione non avviene.
+  - se entrambe le strutture sono vuote, non sono correntemente presenti atomi e l'attivazione non avviene.
+- `SIGTERM`, inviato dal master per indicare la terminazione della simulazione.
 
 ### Atomo
 
@@ -315,20 +313,22 @@ L'atomo resta in attesa tramite `sigsuspend` di uno dei seguenti segnali:
 L'inibitore resta in attesa:
 
 - Su un semaforo dedicato che viene incrementato dagli atomi a seguito della scissione,
-  per segnalare all'inibitore di eseguire le relative operazioni di controllo:
-  - assorbimento di tutta l'energia necessaria a evitare `EXPLODE`;
-  - trasformazione in scoria di uno degli atomi scissi per evitare `MELTDOWN`.
-- Di `SIGTERM`, da parte del master, per indicare la terminazione della simulazione.
+  per segnalare allo stesso di procedere con le relative operazioni di controllo, ossia:
+  - l'assorbimento di tutta l'energia necessaria a evitare `EXPLODE`;
+  - la trasformazione in scoria di uno degli atomi scissi per evitare `MELTDOWN`.
+- Del segnale di `SIGTERM`, inviato dal master per indicare la terminazione della simulazione.
 
 
 ### Alimentatore
 
-L'alimentatore esegue le sue funzionalità in due modalità distinte, che dipendono dallo stato dell'inibitore e che, quindi,
-possono alternarsi un numero arbitrario di volte nel corso di una singola simulazione:
+| L'alimentatore esegue le sue funzionalità in due modalità distinte, che dipendono dallo stato dell'inibitore e che, quindi, possono alternarsi un numero arbitrario di volte nel corso di una singola simulazione.
+| Ogni `STEP_ALIMENTAZIONE`, l'alimentatore:
 
-- se l'inibitore è `OFF`, ogni `STEP_ALIMENTAZIONE` esegue la `fork` di `N_NUOVI_ATOMI`, senza limitazioni;
-- se l'inibitore è `ON`, ogni `STEP_ALIMENTAZIONE` esegue un numero limitato ($\leq$ `N_NUOVI_ATOMI`) di `fork` indicato
+- se l'inibitore è `OFF`, esegue la `fork` di `N_NUOVI_ATOMI`, senza limitazioni;
+- se l'inibitore è `ON`, esegue un numero limitato di `fork` ($\leq$ `N_NUOVI_ATOMI`), indicato
   dal valore di un apposito semaforo utilizzato per evitare `MELTDOWN`.
+
+Anche l'alimentatore attende il segnale di `SIGTERM`, inviato dal master per indicare la terminazione della simulazione.
 
 ### Esempio di un ciclo di attivazione e scissione
 

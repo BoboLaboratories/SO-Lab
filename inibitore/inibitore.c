@@ -100,7 +100,7 @@ int main(int argc, char *argv[]) {
         unmask(SIGTERM);
     }
 
-    exit(EXIT_FAILURE);
+    exit(EXIT_SUCCESS);
 }
 
 void cleanup() {
