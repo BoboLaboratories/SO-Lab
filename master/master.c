@@ -203,25 +203,15 @@ int main(int argc, char *argv[]) {
         sprintf(argvc[1], "%d", model->res->shmid);
         for (n_atoms = 0; sim.status == STARTING && n_atoms < N_ATOMI_INIT; n_atoms++) {
             sprintf(argvc[2], "%d", rand_between(MIN_N_ATOMICO, N_ATOM_MAX));
+            // so that child processes inherits SIGTERM masking which
+            // will be handled automatically at the right time
+            mask(SIGTERM);
             if (fork_execv(argvc) == -1) {
                 sim.status = MELTDOWN;
             }
+            unmask(SIGTERM);
         }
         frargs(argvc, buf);
-        if (sim.status != STARTING) {
-            n_atoms = N_ATOMI_INIT - n_atoms + 1;
-            struct sembuf sops;
-            int should_recover = 1;
-            while (should_recover && n_atoms > 0) {
-                short delta = (short) n_atoms;
-                sem_buf(&sops, SEM_SYNC, (short) -delta, 0);
-                if (sem_op(model->ipc->semid, &sops, 1) == -1) {
-                    print(E, "Could not SEM_SYNC after MELTDOWN.\n");
-                    should_recover = 0;
-                }
-                n_atoms -= delta;
-            }
-        }
     }
 
 
@@ -233,13 +223,13 @@ int main(int argc, char *argv[]) {
     struct timespec sim_start;
     struct timespec sim_curr;
 
-    print(I, "Waiting for all processes to be ready..\n");
-    sigprocmask(SIG_SETMASK, &mask, NULL);
-    mask(SIGCHLD);
-
-    sem_sync(model->ipc->semid, SEM_SYNC);
-
     if (sim.status == STARTING) {
+        print(I, "Waiting for all processes to be ready..\n");
+        sigprocmask(SIG_SETMASK, &mask, NULL);
+        mask(SIGCHLD);
+
+        sem_sync(model->ipc->semid, SEM_SYNC);
+
         sim.status = RUNNING;
         memset(&sim_start, 0, sizeof(struct timespec));
         memset(&sim_curr, 0, sizeof(struct timespec));

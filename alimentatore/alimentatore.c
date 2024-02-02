@@ -82,7 +82,11 @@ int main(int argc, char *argv[]) {
                     print(E, "Could not acquire master semaphore.\n");
                 }
 
+                // so that child processes inherits SIGTERM masking which
+                // will be handled automatically at the right time
+                mask(SIGTERM);
                 pid_t atom = fork_execv(argvc);
+                unmask(SIGTERM);
 
                 // immediately release, regardless of fork result,
                 // so that simulation can continue and if fork failed
